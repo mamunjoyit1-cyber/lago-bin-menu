@@ -71,11 +71,10 @@
   .piatti-item { font-size: 13px; color: #2c1810; padding: 4px 0; border-bottom: 1px dotted #e8d5b7; line-height: 1.4; }
   .piatti-item:last-child { border-bottom: none; }
   .piatti-sauce { font-size: 12px; color: #9a7a5a; font-style: italic; font-weight: normal; }
-  .bambini-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 10px; }
- .bambini-grid {
+  .bambini-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
   margin-top: 10px;
 }
 
