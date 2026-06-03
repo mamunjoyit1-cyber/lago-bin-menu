@@ -178,9 +178,9 @@
 
 </div>
   <div class="lang-bar">
-    <button class="lang-btn active" onclick="setLang('it')">🇮🇹 Italiano</button>
-    <button class="lang-btn" onclick="setLang('fr')">🇫🇷 Français</button>
-    <button class="lang-btn" onclick="setLang('en')">🇬🇧 English</button>
+    <button class="lang-btn active" onclick="setLang('it', this)">🇮🇹 Italiano</button>
+<button class="lang-btn" onclick="setLang('fr', this)">🇫🇷 Français</button>
+<button class="lang-btn" onclick="setLang('en', this)">🇬🇧 English</button>
     <div class="translate-wrap">
       <button class="translate-btn" onclick="toggleDropdown()" id="translateBtn">🌐 More Languages ▾</button>
       <div class="lang-dropdown" id="langDropdown">
@@ -829,18 +829,23 @@ function googleTranslateElementInit() {
 <script>
   let currentLang = 'it';
 
-  function setLang(lang) {
-    currentLang = lang;
-    resetGoogleTranslate();
-    document.querySelectorAll('[data-' + lang + ']').forEach(el => {
-      el.textContent = el.getAttribute('data-' + lang);
-    });
-    document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
-    el.classList.add('active');
-    document.getElementById('translateBtn').textContent = '🌐 More Languages ▾';
-    closeDropdown();
-  }
+  function setLang(lang, el) {
+  currentLang = lang;
+  resetGoogleTranslate();
 
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    b.classList.remove('active');
+  });
+
+  el.classList.add('active');
+
+  document.querySelectorAll('[data-' + lang + ']').forEach(item => {
+    item.textContent = item.getAttribute('data-' + lang + '');
+  });
+
+  document.getElementById('translateBtn').textContent = '🌐 More Languages ▾';
+  closeDropdown();
+}
   function setTab(tab, el) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     const btn = document.querySelector('.tab-btn[onclick*="' + tab + '"]');
