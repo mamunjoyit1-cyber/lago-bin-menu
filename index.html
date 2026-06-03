@@ -64,7 +64,20 @@
   .piatti-sauce { font-size: 12px; color: #9a7a5a; font-style: italic; font-weight: normal; }
   .bambini-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 10px; }
   .bambini-item { background: #fdf6ee; border: 1px solid #e8d5b7; border-radius: 8px; padding: 7px 12px; font-size: 13px; color: #2c1810; }
-  .gelato-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 16px 0; }
+  .gelato-grid {
+    display: block;
+  }
+
+  .gelato-grid .item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 14px 18px;
+    background: #fff;
+    border: 1px solid #ede0cc;
+    border-radius: 10px;
+    margin-bottom: 10px;
+  }
   .gelato-item { background: linear-gradient(135deg, #fff8f0, #ffeedd); border: 1px solid #e8c89a; border-radius: 10px; padding: 12px 14px; font-size: 14px; color: #2c1810; text-align: center; font-weight: bold; }
 
   /* NOTE BOX */
@@ -631,84 +644,117 @@
     </div>
   </div>
 
-  <div class="gelato-item">
-    <div data-it="Fiore di Latte" data-fr="Lait" data-en="Milk Cream">Fiore di Latte</div>
-    <div class="item-desc"
-      data-it="Gelato al latte fresco"
-      data-fr="Glace au lait frais"
-      data-en="Fresh milk ice cream">
-      Gelato al latte fresco
+  <div>
+
+  <div class="item">
+    <div class="item-left">
+      <div class="item-name">🍦 <span data-it="Vaniglia" data-fr="Vanille" data-en="Vanilla">Vaniglia</span></div>
+      <div class="item-desc"
+        data-it="Classico gusto alla vaniglia"
+        data-fr="Saveur classique à la vanille"
+        data-en="Classic vanilla flavour">
+        Classico gusto alla vaniglia
+      </div>
     </div>
   </div>
 
-  <div class="gelato-item">
-    <div data-it="Fragola" data-fr="Fraise" data-en="Strawberry">Fragola</div>
-    <div class="item-desc"
-      data-it="Gelato alla fragola fresca"
-      data-fr="Glace à la fraise fraîche"
-      data-en="Fresh strawberry ice cream">
-      Gelato alla fragola fresca
+  <div class="item">
+    <div class="item-left">
+      <div class="item-name">🥛 <span data-it="Fiore di Latte" data-fr="Lait" data-en="Milk Cream">Fiore di Latte</span></div>
+      <div class="item-desc"
+        data-it="Gelato al latte fresco"
+        data-fr="Glace au lait frais"
+        data-en="Fresh milk ice cream">
+        Gelato al latte fresco
+      </div>
     </div>
   </div>
 
-  <div class="gelato-item">
-    <div data-it="Nocciola" data-fr="Noisette" data-en="Hazelnut">Nocciola</div>
-    <div class="item-desc"
-      data-it="Crema di nocciola piemontese"
-      data-fr="Crème de noisette du Piémont"
-      data-en="Piedmont hazelnut cream">
-      Crema di nocciola piemontese
+  <div class="item">
+    <div class="item-left">
+      <div class="item-name">🍓 <span data-it="Fragola" data-fr="Fraise" data-en="Strawberry">Fragola</span></div>
+      <div class="item-desc"
+        data-it="Gelato alla fragola fresca"
+        data-fr="Glace à la fraise fraîche"
+        data-en="Fresh strawberry ice cream">
+        Gelato alla fragola fresca
+      </div>
     </div>
   </div>
 
-  <div class="gelato-item">
-    <div data-it="Limone" data-fr="Citron" data-en="Lemon">Limone</div>
-    <div class="item-desc"
-      data-it="Sorbetto fresco al limone"
-      data-fr="Sorbet au citron"
-      data-en="Fresh lemon sorbet">
-      Sorbetto fresco al limone
+  <div class="item">
+    <div class="item-left">
+      <div class="item-name">🌰 <span data-it="Nocciola" data-fr="Noisette" data-en="Hazelnut">Nocciola</span></div>
+      <div class="item-desc"
+        data-it="Crema di nocciola piemontese"
+        data-fr="Crème de noisette du Piémont"
+        data-en="Piedmont hazelnut cream">
+        Crema di nocciola piemontese
+      </div>
     </div>
   </div>
 
-  <div class="gelato-item">
-    <div data-it="Mango" data-fr="Mangue" data-en="Mango">Mango</div>
-    <div class="item-desc"
-      data-it="Gelato esotico al mango"
-      data-fr="Glace exotique à la mangue"
-      data-en="Exotic mango ice cream">
-      Gelato esotico al mango
+  <div class="item">
+    <div class="item-left">
+      <div class="item-name">🍋 <span data-it="Limone" data-fr="Citron" data-en="Lemon">Limone</span></div>
+      <div class="item-desc"
+        data-it="Sorbetto fresco al limone"
+        data-fr="Sorbet au citron"
+        data-en="Fresh lemon sorbet">
+        Sorbetto fresco al limone
+      </div>
     </div>
   </div>
 
-  <div class="gelato-item">
-    <div data-it="Cioccolata" data-fr="Chocolat" data-en="Chocolate">Cioccolata</div>
-    <div class="item-desc"
-      data-it="Gelato al cioccolato fondente"
-      data-fr="Glace au chocolat noir"
-      data-en="Dark chocolate ice cream">
-      Gelato al cioccolato fondente
+  <div class="item">
+    <div class="item-left">
+      <div class="item-name">🥭 <span data-it="Mango" data-fr="Mangue" data-en="Mango">Mango</span></div>
+      <div class="item-desc"
+        data-it="Gelato esotico al mango"
+        data-fr="Glace exotique à la mangue"
+        data-en="Exotic mango ice cream">
+        Gelato esotico al mango
+      </div>
     </div>
   </div>
 
-  <div class="gelato-item">
-    <div data-it="Caffè" data-fr="Café" data-en="Coffee">Caffè</div>
-    <div class="item-desc"
-      data-it="Gelato al caffè intenso"
-      data-fr="Glace au café intense"
-      data-en="Strong coffee ice cream">
-      Gelato al caffè intenso
+  <div class="item">
+    <div class="item-left">
+      <div class="item-name">🍫 <span data-it="Cioccolata" data-fr="Chocolat" data-en="Chocolate">Cioccolata</span></div>
+      <div class="item-desc"
+        data-it="Gelato al cioccolato fondente"
+        data-fr="Glace au chocolat noir"
+        data-en="Dark chocolate ice cream">
+        Gelato al cioccolato fondente
+      </div>
     </div>
   </div>
 
-  <div class="gelato-item">
-    <div data-it="Sorbetto" data-fr="Sorbet" data-en="Sorbet">Sorbetto</div>
-    <div class="item-desc"
-      data-it="Sorbetto leggero di frutta"
-      data-fr="Sorbet léger aux fruits"
-      data-en="Light fruit sorbet">
-      Sorbetto leggero di frutta
+  <div class="item">
+    <div class="item-left">
+      <div class="item-name">☕ <span data-it="Caffè" data-fr="Café" data-en="Coffee">Caffè</span></div>
+      <div class="item-desc"
+        data-it="Gelato al caffè intenso"
+        data-fr="Glace au café intense"
+        data-en="Strong coffee ice cream">
+        Gelato al caffè intenso
+      </div>
     </div>
+  </div>
+
+  <div class="item">
+    <div class="item-left">
+      <div class="item-name">🍧 <span data-it="Sorbetto" data-fr="Sorbet" data-en="Sorbet">Sorbetto</span></div>
+      <div class="item-desc"
+        data-it="Sorbetto leggero di frutta"
+        data-fr="Sorbet léger aux fruits"
+        data-en="Light fruit sorbet">
+        Sorbetto leggero di frutta
+      </div>
+    </div>
+  </div>
+
+</div>
   </div>
 
 </div>
