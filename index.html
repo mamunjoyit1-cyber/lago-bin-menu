@@ -47,7 +47,13 @@
   .translating-bar { display: none; background: #fff8e1; padding: 10px 20px; text-align: center; font-size: 13px; color: #8b6914; border-bottom: 1px solid #f0d060; }
   .translating-bar.show { display: block; }
 
-  .tabs-wrap { background: #fff; border-bottom: 2px solid #e8d5b7; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .tabs {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 12px;
+}
   .tabs { display: flex; min-width: max-content; padding: 0 12px; }
   .tab-btn { background: none; border: none; border-bottom: 3px solid transparent; color: #7a6a5a; padding: 13px 14px; font-size: 13px; cursor: pointer; font-family: inherit; white-space: nowrap; transition: all 0.2s; }
   .tab-btn.active { border-bottom-color: #8b1a1a; color: #8b1a1a; font-weight: bold; }
