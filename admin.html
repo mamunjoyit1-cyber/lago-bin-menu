@@ -972,13 +972,21 @@ function buildReceiptHTML(job,tbl,items,showPrice,room,operatorName,billingItems
   });
   sortedTurni.forEach(turno=>{
     if(turno!=='—')html+='<div class="receipt-turno">'+turno+'</div>';
+    const grouped=[];
     byTurno[turno].forEach(it=>{
       const isMenuFisso = it.name==='Menù del Lago Bin';
       const isMenuComponent = it.course==='menu_component';
-      const tag = isMenuFisso ? ' <span class="menu-fisso-tag">MENU FISSO</span>' : (isMenuComponent ? ' <span class="menu-fisso-tag">MENU</span>' : '');
-      html+='<div class="receipt-item"><span class="rname">'+(it.person?it.person+' — ':'')+it.name+tag+'</span>';
+      const key=it.name+'||'+(it.detail||'')+'||'+(it.person||'')+'||'+(isMenuFisso?'F':'')+(isMenuComponent?'C':'');
+      const existing=grouped.find(g=>g.key===key);
+      if(existing){existing.qty++;}
+      else grouped.push({key,name:it.name,detail:it.detail,person:it.person,isMenuFisso,isMenuComponent,qty:1});
+    });
+    grouped.forEach(g=>{
+      const tag = g.isMenuFisso ? ' <span class="menu-fisso-tag">MENU FISSO</span>' : (g.isMenuComponent ? ' <span class="menu-fisso-tag">MENU</span>' : '');
+      const qtyTag = g.qty>1 ? ' <span class="rqty">×'+g.qty+'</span>' : '';
+      html+='<div class="receipt-item"><span class="rname">'+(g.person?g.person+' — ':'')+g.name+qtyTag+tag+'</span>';
       html+='<br>';
-      if(it.detail && it.name!=='Menù del Lago Bin')html+='<span class="rdetail">'+it.detail+'</span>';
+      if(g.detail && g.name!=='Menù del Lago Bin')html+='<span class="rdetail">'+g.detail+'</span>';
       html+='</div>';
     });
   });
