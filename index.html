@@ -543,6 +543,18 @@ html body { margin-top: 0 !important; }
   <div class="overlay-note" id="overlay-note-text" data-it="✅ Ordine inviato! Il cameriere lo riceverà a breve." data-fr="✅ Commande envoyée! Le serveur la recevra bientôt." data-en="✅ Order sent! The waiter will receive it shortly." data-de="✅ Bestellung gesendet! Der Kellner erhält sie in Kürze.">✅ Ordine inviato! Il cameriere lo riceverà a breve.</div>
 </div>
 
+  <!-- HOUSE WINE BOTTLE COLOR POPUP -->
+<div class="vini-modal-overlay" id="house-bottle-popup-overlay" onclick="if(event.target===this)closeHouseBottlePopup()">
+  <div class="vini-modal-box">
+    <div class="vini-calice">🍷</div>
+    <div class="vini-modal-title" data-it="Scegli il Colore" data-fr="Choisissez la Couleur" data-en="Choose the Color" data-de="Farbe wählen">Scegli il Colore</div>
+    <div class="vini-modal-sub" data-it="Vino della Casa" data-fr="Vin Maison" data-en="House Wine" data-de="Hauswein">Vino della Casa</div>
+    <button type="button" class="vini-modal-btn primary" onclick="selectHouseBottleColor('rosso')">🍷 Rosso</button>
+    <button type="button" class="vini-modal-btn primary" onclick="selectHouseBottleColor('bianco')">🥂 Bianco</button>
+    <button type="button" class="vini-modal-btn primary" onclick="selectHouseBottleColor('rose')">🌸 Rosé</button>
+    <span class="vini-modal-close" onclick="closeHouseBottlePopup()" data-it="Annulla" data-fr="Annuler" data-en="Cancel" data-de="Abbrechen">Annulla</span>
+  </div>
+</div>
 <!-- CARTA DEI VINI MODAL -->
 <div class="vini-modal-overlay" id="vini-modal" onclick="if(event.target===this)closeViniModal()">
   <div class="vini-modal-box">
@@ -591,6 +603,12 @@ html body { margin-top: 0 !important; }
         <button class="bar-qty-btn" onclick="changeHouseWineQty('prosecco',1)">+</button>
       </div>
     </div>
+  </div>
+      <div class="vini-row" onclick="openHouseWineBottlePopup('0.5')">
+    <span>🍷 <span data-it="Vino della Casa 0,5L" data-fr="Vin Maison 0,5L" data-en="House Wine 0.5L" data-de="Hauswein 0,5L">Vino della Casa 0,5L</span></span><span class="vini-price">€8,00</span>
+  </div>
+  <div class="vini-row" onclick="openHouseWineBottlePopup('0.25')">
+    <span>🍷 <span data-it="Vino della Casa 0,25L" data-fr="Vin Maison 0,25L" data-en="House Wine 0.25L" data-de="Hauswein 0,25L">Vino della Casa 0,25L</span></span><span class="vini-price">€6,00</span>
   </div>
 </div>
     <button type="button" class="vini-modal-btn primary vini-cta-pulse" onclick="openViniFrame()" data-it="🍷 Apri la Carta dei Vini Digitale➔" data-fr="🍷 Ouvrir la Carte des Vins Digitale➔" data-en="🍷 Open the Digital Wine List➔" data-de="🍷 Digitale Weinkarte öffnen➔">🍷 Apri la Carta dei Vini Digitale➔</button>
@@ -1096,7 +1114,29 @@ function changeHouseWineQty(id,delta){
   const qd=document.getElementById('qty-housewine-'+id);if(qd)qd.textContent=q;
   updateCart();
 }
-
+// ── HOUSE WINE BOTTLES (0.5L / 0.25L) — color choice popup ──
+const HOUSE_WINE_BOTTLE_PRICES = { '0.5': 8, '0.25': 6 };
+let houseBottlePopupSize = null;
+function openHouseWineBottlePopup(size){
+  houseBottlePopupSize = size;
+  const overlay = document.getElementById('house-bottle-popup-overlay');
+  if(overlay) overlay.classList.add('open');
+}
+function closeHouseBottlePopup(){
+  const overlay = document.getElementById('house-bottle-popup-overlay');
+  if(overlay) overlay.classList.remove('open');
+  houseBottlePopupSize = null;
+}
+function selectHouseBottleColor(color){
+  const size = houseBottlePopupSize;
+  if(!size) return;
+  const price = HOUSE_WINE_BOTTLE_PRICES[size];
+  const sizeLabel = size === '0.5' ? '0,5L' : '0,25L';
+  const colorLabels = { rosso:'Rosso', bianco:'Bianco', rose:'Rosé' };
+  cart.push({id:++cartIdCounter, itemId:'housebottle_'+size+'_'+color, name:'Vino della Casa '+sizeLabel, price:price, course:'bevande', turno:'—', person:null, detail:colorLabels[color]});
+  closeHouseBottlePopup();
+  updateCart();
+}
 // ── GELATO INLINE (FIX: translated chips) ──
 function renderInlineGelato(){
   const c=document.getElementById('inline-flavours-gelato'),note=document.getElementById('flavour-note-gelato');
