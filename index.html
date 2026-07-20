@@ -200,11 +200,17 @@ body { font-family: 'Palatino Linotype', Palatino, serif; background: #150e0b; c
 .sub-section { display: none; }
 .sub-section.active { display: block; }
 .cocktail-list { background: #fdf5e6; border-radius: 10px; padding: 12px 16px; margin-bottom: 8px; }
-.price-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px dotted rgba(212,175,55,0.15); font-size: 15px; color: #1a0505; font-weight: 500; }
+.price-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px dotted rgba(212,175,55,0.15); font-size: 15px; color: #1a0505; font-weight: 500; gap: 10px; }
 .price-row:last-child { border-bottom: none; }
 .cocktail-group { color: #b31e1e; font-size: 12px; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; margin: 14px 0 8px; }
 .cocktail-name { font-size: 14.5px; color: #1a0505; padding: 4px 0; border-bottom: 1px dotted rgba(0,0,0,0.08); }
 .bar-divider { text-align: center; color: #bca07d; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; margin: 18px 0 10px; border-top: 1px solid rgba(212,175,55,0.15); padding-top: 14px; }
+.bar-row-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.bar-row-price { font-weight: 800; color: #b31e1e; white-space: nowrap; }
+.bar-qty-row { display: flex; align-items: center; gap: 6px; }
+.bar-qty-btn { width: 24px; height: 24px; border-radius: 50%; border: 2px solid #d4af37; background: #fdf5e6; color: #b31e1e; font-size: 15px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; font-family: inherit; line-height: 1; }
+.bar-qty-btn:hover { background: #d4af37; color: #150e0b; }
+.bar-qty-display { font-size: 14px; font-weight: bold; color: #b31e1e; min-width: 16px; text-align: center; }
 .footer { background: #0b0202; color: #d4af37; text-align: center; padding: 30px 20px; font-size: 14px; border-top: 3px solid #d4af37; margin-top: 50px; }
 .footer .note { color: #bca07d; font-size: 13px; font-style: italic; margin-top: 10px; }
 #google_translate_element { display: none !important; }
@@ -240,6 +246,13 @@ html body { margin-top: 0 !important; }
 .vini-confirm-btn { width: 100%; padding: 12px; border-radius: 25px; border: none; background: #d4af37; color: #150e0b; font-size: 14px; font-weight: bold; font-family: inherit; cursor: pointer; margin-bottom: 10px; transition: all 0.2s; }
 .vini-confirm-btn:hover { background: #f0c93a; }
 .vini-selected-name { color: #d4af37; font-size: 13px; font-weight: bold; text-align: center; margin-bottom: 8px; }
+.vini-frame-overlay { display: none; position: fixed; inset: 0; background: #150e0b; z-index: 900; flex-direction: column; }
+.vini-frame-overlay.open { display: flex; }
+.vini-frame-header { background: linear-gradient(135deg, #0f0303 0%, #260707 50%, #0f0303 100%); border-bottom: 3px solid #d4af37; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.vini-frame-title { color: #d4af37; font-size: 15px; font-weight: bold; letter-spacing: 2px; }
+.vini-frame-close { background: transparent; border: 1.5px solid #d4af37; color: #d4af37; border-radius: 20px; padding: 7px 16px; font-size: 13px; font-weight: bold; cursor: pointer; font-family: inherit; }
+.vini-frame-close:hover { background: #d4af37; color: #150e0b; }
+.vini-frame-iframe { flex: 1; width: 100%; border: none; background: #fff; }
 </style>
 </head>
 <body>
@@ -463,56 +476,18 @@ html body { margin-top: 0 !important; }
 <div class="section" id="sec-bar">
   <h2 class="cat-title" data-it="🍹 Il Nostro Bar" data-fr="🍹 Notre Bar" data-en="🍹 Our Bar" data-de="🍹 Unsere Bar">🍹 Il Nostro Bar</h2>
   <div class="sub-tabs">
-    <button class="sub-tab-btn active" onclick="setSubTab('caffetteria',this)"><span data-it="☕ Caffetteria" data-fr="☕ Cafétéria" data-en="☕ Coffee" data-de="☕ Kaffee">☕ Caffetteria</span></button>
-    <button class="sub-tab-btn" onclick="setSubTab('bibite',this)"><span data-it="🥤 Bibite" data-fr="🥤 Boissons" data-en="🥤 Drinks" data-de="🥤 Getränke">🥤 Bibite</span></button>
-    <button class="sub-tab-btn" onclick="setSubTab('cocktails',this)"><span data-it="🍹 Cocktails" data-fr="🍹 Cocktails" data-en="🍹 Cocktails" data-de="🍹 Cocktails">🍹 Cocktails</span></button>
+    <button class="sub-tab-btn active" onclick="setSubTab('bibite',this)"><span data-it="🥤 Bibite" data-fr="🥤 Boissons" data-en="🥤 Drinks" data-de="🥤 Getränke">🥤 Bibite</span></button>
+<button class="sub-tab-btn" onclick="setSubTab('cocktails',this)"><span data-it="🍹 Cocktails" data-fr="🍹 Cocktails" data-en="🍹 Cocktails" data-de="🍹 Cocktails">🍹 Cocktails</span></button>
+<button class="sub-tab-btn" onclick="setSubTab('caffetteria',this)"><span data-it="☕ Caffetteria" data-fr="☕ Cafétéria" data-en="☕ Coffee" data-de="☕ Kaffee">☕ Caffetteria</span></button>
   </div>
   <div class="sub-section active" id="subsec-caffetteria">
-    <div class="cocktail-list">
-      <div class="price-row"><span data-it="Caffè Espresso" data-fr="Café Espresso" data-en="Espresso Coffee" data-de="Espresso">Caffè Espresso</span><span style="font-weight:800;color:#b31e1e;">€1,50</span></div>
-      <div class="price-row"><span data-it="Caffè Decaffeinato" data-fr="Café Décaféiné" data-en="Decaf Coffee" data-de="Entkoffeinierter Kaffee">Caffè Decaffeinato</span><span style="font-weight:800;color:#b31e1e;">€1,80</span></div>
-      <div class="price-row"><span data-it="Caffè D'Orzo (Piccolo / Grande)" data-fr="Café d'Orge (Petit / Grand)" data-en="Barley Coffee (Small / Large)" data-de="Gerstenkaffee (Klein / Groß)">Caffè D'Orzo (Piccolo / Grande)</span><span style="font-weight:800;color:#b31e1e;">€2,00</span></div>
-      <div class="price-row"><span data-it="Caffè Ginseng Piccolo" data-fr="Café Ginseng Petit" data-en="Ginseng Coffee Small" data-de="Ginseng Kaffee Klein">Caffè Ginseng Piccolo</span><span style="font-weight:800;color:#b31e1e;">€2,00</span></div>
-      <div class="price-row"><span data-it="Caffè Ginseng Grande" data-fr="Café Ginseng Grand" data-en="Ginseng Coffee Large" data-de="Ginseng Kaffee Groß">Caffè Ginseng Grande</span><span style="font-weight:800;color:#b31e1e;">€3,00</span></div>
-      <div class="price-row"><span data-it="Caffè Corretto" data-fr="Café Corretto" data-en="Coffee with Grappa" data-de="Kaffee mit Schnaps">Caffè Corretto</span><span style="font-weight:800;color:#b31e1e;">€2,50</span></div>
-      <div class="price-row"><span>Cappuccino</span><span style="font-weight:800;color:#b31e1e;">€2,00</span></div>
-      <div class="price-row"><span data-it="Caffè Latte / Latte Macchiato" data-fr="Café Latte / Latte Macchiato" data-en="Café Latte / Latte Macchiato" data-de="Café Latte / Latte Macchiato">Caffè Latte / Latte Macchiato</span><span style="font-weight:800;color:#b31e1e;">€2,50</span></div>
-      <div class="price-row"><span data-it="Thè Caldo / Infusi" data-fr="Thé Chaud / Infusions" data-en="Hot Tea / Herbal Tea" data-de="Heißer Tee / Kräutertee">Thè Caldo / Infusi</span><span style="font-weight:800;color:#b31e1e;">€2,50</span></div>
-      <div class="price-row"><span data-it="Cioccolata Calda" data-fr="Chocolat Chaud" data-en="Hot Chocolate" data-de="Heiße Schokolade">Cioccolata Calda</span><span style="font-weight:800;color:#b31e1e;">€2,50</span></div>
-    </div>
+    <div class="cocktail-list" id="bar-list-caffetteria"></div>
   </div>
   <div class="sub-section" id="subsec-bibite">
-    <div class="cocktail-list">
-      <div class="price-row"><span data-it="Acqua 50 cl" data-fr="Eau 50 cl" data-en="Water 50 cl" data-de="Wasser 50 cl">Acqua 50 cl</span><span style="font-weight:800;color:#b31e1e;">€1,50</span></div>
-      <div class="price-row"><span data-it="Acqua 1 lt" data-fr="Eau 1 lt" data-en="Water 1 lt" data-de="Wasser 1 lt">Acqua 1 lt</span><span style="font-weight:800;color:#b31e1e;">€3,00</span></div>
-      <div class="price-row"><span class="notranslate">Coca Cola / Coca Cola Zero</span><span style="font-weight:800;color:#b31e1e;">€4,00</span></div>
-      <div class="price-row"><span class="notranslate">Fanta / Sprite</span><span style="font-weight:800;color:#b31e1e;">€4,00</span></div>
-      <div class="price-row"><span class="notranslate">Estathé Limone / Pesca</span><span style="font-weight:800;color:#b31e1e;">€4,00</span></div>
-      <div class="price-row"><span class="notranslate">Schweppes / Schweppes Lemon</span><span style="font-weight:800;color:#b31e1e;">€3,00</span></div>
-      <div class="price-row"><span class="notranslate">Crodino / Sanbitter</span><span style="font-weight:800;color:#b31e1e;">€3,00</span></div>
-      <div class="bar-divider" data-it="Succhi di Frutta" data-fr="Jus de Fruits" data-en="Fruit Juices" data-de="Fruchtsäfte">Succhi di Frutta</div>
-      <div class="price-row"><span style="font-size:13px;color:#666;" data-it="Pesca · Ananas · Arancia · Albicocca · ACE · Pera" data-fr="Pêche · Ananas · Orange · Abricot · ACE · Poire" data-en="Peach · Pineapple · Orange · Apricot · ACE · Pear" data-de="Pfirsich · Ananas · Orange · Aprikose · ACE · Birne">Pesca · Ananas · Arancia · Albicocca · ACE · Pera</span><span style="font-weight:800;color:#b31e1e;">€3,00</span></div>
-    </div>
+    <div class="cocktail-list" id="bar-list-bibite"></div>
   </div>
   <div class="sub-section" id="subsec-cocktails">
-    <div class="cocktail-list">
-      <div class="cocktail-group">🍺 Birre &amp; Aperitivi Base</div>
-      <div class="price-row"><span data-it="Birra Bottiglia 33 cl" data-fr="Bière Bouteille 33 cl" data-en="Beer Bottle 33 cl" data-de="Bier Flasche 33 cl">Birra Bottiglia 33 cl</span><span style="font-weight:800;color:#b31e1e;">€4,00</span></div>
-      <div class="price-row"><span class="notranslate">Panaché / Monaco</span><span style="font-weight:800;color:#b31e1e;">€5,00</span></div>
-      <div class="price-row"><span class="notranslate">Martini Bianco e Rosso</span><span style="font-weight:800;color:#b31e1e;">€5,00</span></div>
-      <div class="price-row"><span data-it="Digestivi / Distillati" data-fr="Digestifs / Distillats" data-en="Digestifs / Spirits" data-de="Digestifs / Destillate">Digestivi / Distillati</span><span style="font-weight:800;color:#b31e1e;">€4,00</span></div>
-      <div class="price-row"><span data-it="Shot Alcolici" data-fr="Shots Alcoolisés" data-en="Alcohol Shots" data-de="Alkohol-Shots">Shot Alcolici</span><span style="font-weight:800;color:#b31e1e;">€4,00</span></div>
-      <div class="cocktail-group">🥂 Spritz &amp; Cocktails Classici — €6,00</div>
-      <div class="cocktail-name notranslate">Aperol Spritz</div>
-      <div class="cocktail-name notranslate">Campari Spritz</div>
-      <div class="cocktail-name notranslate">Limoncello Spritz</div>
-      <div class="cocktail-name notranslate">Negroni</div>
-      <div class="cocktail-name notranslate">Negroni Sbagliato</div>
-      <div class="cocktail-name notranslate">Americano</div>
-      <div class="cocktail-group">⭐ Premium Cocktails — €8,00</div>
-      <div class="cocktail-name"><span data-it="Whisky & Coca / Rhum & Coca" data-fr="Whisky Coca / Rhum Coca" data-en="Whisky & Coke / Rum & Coke" data-de="Whisky & Cola / Rum & Cola">Whisky &amp; Coca / Rhum &amp; Coca</span></div>
-      <div class="cocktail-name"><span data-it="Gin Tonic / Gin Lemon" data-fr="Gin Tonic / Gin Citron" data-en="Gin & Tonic / Gin & Lemon" data-de="Gin Tonic / Gin Zitrone">Gin Tonic / Gin Lemon</span></div>
-    </div>
+    <div class="cocktail-list" id="bar-list-cocktails"></div>
   </div>
 </div>
 
@@ -530,9 +505,20 @@ html body { margin-top: 0 !important; }
 </div>
 <div class="cart-panel" id="cart-panel" onclick="event.stopPropagation()">
   <div class="cart-title" data-it="📋 Il Tuo Ordine" data-fr="📋 Votre Commande" data-en="📋 Your Order" data-de="📋 Ihre Bestellung">📋 Il Tuo Ordine</div>
+  <div class="table-select-wrap" style="margin-bottom:12px;">
+    <label for="tableSelect" style="display:block;color:#d4af37;font-weight:bold;font-size:13px;margin-bottom:6px;" data-it="🪑 Numero Tavolo" data-fr="🪑 Numéro de Table" data-en="🪑 Table Number" data-de="🪑 Tischnummer">🪑 Numero Tavolo</label>
+    <select id="tableSelect" style="width:100%;padding:10px 14px;border-radius:14px;border:1px solid #d4af37;background:#2a1d19;color:#f9f1e2;font-size:14px;font-family:inherit;outline:none;">
+      <option value="" data-it="-- Seleziona Tavolo --" data-fr="-- Choisir la Table --" data-en="-- Select Table --" data-de="-- Tisch wählen --">-- Seleziona Tavolo --</option>
+    </select>
+  </div>
   <div id="cart-content"><div class="cart-empty">Nessun articolo ancora</div></div>
   <div class="cart-total" id="cart-total" style="display:none;"><span data-it="Totale stimato" data-fr="Total estimé" data-en="Estimated total" data-de="Geschätzter Gesamtbetrag">Totale stimato</span><span id="total-amount">€0</span></div>
-  <button class="waiter-btn" id="waiter-btn" disabled onclick="showOverlay()" data-it="📲 Mostra al Cameriere" data-fr="📲 Montrer au Serveur" data-en="📲 Show to Waiter" data-de="📲 Dem Kellner zeigen">📲 Mostra al Cameriere</button>
+  <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#d4af37;margin:10px 0;cursor:pointer;">
+    <input type="checkbox" id="lastOrderCheck" style="width:18px;height:18px;">
+    <span data-it="✅ Questo è l'ultimo ordine del tavolo (nessun altro deve ordinare)" data-fr="✅ Ceci est la dernière commande de la table" data-en="✅ This is the table's last order (no one else still needs to order)" data-de="✅ Dies ist die letzte Bestellung des Tisches">✅ Questo è l'ultimo ordine del tavolo (nessun altro deve ordinare)</span>
+  </label>
+  <button class="waiter-btn" id="waiter-btn" disabled onclick="sendOrder()" data-it="📤 Invia Ordine" data-fr="📤 Envoyer la Commande" data-en="📤 Send Order" data-de="📤 Bestellung Senden">📤 Invia Ordine</button>
+  <button class="waiter-btn" id="show-waiter-btn" disabled onclick="showOverlay()" style="background:transparent;border:1px solid #d4af37;color:#d4af37;margin-top:8px;" data-it="📲 Mostra al Cameriere" data-fr="📲 Montrer au Serveur" data-en="📲 Show to Waiter" data-de="📲 Dem Kellner zeigen">📲 Mostra al Cameriere</button>
 </div>
 
 <!-- POPUP -->
@@ -545,7 +531,7 @@ html body { margin-top: 0 !important; }
     <div id="popup-persons"></div>
     <button class="add-person-btn" id="popup-add-person" onclick="popupAddPerson()">+ Aggiungi persona</button>
     <button class="popup-confirm-btn not-ready" id="popup-confirm" onclick="popupConfirm()">✓ Conferma Ordine</button>
-    <span class="popup-cancel" onclick="closePopup()">Annulla / Cancel</span>
+    <span class="popup-cancel" onclick="closeAnyPopup()">Annulla / Cancel</span>
   </div>
 </div>
 
@@ -554,7 +540,7 @@ html body { margin-top: 0 !important; }
   <div class="overlay-header"><div class="overlay-logo">✦ LAGO BIN ✦</div><div class="overlay-sub" data-it="Riepilogo Ordine" data-fr="Récapitulatif" data-en="Order Summary" data-de="Bestellübersicht">Riepilogo Ordine</div></div>
   <div id="overlay-content"></div>
   <button class="overlay-close" onclick="closeOverlay()" data-it="✕ Chiudi / Close" data-fr="✕ Fermer" data-en="✕ Close" data-de="✕ Schließen">✕ Chiudi / Close</button>
-  <div class="overlay-note" data-it="Mostra questo schermo al cameriere" data-fr="Montrez cet écran au serveur" data-en="Show this screen to the waiter" data-de="Zeigen Sie dies dem Kellner">Mostra questo schermo al cameriere</div>
+  <div class="overlay-note" id="overlay-note-text" data-it="✅ Ordine inviato! Il cameriere lo riceverà a breve." data-fr="✅ Commande envoyée! Le serveur la recevra bientôt." data-en="✅ Order sent! The waiter will receive it shortly." data-de="✅ Bestellung gesendet! Der Kellner erhält sie in Kürze.">✅ Ordine inviato! Il cameriere lo riceverà a breve.</div>
 </div>
 
 <!-- CARTA DEI VINI MODAL -->
@@ -565,37 +551,79 @@ html body { margin-top: 0 !important; }
     <div class="vini-modal-sub" data-it="Scegli il vino o apri la lista completa" data-fr="Choisissez le vin ou ouvrez la liste complète" data-en="Choose a wine or open the full list" data-de="Wein wählen oder vollständige Liste öffnen">Scegli il vino o apri la lista completa</div>
     <!-- House wines list -->
     <div id="vini-list" style="background:#1a110e;border-radius:12px;padding:10px 14px;margin-bottom:14px;text-align:left;">
-      <div style="font-size:10px;color:#d4af37;font-weight:bold;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;" data-it="Vini della Casa — Calice" data-fr="Vins Maison — Verre" data-en="House Wines — Glass" data-de="Hausweine — Glas">Vini della Casa — Calice</div>
-      <div class="vini-row" onclick="selectVino('Vino Rosso della Casa','Calice',3)">
-        <span>🍷 <span data-it="Vino Rosso della Casa" data-fr="Vin Rouge Maison" data-en="House Red Wine" data-de="Hauswein Rot">Vino Rosso della Casa</span></span><span class="vini-price">€3,00</span>
-      </div>
-      <div class="vini-row" onclick="selectVino('Vino Bianco della Casa','Calice',3)">
-        <span>🥂 <span data-it="Vino Bianco della Casa" data-fr="Vin Blanc Maison" data-en="House White Wine" data-de="Hauswein Weiß">Vino Bianco della Casa</span></span><span class="vini-price">€3,00</span>
-      </div>
-      <div class="vini-row" onclick="selectVino('Vino Rosato della Casa','Calice',3)">
-        <span>🌸 <span data-it="Vino Rosato della Casa" data-fr="Vin Rosé Maison" data-en="House Rosé Wine" data-de="Hauswein Rosé">Vino Rosato della Casa</span></span><span class="vini-price">€3,00</span>
-      </div>
-      <div class="vini-row" onclick="selectVino('Prosecco DOC','Calice',5)">
-        <span>🥂 Prosecco DOC</span><span class="vini-price">€5,00</span>
+  <div style="font-size:10px;color:#d4af37;font-weight:bold;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;" data-it="Vini della Casa — Calice" data-fr="Vins Maison — Verre" data-en="House Wines — Glass" data-de="Hausweine — Glas">Vini della Casa — Calice</div>
+  <div class="vini-row" style="cursor:default;">
+    <span>🍷 <span data-it="Vino Rosso della Casa" data-fr="Vin Rouge Maison" data-en="House Red Wine" data-de="Hauswein Rot">Vino Rosso della Casa</span></span>
+    <div class="bar-row-right"><span class="vini-price">€3,00</span>
+      <div class="bar-qty-row">
+        <button class="bar-qty-btn" onclick="changeHouseWineQty('rosso',-1)">−</button>
+        <span class="bar-qty-display" id="qty-housewine-rosso">0</span>
+        <button class="bar-qty-btn" onclick="changeHouseWineQty('rosso',1)">+</button>
       </div>
     </div>
-    <a class="vini-modal-btn primary vini-cta-pulse" href="https://mamunjoyit1-cyber.github.io/carta-dei-vini/" target="_blank" onclick="closeViniModal()" data-it="🍷 Clicca qui per la Carta dei Vini Digitale➔" data-fr="🍷 Cliquez ici pour la Carte des Vins Digitale➔" data-en="🍷 Click here for the Digital Wine List➔" data-de="🍷 Hier klicken für die digitale Weinkarte➔">🍷 Clicca qui per la Carta dei Vini Digitale➔</a>
+  </div>
+  <div class="vini-row" style="cursor:default;">
+    <span>🥂 <span data-it="Vino Bianco della Casa" data-fr="Vin Blanc Maison" data-en="House White Wine" data-de="Hauswein Weiß">Vino Bianco della Casa</span></span>
+    <div class="bar-row-right"><span class="vini-price">€3,00</span>
+      <div class="bar-qty-row">
+        <button class="bar-qty-btn" onclick="changeHouseWineQty('bianco',-1)">−</button>
+        <span class="bar-qty-display" id="qty-housewine-bianco">0</span>
+        <button class="bar-qty-btn" onclick="changeHouseWineQty('bianco',1)">+</button>
+      </div>
+    </div>
+  </div>
+  <div class="vini-row" style="cursor:default;">
+    <span>🌸 <span data-it="Vino Rosato della Casa" data-fr="Vin Rosé Maison" data-en="House Rosé Wine" data-de="Hauswein Rosé">Vino Rosato della Casa</span></span>
+    <div class="bar-row-right"><span class="vini-price">€3,00</span>
+      <div class="bar-qty-row">
+        <button class="bar-qty-btn" onclick="changeHouseWineQty('rosato',-1)">−</button>
+        <span class="bar-qty-display" id="qty-housewine-rosato">0</span>
+        <button class="bar-qty-btn" onclick="changeHouseWineQty('rosato',1)">+</button>
+      </div>
+    </div>
+  </div>
+  <div class="vini-row" style="cursor:default;">
+    <span>🥂 Prosecco DOC</span>
+    <div class="bar-row-right"><span class="vini-price">€5,00</span>
+      <div class="bar-qty-row">
+        <button class="bar-qty-btn" onclick="changeHouseWineQty('prosecco',-1)">−</button>
+        <span class="bar-qty-display" id="qty-housewine-prosecco">0</span>
+        <button class="bar-qty-btn" onclick="changeHouseWineQty('prosecco',1)">+</button>
+      </div>
+    </div>
+  </div>
+</div>
+    <button type="button" class="vini-modal-btn primary vini-cta-pulse" onclick="openViniFrame()" data-it="🍷 Apri la Carta dei Vini Digitale➔" data-fr="🍷 Ouvrir la Carte des Vins Digitale➔" data-en="🍷 Open the Digital Wine List➔" data-de="🍷 Digitale Weinkarte öffnen➔">🍷 Apri la Carta dei Vini Digitale➔</button>
     <span class="vini-modal-close" onclick="closeViniModal()" data-it="Annulla" data-fr="Annuler" data-en="Cancel" data-de="Abbrechen">Annulla</span>
   </div>
 </div>
 
+<div class="vini-frame-overlay" id="vini-frame-overlay">
+  <div class="vini-frame-header">
+    <div class="vini-frame-title">✦ CARTA DEI VINI ✦</div>
+    <button class="vini-frame-close" onclick="closeViniFrame()" data-it="✕ Chiudi" data-fr="✕ Fermer" data-en="✕ Close" data-de="✕ Schließen">✕ Chiudi</button>
+  </div>
+  <iframe class="vini-frame-iframe" id="vini-frame-iframe" src="about:blank" title="Carta dei Vini"></iframe>
+</div>
+
+<!-- FIREBASE SDK (must load before the script below) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
 // ── GELATO FLAVORS with multilingual labels (FIX) ──
+// 'id' must match the id used in admin.html's GELATO_FLAVOR_ITEMS (prefixed gusto_) so availability toggles work.
 const GELATO_FLAVORS=[
-  {it:'Vaniglia 🍦',fr:'Vanille 🍦',en:'Vanilla 🍦',de:'Vanille 🍦'},
-  {it:'Fiore di Latte 🥛',fr:'Fior di Latte 🥛',en:'Fresh Cream 🥛',de:'Milchblume 🥛'},
-  {it:'Fragola 🍓',fr:'Fraise 🍓',en:'Strawberry 🍓',de:'Erdbeere 🍓'},
-  {it:'Nocciola 🌰',fr:'Noisette 🌰',en:'Hazelnut 🌰',de:'Haselnuss 🌰'},
-  {it:'Limone 🍋',fr:'Citron 🍋',en:'Lemon 🍋',de:'Zitrone 🍋'},
-  {it:'Mango 🥭',fr:'Mangue 🥭',en:'Mango 🥭',de:'Mango 🥭'},
-  {it:'Cioccolata 🍫',fr:'Chocolat 🍫',en:'Chocolate 🍫',de:'Schokolade 🍫'},
-  {it:'Caffè ☕',fr:'Café ☕',en:'Coffee ☕',de:'Kaffee ☕'}
+  {id:'gusto_vaniglia',it:'Vaniglia 🍦',fr:'Vanille 🍦',en:'Vanilla 🍦',de:'Vanille 🍦'},
+  {id:'gusto_fiordilatte',it:'Fiore di Latte 🥛',fr:'Fior di Latte 🥛',en:'Fresh Cream 🥛',de:'Milchblume 🥛'},
+  {id:'gusto_fragola',it:'Fragola 🍓',fr:'Fraise 🍓',en:'Strawberry 🍓',de:'Erdbeere 🍓'},
+  {id:'gusto_nocciola',it:'Nocciola 🌰',fr:'Noisette 🌰',en:'Hazelnut 🌰',de:'Haselnuss 🌰'},
+  {id:'gusto_limone',it:'Limone 🍋',fr:'Citron 🍋',en:'Lemon 🍋',de:'Zitrone 🍋'},
+  {id:'gusto_mango',it:'Mango 🥭',fr:'Mangue 🥭',en:'Mango 🥭',de:'Mango 🥭'},
+  {id:'gusto_cioccolata',it:'Cioccolata 🍫',fr:'Chocolat 🍫',en:'Chocolate 🍫',de:'Schokolade 🍫'},
+  {id:'gusto_caffe',it:'Caffè ☕',fr:'Café ☕',en:'Coffee ☕',de:'Kaffee ☕'}
 ];
+let unavailableFlavorIds=new Set();
+function availableGelatoFlavors(){return GELATO_FLAVORS.filter(f=>!unavailableFlavorIds.has(f.id));}
 function flavorLabel(itKey){const f=GELATO_FLAVORS.find(x=>x.it===itKey);return f?(f[currentLang]||f.it):itKey;}
 
 // Turno options - language-aware display, but stored in IT for cart
@@ -743,6 +771,205 @@ const PKG_CONFIG={
   ]}
 };
 
+// ── BAR ITEMS (all directly orderable — no popup, simple add/remove) ──
+// Water: removed Acqua 50cl; split 1lt into Naturale/Gassata at €3,00 each.
+const BAR_TRANS={
+  'Caffè Espresso':{fr:'Café Espresso',en:'Espresso Coffee',de:'Espresso'},
+  'Caffè Decaffeinato':{fr:'Café Décaféiné',en:'Decaf Coffee',de:'Entkoffeinierter Kaffee'},
+  "Caffè D'Orzo":{fr:"Café d'Orge",en:'Barley Coffee',de:'Gerstenkaffee'},
+  'Caffè Ginseng':{fr:'Café Ginseng',en:'Ginseng Coffee',de:'Ginseng Kaffee'},
+  'Caffè Corretto':{fr:'Café Corretto',en:'Coffee with Grappa',de:'Kaffee mit Schnaps'},
+  'Caffè Latte':{fr:'Café Latte',en:'Café Latte',de:'Café Latte'},
+  'Latte Macchiato':{fr:'Latte Macchiato',en:'Latte Macchiato',de:'Latte Macchiato'},
+  'Thè Caldo':{fr:'Thé Chaud',en:'Hot Tea',de:'Heißer Tee'},
+  'Infusi':{fr:'Infusions',en:'Herbal Tea',de:'Kräutertee'},
+  'Cioccolata Calda':{fr:'Chocolat Chaud',en:'Hot Chocolate',de:'Heiße Schokolade'},
+  'Acqua Naturale 1 lt':{fr:'Eau Plate 1 lt',en:'Still Water 1 lt',de:'Stilles Wasser 1 lt'},
+  'Acqua Gassata 1 lt':{fr:'Eau Gazeuse 1 lt',en:'Sparkling Water 1 lt',de:'Sprudelwasser 1 lt'},
+  'Estathé Limone':{fr:'Estathé Citron',en:'Estathé Lemon',de:'Estathé Zitrone'},
+  'Estathé Pesca':{fr:'Estathé Pêche',en:'Estathé Peach',de:'Estathé Pfirsich'},
+  'Schweppes':{fr:'Schweppes',en:'Schweppes',de:'Schweppes'},
+  'Schweppes Lemon':{fr:'Schweppes Citron',en:'Schweppes Lemon',de:'Schweppes Lemon'},
+  'Crodino':{fr:'Crodino',en:'Crodino',de:'Crodino'},
+  'Sanbitter':{fr:'Sanbitter',en:'Sanbitter',de:'Sanbitter'},
+  'Succo di Frutta':{fr:'Jus de Fruits',en:'Fruit Juice',de:'Fruchtsaft'},
+  'Ricard':{fr:'Ricard',en:'Ricard',de:'Ricard'},
+  'Whiskey':{fr:'Whiskey',en:'Whiskey',de:'Whiskey'},
+  'Birra Bottiglia 33 cl':{fr:'Bière Bouteille 33 cl',en:'Beer Bottle 33 cl',de:'Bier Flasche 33 cl'},
+  'Digestivi':{fr:'Digestifs',en:'Digestifs',de:'Digestifs'},
+  'Distillati':{fr:'Distillats',en:'Spirits',de:'Destillate'},
+  'Shot Alcolici':{fr:'Shots Alcoolisés',en:'Alcohol Shots',de:'Alkohol-Shots'},
+  'Whisky & Coca':{fr:'Whisky Coca',en:'Whisky & Coke',de:'Whisky & Cola'},
+  'Rhum & Coca':{fr:'Rhum Coca',en:'Rum & Coke',de:'Rum & Cola'},
+  'Gin Tonic':{fr:'Gin Tonic',en:'Gin & Tonic',de:'Gin Tonic'},
+  'Gin Lemon':{fr:'Gin Citron',en:'Gin & Lemon',de:'Gin Zitrone'}
+};
+function barLabel(it){const tr=BAR_TRANS[it];return(tr&&tr[currentLang])||it;}
+  const SUCCO_FLAVORS=[
+  {it:'Pesca',fr:'Pêche',en:'Peach',de:'Pfirsich'},
+  {it:'Ananas',fr:'Ananas',en:'Pineapple',de:'Ananas'},
+  {it:'Arancia',fr:'Orange',en:'Orange',de:'Orange'},
+  {it:'Albicocca',fr:'Abricot',en:'Apricot',de:'Aprikose'},
+  {it:'ACE',fr:'ACE',en:'ACE',de:'ACE'},
+  {it:'Pera',fr:'Poire',en:'Pear',de:'Birne'}
+];
+let barPopupItemId=null,barPopupFlavor=null;
+  const DIGESTIVI_OPTIONS=['Limoncello','Grappa','Montenegro','Amaro','Amaretto','Sambuca'];
+let barPopupDigestivo=null;
+function renderDigestivoChips(){
+  const box=document.getElementById('bar-digestivo-chips');if(!box)return;
+  box.innerHTML=DIGESTIVI_OPTIONS.map(d=>'<button class="chip'+(barPopupDigestivo===d?' selected':'')+'" onclick="selectBarDigestivo(\''+d+'\')">'+d+'</button>').join('');
+}
+function selectBarDigestivo(d){barPopupDigestivo=d;renderDigestivoChips();updateBarPopupConfirm();}
+function openBarItemPopup(id){
+  const it=BAR_ITEMS[id];if(!it)return;
+  barPopupItemId=id;barPopupFlavor=null;
+  document.getElementById('popup-title').textContent=barLabel(it.name);
+  document.getElementById('popup-subtitle').textContent = '';
+  document.getElementById('popup-confirm').textContent=t('conferma_btn');
+  const ap=document.getElementById('popup-add-person');if(ap)ap.style.display='none';
+  const c=document.getElementById('popup-persons');
+  c.innerHTML='';
+  const div=document.createElement('div');div.className='person-row';
+  if(it.popupType==='flavor'){
+    div.innerHTML='<div class="person-fields"><div class="sauce-label-sm">🧃 Gusto:</div><div class="chip-group" id="bar-flavor-chips"></div></div>';
+  }else if(it.popupType==='digestivo'){
+    div.innerHTML='<div class="person-fields"><div class="sauce-label-sm">🥃 Scegli:</div><div class="chip-group" id="bar-digestivo-chips"></div></div>';
+  }else if(it.popupType==='note'){
+    div.innerHTML='<div class="person-fields"><div class="sauce-label-sm">'+t('condimento_label')+'</div><textarea id="bar-note-input" class="name-input" rows="3" style="resize:vertical;"></textarea></div>';
+  }
+  c.appendChild(div);
+  if(it.popupType==='flavor')renderBarFlavorChips();
+  if(it.popupType==='digestivo')renderDigestivoChips();
+  updateBarPopupConfirm();
+  document.getElementById('popup-confirm').setAttribute('onclick','confirmBarItemPopup()');
+  document.getElementById('popup-overlay').classList.add('open');
+}
+function renderBarFlavorChips(){
+  const box=document.getElementById('bar-flavor-chips');if(!box)return;
+  box.innerHTML=SUCCO_FLAVORS.map(f=>'<button class="chip'+(barPopupFlavor===f.it?' selected':'')+'" onclick="selectBarFlavor(\''+f.it+'\')">'+(f[currentLang]||f.it)+'</button>').join('');
+}
+function selectBarFlavor(fl){barPopupFlavor=fl;renderBarFlavorChips();updateBarPopupConfirm();}
+function updateBarPopupConfirm(){
+  const it=BAR_ITEMS[barPopupItemId];
+  let ok=true;
+  if(it&&it.popupType==='flavor')ok=!!barPopupFlavor;
+  if(it&&it.popupType==='digestivo')ok=!!barPopupDigestivo;
+  const btn=document.getElementById('popup-confirm');
+  if(btn)btn.className='popup-confirm-btn '+(ok?'ready':'not-ready');
+}
+function confirmBarItemPopup(){
+  const it=BAR_ITEMS[barPopupItemId];if(!it)return;
+  if(it.popupType==='flavor'&&!barPopupFlavor)return;
+  if(it.popupType==='digestivo'&&!barPopupDigestivo)return;
+  let detail='';
+  if(it.popupType==='flavor')detail=barPopupFlavor;
+  else if(it.popupType==='digestivo')detail=barPopupDigestivo;
+  else if(it.popupType==='note'){const ta=document.getElementById('bar-note-input');detail=ta?ta.value.trim():'';}
+  cart.push({id:++cartIdCounter,itemId:'bar_'+barPopupItemId,name:it.name,price:it.price,course:'bevande',turno:'',person:null,detail:detail});
+  barQty[barPopupItemId]=cart.filter(c=>c.itemId==='bar_'+barPopupItemId).length;
+  const qd=document.getElementById('qty-bar-'+barPopupItemId);if(qd)qd.textContent=barQty[barPopupItemId];
+  closeBarItemPopup();
+  updateCart();
+}
+function closeBarItemPopup(){
+  document.getElementById('popup-overlay').classList.remove('open');
+  const ap=document.getElementById('popup-add-person');if(ap)ap.style.display='';
+  const btn=document.getElementById('popup-confirm');if(btn)btn.setAttribute('onclick','popupConfirm()');
+  barPopupItemId=null;barPopupFlavor=null;barPopupDigestivo=null;
+}
+function closeAnyPopup(){ if(barPopupItemId){closeBarItemPopup();}else{closePopup();} }
+
+const BAR_ITEMS={
+  caffe_espresso:{name:'Caffè Espresso',price:1.50,sub:'caffetteria'},
+  caffe_decaffeinato:{name:'Caffè Decaffeinato',price:1.80,sub:'caffetteria'},
+  caffe_orzo:{name:"Caffè D'Orzo",price:2.00,sub:'caffetteria'},
+  caffe_ginseng:{name:'Caffè Ginseng',price:2.50,sub:'caffetteria'},
+  caffe_corretto:{name:'Caffè Corretto',price:2.50,sub:'caffetteria',popupType:'note'},
+  cappuccino:{name:'Cappuccino',price:2.00,sub:'caffetteria',notrans:true},
+  caffe_latte:{name:'Caffè Latte',price:2.50,sub:'caffetteria'},
+  latte_macchiato:{name:'Latte Macchiato',price:2.50,sub:'caffetteria'},
+  te_caldo:{name:'Thè Caldo',price:2.50,sub:'caffetteria'},
+  infusi:{name:'Infusi',price:2.50,sub:'caffetteria'},
+  cioccolata_calda:{name:'Cioccolata Calda',price:2.50,sub:'caffetteria'},
+  acqua_naturale_1l:{name:'Acqua Naturale 1 lt',price:3.00,sub:'bibite'},
+  acqua_gassata_1l:{name:'Acqua Gassata 1 lt',price:3.00,sub:'bibite'},
+  coca_cola:{name:'Coca Cola',price:4.00,sub:'bibite',notrans:true},
+  coca_cola_zero:{name:'Coca Cola Zero',price:4.00,sub:'bibite',notrans:true},
+  fanta:{name:'Fanta',price:4.00,sub:'bibite',notrans:true},
+  sprite:{name:'Sprite',price:4.00,sub:'bibite',notrans:true},
+  estathe_limone:{name:'Estathé Limone',price:4.00,sub:'bibite'},
+  estathe_pesca:{name:'Estathé Pesca',price:4.00,sub:'bibite'},
+  schweppes:{name:'Schweppes',price:3.00,sub:'bibite'},
+  schweppes_lemon:{name:'Schweppes Lemon',price:3.00,sub:'bibite'},
+  crodino:{name:'Crodino',price:3.00,sub:'bibite'},
+  sanbitter:{name:'Sanbitter',price:3.00,sub:'bibite'},
+  succo_frutta:{name:'Succo di Frutta',price:3.00,sub:'bibite',popupType:'flavor'},
+  birra_bottiglia:{name:'Birra Bottiglia 33 cl',price:4.00,sub:'cocktails',group:'birre'},
+  panache:{name:'Panaché',price:5.00,sub:'cocktails',group:'birre',notrans:true},
+  monaco:{name:'Monaco',price:5.00,sub:'cocktails',group:'birre',notrans:true},
+  martini_bianco:{name:'Martini Bianco',price:5.00,sub:'cocktails',group:'birre',notrans:true},
+  martini_rosso:{name:'Martini Rosso',price:5.00,sub:'cocktails',group:'birre',notrans:true},
+  digestivi:{name:'Digestivi',price:4.00,sub:'cocktails',group:'birre',popupType:'digestivo'},
+  distillati:{name:'Distillati',price:4.00,sub:'cocktails',group:'birre'},
+  shot_alcolici:{name:'Shot Alcolici',price:4.00,sub:'cocktails',group:'birre',popupType:'note'},
+  ricard:{name:'Ricard',price:4.00,sub:'cocktails',group:'birre'},
+  whiskey:{name:'Whiskey',price:5.00,sub:'cocktails',group:'birre'},
+  aperol_spritz:{name:'Aperol Spritz',price:6.00,sub:'cocktails',group:'spritz',notrans:true},
+  campari_spritz:{name:'Campari Spritz',price:6.00,sub:'cocktails',group:'spritz',notrans:true},
+  limoncello_spritz:{name:'Limoncello Spritz',price:6.00,sub:'cocktails',group:'spritz',notrans:true},
+  negroni:{name:'Negroni',price:6.00,sub:'cocktails',group:'spritz',notrans:true},
+  negroni_sbagliato:{name:'Negroni Sbagliato',price:6.00,sub:'cocktails',group:'spritz',notrans:true},
+  americano:{name:'Americano',price:6.00,sub:'cocktails',group:'spritz',notrans:true},
+  whisky_coca:{name:'Whisky & Coca',price:8.00,sub:'cocktails',group:'premium'},
+  rhum_coca:{name:'Rhum & Coca',price:8.00,sub:'cocktails',group:'premium'},
+  gin_tonic:{name:'Gin Tonic',price:8.00,sub:'cocktails',group:'premium'},
+  gin_lemon:{name:'Gin Lemon',price:8.00,sub:'cocktails',group:'premium'}
+};
+const BAR_GROUP_TITLES={
+  birre:{it:'🍺 Birre & Aperitivi Base',fr:'🍺 Bières & Apéritifs',en:'🍺 Beers & Base Aperitifs',de:'🍺 Biere & Basis-Aperitifs'},
+  spritz:{it:'🥂 Spritz & Cocktails Classici — €6,00',fr:'🥂 Spritz & Cocktails Classiques — €6,00',en:'🥂 Spritz & Classic Cocktails — €6,00',de:'🥂 Spritz & Klassische Cocktails — €6,00'},
+  premium:{it:'⭐ Premium Cocktails — €8,00',fr:'⭐ Cocktails Premium — €8,00',en:'⭐ Premium Cocktails — €8,00',de:'⭐ Premium-Cocktails — €8,00'}
+};
+let barQty={};
+function fmtPrice(p){return p.toFixed(2).replace('.',',');}
+function renderBarSection(sub){
+  const container=document.getElementById('bar-list-'+sub);
+  if(!container)return;
+  const entries=Object.keys(BAR_ITEMS).filter(id=>BAR_ITEMS[id].sub===sub);
+  let html='',lastGroup=null;
+  entries.forEach(id=>{
+    const it=BAR_ITEMS[id];
+    if(it.group&&it.group!==lastGroup){
+      lastGroup=it.group;
+      const gt=BAR_GROUP_TITLES[it.group];
+      html+='<div class="cocktail-group">'+((gt&&gt[currentLang])||(gt&&gt.it)||'')+'</div>';
+    }
+    const q=barQty[id]||0;
+    const nameHtml=it.notrans?('<span class="notranslate">'+it.name+'</span>'):barLabel(it.name);
+    const plusAction = it.popupType ? ("openBarItemPopup('"+id+"')") : ("changeBarQty('"+id+"',1)");
+    html+='<div class="price-row"><span>'+nameHtml+'</span>'+
+      '<div class="bar-row-right"><span class="bar-row-price">€'+fmtPrice(it.price)+'</span>'+
+      '<div class="bar-qty-row"><button class="bar-qty-btn" onclick="changeBarQty(\''+id+'\',-1)">−</button>'+
+      '<span class="bar-qty-display" id="qty-bar-'+id+'">'+q+'</span>'+
+      '<button class="bar-qty-btn" onclick="'+plusAction+'">+</button></div></div></div>';
+  });
+  container.innerHTML=html;
+}
+function renderAllBarSections(){['caffetteria','bibite','cocktails'].forEach(renderBarSection);}
+function changeBarQty(id,delta){
+  const it=BAR_ITEMS[id];if(!it)return;
+  if(delta>0){
+    cart.push({id:++cartIdCounter,itemId:'bar_'+id,name:it.name,price:it.price,course:'bevande',turno:'',person:null,detail:''});
+  }else{
+    const idx=cart.map(c=>c.itemId).lastIndexOf('bar_'+id);
+    if(idx>=0)cart.splice(idx,1);
+  }
+  barQty[id]=cart.filter(c=>c.itemId==='bar_'+id).length;
+  const qd=document.getElementById('qty-bar-'+id);if(qd)qd.textContent=barQty[id];
+  updateCart();
+}
+
 // Cart bucket labels: menu first, then by turno (language-aware), then dolci/gelato/bevande
 const STATIC_BUCKET_MAP={
   it:{menu:'🍽️ Menù',dolci:'🍰 Dolci',gelato:'🍦 Gelato',bevande:'🍷 Bevande'},
@@ -780,6 +1007,41 @@ function openViniModal(){
   applyLang(currentLang);
 }
 function closeViniModal(){document.getElementById('vini-modal').classList.remove('open');}
+const VINI_URL='https://mamunjoyit1-cyber.github.io/TEST/';
+function openViniFrame(){
+  closeViniModal();
+  const frame=document.getElementById('vini-frame-iframe');
+  if(frame.getAttribute('src')==='about:blank')frame.setAttribute('src',VINI_URL);
+  document.getElementById('vini-frame-overlay').classList.add('open');
+}
+function closeViniFrame(){document.getElementById('vini-frame-overlay').classList.remove('open');}
+  window.addEventListener('message', function(event){
+  if(!event.data) return;
+  if(event.data.type === 'wineCartUpdate'){
+    const id=event.data.id, name=event.data.name, price=event.data.price, delta=event.data.delta;
+    if(delta > 0){
+      cart.push({id:++cartIdCounter, itemId:'winesync_'+id, name:name, price:price, course:'bevande', turno:'—', person:null, detail:''});
+    }else{
+      const idx=cart.map(c=>c.itemId).lastIndexOf('winesync_'+id);
+      if(idx>=0)cart.splice(idx,1);
+    }
+    updateCart();
+  }
+  if(event.data.type === 'submitOrderRequest'){
+    const tableSel=document.getElementById('tableSelect');
+    if(tableSel)tableSel.value=event.data.table;
+    sendOrder();
+  }
+});
+function syncCartToIframe(){
+  const frame=document.getElementById('vini-frame-iframe');
+  if(frame&&frame.contentWindow){
+    try{ frame.contentWindow.postMessage({type:'fullCartSync', cart:cart}, '*'); }catch(e){}
+  }
+}
+document.getElementById('vini-frame-iframe').addEventListener('load', function(){
+  syncCartToIframe();
+});
 function selectVino(name,tipo,price){
   vinoSelected={name,tipo,price};vinoQty=1;
   // Hide list, show qty picker
@@ -815,11 +1077,24 @@ function confirmVino(){
   for(let i=0;i<vinoQty;i++)cart.push({id:++cartIdCounter,itemId:'vino_'+vinoSelected.name.replace(/\s/g,'_'),name:vinoSelected.name,price:vinoSelected.price,course:'bevande',turno:'—',person:null,detail:vinoSelected.tipo});
   closeViniModal();updateCart();
 }
-function backToViniList(){
-  vinoSelected=null;vinoQty=1;
-  document.getElementById('vini-list').style.display='block';
-  const qr=document.getElementById('vini-qty-picker');if(qr)qr.remove();
-  const cb=document.getElementById('vini-confirm-area');if(cb)cb.remove();
+// ── HOUSE WINES: direct +/- add to cart, no popup ──
+const HOUSE_WINES={
+  rosso:{name:'Vino Rosso della Casa',price:3,tipo:'Calice'},
+  bianco:{name:'Vino Bianco della Casa',price:3,tipo:'Calice'},
+  rosato:{name:'Vino Rosato della Casa',price:3,tipo:'Calice'},
+  prosecco:{name:'Prosecco DOC',price:5,tipo:'Calice'}
+};
+function changeHouseWineQty(id,delta){
+  const w=HOUSE_WINES[id];if(!w)return;
+  if(delta>0){
+    cart.push({id:++cartIdCounter,itemId:'housewine_'+id,name:w.name,price:w.price,course:'bevande',turno:'—',person:null,detail:w.tipo});
+  }else{
+    const idx=cart.map(c=>c.itemId).lastIndexOf('housewine_'+id);
+    if(idx>=0)cart.splice(idx,1);
+  }
+  const q=cart.filter(c=>c.itemId==='housewine_'+id).length;
+  const qd=document.getElementById('qty-housewine-'+id);if(qd)qd.textContent=q;
+  updateCart();
 }
 
 // ── GELATO INLINE (FIX: translated chips) ──
@@ -827,7 +1102,7 @@ function renderInlineGelato(){
   const c=document.getElementById('inline-flavours-gelato'),note=document.getElementById('flavour-note-gelato');
   if(!c)return;
   const count=inlineGelatoFlavors.length;
-  c.innerHTML=GELATO_FLAVORS.map(f=>{
+  c.innerHTML=availableGelatoFlavors().map(f=>{
     const sel=inlineGelatoFlavors.includes(f.it),maxed=!sel&&count>=3;
     return'<button class="flavour-chip'+(sel?' selected':'')+(maxed?' maxed':'')+'" onclick="toggleInlineFlavor(\''+f.it.replace(/'/g,"\\'")+'\')">'+( f[currentLang]||f.it)+'</button>';
   }).join('');
@@ -869,7 +1144,7 @@ function openPopup(id){
   document.getElementById('popup-overlay').classList.add('open');
 }
 function closePopup(){document.getElementById('popup-overlay').classList.remove('open');popupItemId=null;popupPersons=[];}
-function handleOverlayClick(e){if(e.target===document.getElementById('popup-overlay'))closePopup();}
+function handleOverlayClick(e){if(e.target===document.getElementById('popup-overlay'))closeAnyPopup();}
 function popupAddPerson(){
   const pid=++popupPersonCounter,item=ITEMS[popupItemId];
   const isDessert=item.course==='dolci'||item.course==='gelato';
@@ -885,7 +1160,7 @@ function renderPopupPersons(){
     if(item.isGelato){
       const count=p.flavors.length;
       sauce='<div class="sauce-label-sm">'+t('gusti_label')+'</div><div class="chip-group">'+
-        GELATO_FLAVORS.map(f=>{const sel=p.flavors.includes(f.it),mx=!sel&&count>=3;return'<button class="chip'+(sel?' selected':'')+(mx?' maxed':'')+'" onclick="togglePopupFlavor('+p.pid+',\''+f.it.replace(/'/g,"\\'")+'\')">'+( f[currentLang]||f.it)+'</button>';}).join('')+
+        availableGelatoFlavors().map(f=>{const sel=p.flavors.includes(f.it),mx=!sel&&count>=3;return'<button class="chip'+(sel?' selected':'')+(mx?' maxed':'')+'" onclick="togglePopupFlavor('+p.pid+',\''+f.it.replace(/'/g,"\\'")+'\')">'+( f[currentLang]||f.it)+'</button>';}).join('')+
         '</div>'+(count===0?'<div style="font-size:11px;color:#b31e1e;font-style:italic;">'+t('seleziona_gusto')+'</div>':'');
     }else if(item.isSorbetto){
       sauce='<div class="sauce-label-sm">'+t('preferenza_label')+'</div><div class="chip-group">'+
@@ -1100,15 +1375,24 @@ function updateCart(){
         '</div></div>';
     });
   });
-  const cc=document.getElementById('cart-content'),tc=document.getElementById('cart-total'),wb=document.getElementById('waiter-btn');
-  if(hasContent){cc.innerHTML=html;tc.style.display='flex';document.getElementById('total-amount').textContent='€'+totalPrice;wb.disabled=false;}
-  else{cc.innerHTML='<div class="cart-empty">'+t('nessun_articolo')+'</div>';tc.style.display='none';wb.disabled=true;}
+  const cc=document.getElementById('cart-content'),tc=document.getElementById('cart-total'),wb=document.getElementById('waiter-btn'),swb=document.getElementById('show-waiter-btn');
+  if(hasContent){cc.innerHTML=html;tc.style.display='flex';document.getElementById('total-amount').textContent='€'+totalPrice;wb.disabled=false;if(swb)swb.disabled=false;}
+  else{cc.innerHTML='<div class="cart-empty">'+t('nessun_articolo')+'</div>';tc.style.display='none';wb.disabled=true;if(swb)swb.disabled=true;}
   document.getElementById('cart-badge').textContent=totalItems;
   Object.keys(ITEMS).forEach(id=>{
     const qd=document.getElementById('qty-'+id);if(qd)qd.textContent=cart.filter(c=>c.itemId===id).length;
     const b=document.getElementById('btn-'+id);if(b)b.classList.toggle('has-items',cart.some(c=>c.itemId===id));
   });
+  Object.keys(BAR_ITEMS).forEach(id=>{
+    barQty[id]=cart.filter(c=>c.itemId==='bar_'+id).length;
+    const qd=document.getElementById('qty-bar-'+id);if(qd)qd.textContent=barQty[id];
+  });
+  Object.keys(HOUSE_WINES).forEach(id=>{
+    const q=cart.filter(c=>c.itemId==='housewine_'+id).length;
+    const qd=document.getElementById('qty-housewine-'+id);if(qd)qd.textContent=q;
+  });
   renderInlineGelato();
+  syncCartToIframe();
 }
 function removeCartGroup(ids){ids.forEach(id=>{const i=cart.findIndex(c=>c.id===id);if(i>=0)cart.splice(i,1);});updateCart();}
 function removeOneCartItem(gk){for(let i=cart.length-1;i>=0;i--){const e=cart[i];if(e.itemId+'||'+(e.detail||'')+'||'+(e.person||'')+'||'+(e.turno||'')===gk){cart.splice(i,1);break;}}updateCart();}
@@ -1116,11 +1400,19 @@ function addSameItem(gk){const e=cart.find(c=>(c.itemId+'||'+(c.detail||'')+'||'
 function toggleCart(){document.getElementById('cart-panel').classList.toggle('open');}
 
 // ── OVERLAY ──
-function showOverlay(){
+const OVERLAY_NOTE_SENT={it:'✅ Ordine inviato! Il cameriere lo riceverà a breve.',fr:'✅ Commande envoyée! Le serveur la recevra bientôt.',en:'✅ Order sent! The waiter will receive it shortly.',de:'✅ Bestellung gesendet! Der Kellner erhält sie in Kürze.'};
+const OVERLAY_NOTE_SHOW={it:'Mostra questo schermo al cameriere',fr:'Montrez cet écran au serveur',en:'Show this screen to the waiter',de:'Zeigen Sie dies dem Kellner'};
+function showOverlay(cartSnapshot,wasSent){
   window.__alaCartaShownOv=false;
+  const sourceCart = cartSnapshot || cart;
+  const noteEl=document.getElementById('overlay-note-text');
+  if(noteEl){
+    const dict = wasSent ? OVERLAY_NOTE_SENT : OVERLAY_NOTE_SHOW;
+    noteEl.textContent = dict[currentLang] || dict.it;
+  }
   let html='',total=0;
   const buckets={};
-  cart.forEach(e=>{
+  sourceCart.forEach(e=>{
     let bid;
     if(e.isPkg) bid='menu';
     else if(['dolci','gelato','bevande'].includes(e.course)) bid=e.course;
@@ -1179,6 +1471,7 @@ function applyLang(lang){
   });
   const si=document.getElementById('searchInput');
   if(si){const ph=si.getAttribute('data-ph-'+lang);if(ph)si.placeholder=ph;}
+  renderAllBarSections();
 }
 function setLang(lang,el){
   document.querySelectorAll('.lang-btn').forEach(b=>b.classList.remove('active'));
@@ -1193,7 +1486,7 @@ function setLang(lang,el){
 function refreshDyn(){
   if(popupItemId)renderPopupPersons();
   Object.keys(pkgPersons).forEach(k=>{if(pkgPersons[k]&&pkgPersons[k].length)renderPkgPersons(k);});
-  updateCart();renderInlineGelato();
+  updateCart();renderInlineGelato();renderAllBarSections();
 }
 function toggleDropdown(e){if(e)e.stopPropagation();document.getElementById('langDropdown').classList.toggle('open');}
 function closeDropdown(){document.getElementById('langDropdown').classList.remove('open');}
@@ -1230,8 +1523,124 @@ function searchMenu(q){
   box.style.display='block';
 }
 
+// ── FIREBASE CONFIG ──
+// ⚠️ IMPORTANT: Replace the values below with YOUR Firebase project's config.
+// You get this from: Firebase Console → Project Settings → General → "Your apps" → Web app → SDK setup snippet
+const firebaseConfig = {
+  apiKey: "AIzaSyAAVvNWOTCUp9PT44pRvIWVnNBOzjxYdeI",
+  authDomain: "lagobin-orders.firebaseapp.com",
+  projectId: "lagobin-orders",
+  storageBucket: "lagobin-orders.firebasestorage.app",
+  messagingSenderId: "202005520791",
+  appId: "1:202005520791:web:8211a8b59b4fcea1eee4d2"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// ── TABLE NUMBER DROPDOWN ──
+// Change this number to match how many tables you actually have.
+const TOTAL_TABLES = 54;
+function populateTableSelect(){
+  const sel=document.getElementById('tableSelect');
+  if(!sel)return;
+  for(let i=1;i<=TOTAL_TABLES;i++){
+    const opt=document.createElement('option');
+    opt.value=i;
+    opt.textContent='Tavolo '+i;
+    sel.appendChild(opt);
+  }
+}
+
+// ── DETERMINE FOOD vs DRINK CATEGORY ──
+// 'bevande' course = drinks (wine + all bar items now go through this).
+// Everything else (antipasti/primi/secondi/contorni/dolci/gelato/menu) = food.
+function categoryFor(entry){
+  return entry.course==='bevande' ? 'drink' : 'food';
+}
+
+// ── SEND ORDER TO FIREBASE ──
+async function sendOrder(){
+  const tableSel=document.getElementById('tableSelect');
+  const tableNum=tableSel?tableSel.value:'';
+  if(!tableNum){
+    alert(currentLang==='it'?'⚠️ Seleziona il numero del tavolo prima di inviare!':
+          currentLang==='fr'?'⚠️ Veuillez sélectionner le numéro de table!':
+          currentLang==='de'?'⚠️ Bitte wählen Sie die Tischnummer!':
+          '⚠️ Please select your table number first!');
+    return;
+  }
+  if(!cart.length)return;
+
+  const btn=document.getElementById('waiter-btn');
+  const originalText=btn.textContent;
+  btn.disabled=true;
+  btn.textContent='⏳ ...';
+
+  const items=cart.map(e=>({
+    name:e.name,
+    detail:e.detail||'',
+    person:e.person||'',
+    turno:e.turno||'',
+    course:e.course||'',
+    category:categoryFor(e),
+    price:e.price
+  }));
+  const total=cart.reduce((s,e)=>s+e.price,0);
+  const cartSnapshot=JSON.parse(JSON.stringify(cart));
+  const lastOrderCheck=document.getElementById('lastOrderCheck');
+  const isLastOrder=lastOrderCheck?lastOrderCheck.checked:false;
+
+  const orderData={
+    table:tableNum,
+    items:items,
+    total:total,
+    status:'pending',
+    lastOrder:isLastOrder,
+    createdAt:firebase.firestore.FieldValue.serverTimestamp()
+  };
+
+  try{
+    await db.collection('orders').add(orderData);
+    cart.length=0;
+    updateCart();
+    tableSel.value='';
+    if(lastOrderCheck)lastOrderCheck.checked=false;
+    showOverlay(cartSnapshot,true);
+  }catch(err){
+    console.error('Order submission failed:',err);
+    alert(currentLang==='it'?'❌ Errore durante l\'invio. Riprova.':
+          currentLang==='fr'?'❌ Erreur lors de l\'envoi. Réessayez.':
+          currentLang==='de'?'❌ Fehler beim Senden. Bitte erneut versuchen.':
+          '❌ Error sending order. Please try again.');
+  }finally{
+    btn.disabled=cart.length===0;
+    btn.textContent=originalText;
+  }
+}
+
+// ── MENU ITEM AVAILABILITY (hides any item the admin marked unavailable, any category) ──
+async function applyMenuAvailability(){
+  try{
+    const snap = await db.collection('menuAvailability').get();
+    unavailableFlavorIds=new Set();
+    snap.forEach(doc=>{
+      if(doc.data().available===false){
+        if(doc.id.startsWith('gusto_')){
+          unavailableFlavorIds.add(doc.id);
+        }else{
+          const el=document.getElementById('item-'+doc.id);
+          if(el)el.style.display='none';
+        }
+      }
+    });
+    renderInlineGelato();
+  }catch(err){
+    console.error('Could not load menu availability:',err);
+  }
+}
+
 // ── INIT ──
-document.addEventListener('DOMContentLoaded',()=>{updateCart();renderInlineGelato();});
+document.addEventListener('DOMContentLoaded',()=>{populateTableSelect();renderAllBarSections();updateCart();renderInlineGelato();applyMenuAvailability();});
 document.addEventListener('click',e=>{
   if(!e.target.closest('.translate-wrap'))closeDropdown();
   const panel=document.getElementById('cart-panel'),fab=document.querySelector('.cart-fab');
@@ -1241,5 +1650,6 @@ document.addEventListener('click',e=>{
 <script src="i18n_patch.js"></script>
 <script src="apply_i18n_patch.js"></script>
 <script src="connect_menu_i18n.js"></script>
+<script src="bar_trans_patch.js"></script>
 </body>
 </html>
