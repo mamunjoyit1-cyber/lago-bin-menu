@@ -88,7 +88,7 @@ body { font-family: 'Palatino Linotype', Palatino, serif; background: #150e0b; c
 .add-order-btn.has-items { background: #2a7a2a; border-color: #2a7a2a; color: #fff; }
 .add-person-btn { width: 100%; padding: 10px; border-radius: 25px; border: 1.5px dashed rgba(212,175,55,0.5); background: transparent; color: #d4af37; font-size: 13px; font-weight: bold; cursor: pointer; font-family: inherit; transition: all 0.2s; margin-top: 12px; margin-bottom: 14px; }
 .add-person-btn:hover { background: rgba(212,175,55,0.1); border-style: solid; }
-.popup-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 500; justify-content: flex-end; align-items: flex-end; flex-direction: column; }
+.popup-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 500; justify-content: flex-end; align-items: flex-end; flex-direction: column; }
 .popup-overlay.open { display: flex; }
 .popup-box { background: #221815; border: 2px solid #d4af37; border-radius: 20px 20px 0 0; padding: 22px 18px 32px; width: 100%; max-width: 500px; margin: 0 auto; max-height: 88vh; overflow-y: auto; animation: slideUp 0.25s ease; }
 @keyframes slideUp { from { transform: translateY(60px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
@@ -126,6 +126,8 @@ body { font-family: 'Palatino Linotype', Palatino, serif; background: #150e0b; c
 .popup-cancel:hover { color: #bca07d; }
 .cart-fab { position: fixed; bottom: 20px; right: 16px; background: linear-gradient(135deg, #3d0b0b, #5a1010); border: 2px solid #d4af37; color: #f9f1e2; padding: 12px 20px; border-radius: 30px; cursor: pointer; font-size: 15px; font-weight: bold; font-family: inherit; box-shadow: 0 4px 16px rgba(0,0,0,0.6); z-index: 200; display: flex; align-items: center; gap: 8px; }
 .cart-badge { background: #d4af37; color: #150e0b; border-radius: 50%; width: 22px; height: 22px; font-size: 12px; font-weight: bold; display: flex; align-items: center; justify-content: center; }
+@keyframes badgePulse { 0%{transform:scale(1);} 35%{transform:scale(1.4);} 65%{transform:scale(0.9);} 100%{transform:scale(1);} }
+.cart-badge.pulse { animation: badgePulse 0.4s ease; }
 .scroll-top-btn { position: fixed; bottom: 20px; left: 16px; background: rgba(212,175,55,0.15); border: 2px solid #d4af37; color: #d4af37; width: 44px; height: 44px; border-radius: 50%; cursor: pointer; display: none; align-items: center; justify-content: center; font-size: 19px; z-index: 199; box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
 .scroll-top-btn.show { display: flex; }
 .cart-panel { display: none; position: fixed; bottom: 80px; right: 16px; width: 310px; background: #221815; border: 2px solid #d4af37; border-radius: 16px; padding: 16px; z-index: 200; box-shadow: 0 8px 30px rgba(0,0,0,0.6); max-height: 72vh; overflow-y: auto; }
@@ -241,7 +243,7 @@ html body { margin-top: 0 !important; }
 .offline-bar { display: none; position: sticky; top: 0; z-index: 1000; background: #b31e1e; color: #fff; padding: 11px 20px; text-align: center; font-size: 13.5px; font-weight: bold; letter-spacing: 0.3px; }
 .offline-bar.show { display: block; }
 /* VINI MODAL */
-.vini-modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 800; align-items: center; justify-content: center; }
+.vini-modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 800; align-items: center; justify-content: center; }
 .vini-modal-overlay.open { display: flex; }
 .vini-modal-box { background: linear-gradient(135deg,#1a0e0b,#260f0a); border: 2px solid #d4af37; border-radius: 20px; padding: 36px 28px 28px; max-width: 360px; width: 92%; text-align: center; animation: fadeInUp 0.3s ease; }
 @keyframes fadeInUp { from { transform: translateY(30px); opacity:0; } to { transform: translateY(0); opacity:1; } }
@@ -595,6 +597,17 @@ body.text-large .add-order-btn { font-size: 14.5px; }
 </div>
 
   <!-- HOUSE WINE BOTTLE POPUP — chip-style color select (like the sauce picker) + one shared qty stepper -->
+<!-- CUSTOM THEMED ALERT/CONFIRM MODAL (replaces native browser alert/confirm) -->
+<div class="vini-modal-overlay" id="appModalOverlay">
+  <div class="vini-modal-box" style="max-width:320px;">
+    <div class="vini-calice" id="appModalIcon" style="font-size:56px;">🍷</div>
+    <div class="vini-modal-title" id="appModalTitle" style="font-size:16px;letter-spacing:2px;">LAGO BIN</div>
+    <div class="vini-modal-sub" id="appModalMessage" style="margin-bottom:22px;font-size:14px;font-style:normal;">—</div>
+    <button type="button" class="vini-modal-btn primary" id="appModalConfirmBtn" onclick="appModalConfirm()">✓ Ho capito</button>
+    <button type="button" class="vini-modal-btn secondary" id="appModalCancelBtn" onclick="appModalCancel()" style="display:none;">Annulla</button>
+  </div>
+</div>
+
 <div class="vini-modal-overlay" id="house-bottle-popup-overlay" onclick="if(event.target===this)closeHouseBottlePopup()">
   <div class="vini-modal-box" style="max-width:340px;">
     <div class="vini-calice">🍷</div>
@@ -989,6 +1002,38 @@ const BAR_GROUP_TITLES={
   premium:{it:'⭐ Premium Cocktails — €8,00',fr:'⭐ Cocktails Premium — €8,00',en:'⭐ Premium Cocktails — €8,00',de:'⭐ Premium-Cocktails — €8,00'}
 };
 let barQty={};
+// ── CUSTOM THEMED ALERT/CONFIRM MODAL ──
+let __appModalResolve=null;
+const APP_MODAL_OK_LABEL={it:'✓ Ho capito',fr:'✓ Compris',en:'✓ Got it',de:'✓ Verstanden'};
+function showAppModal(message, opts){
+  opts=opts||{};
+  return new Promise(resolve=>{
+    __appModalResolve=resolve;
+    document.getElementById('appModalMessage').textContent=message;
+    document.getElementById('appModalIcon').textContent=opts.icon||'🍷';
+    const confirmBtn=document.getElementById('appModalConfirmBtn');
+    const cancelBtn=document.getElementById('appModalCancelBtn');
+    confirmBtn.textContent=opts.confirmLabel||(APP_MODAL_OK_LABEL[currentLang]||APP_MODAL_OK_LABEL.it);
+    if(opts.cancelLabel){
+      cancelBtn.style.display='block';
+      cancelBtn.textContent=opts.cancelLabel;
+    }else{
+      cancelBtn.style.display='none';
+    }
+    document.getElementById('appModalOverlay').classList.add('open');
+  });
+}
+function appModalConfirm(){
+  document.getElementById('appModalOverlay').classList.remove('open');
+  if(__appModalResolve)__appModalResolve(true);
+  __appModalResolve=null;
+}
+function appModalCancel(){
+  document.getElementById('appModalOverlay').classList.remove('open');
+  if(__appModalResolve)__appModalResolve(false);
+  __appModalResolve=null;
+}
+
 function fmtPrice(p){return p.toFixed(2).replace('.',',');}
 const SUGGESTED_ITEM_IDS=['antipasto_tipico','tartare_manzo','filetto','tiramisu'];
 const SUGGESTIONS_TITLE={it:'✨ Ti potrebbe piacere',fr:'✨ Vous pourriez aimer',en:'✨ You might like',de:'✨ Das könnte Ihnen gefallen'};
@@ -1058,7 +1103,7 @@ function courseLabel(bid){
   return'📋 '+bid;
 }
 
-let cart=[],cartIdCounter=0,pkgPersons={},pkgPersonCounter=0;
+let cart=[],cartIdCounter=0,pkgPersons={},pkgPersonCounter=0,__lastCartItemCount=0;
 
 // ── CART PERSISTENCE (survives accidental page refresh / connection drop) ──
 const CART_STORAGE_KEY='lagobin_cart_v1';
@@ -1096,12 +1141,15 @@ function toggleFontSize(){
   try{ localStorage.setItem(FONT_SIZE_STORAGE_KEY, large?'1':'0'); }catch(e){}
   applyFontSizePref();
 }
-function clearCart(){
+async function clearCart(){
   if(!cart.length)return;
-  const ok=confirm(currentLang==='it'?'Svuotare il carrello?':
+  const ok=await showAppModal(currentLang==='it'?'Svuotare il carrello?':
         currentLang==='fr'?'Vider le panier?':
         currentLang==='de'?'Warenkorb leeren?':
-        'Clear the cart?');
+        'Clear the cart?',
+        {icon:'🗑️',
+         confirmLabel:currentLang==='it'?'✓ Sì, svuota':currentLang==='fr'?'✓ Oui, vider':currentLang==='de'?'✓ Ja, leeren':'✓ Yes, clear',
+         cancelLabel:currentLang==='it'?'Annulla':currentLang==='fr'?'Annuler':currentLang==='de'?'Abbrechen':'Cancel'});
   if(!ok)return;
   cart.length=0;
   pkgPersons={};
@@ -1619,7 +1667,14 @@ function updateCart(){
   const cc=document.getElementById('cart-content'),tc=document.getElementById('cart-total'),wb=document.getElementById('waiter-btn'),swb=document.getElementById('show-waiter-btn'),ccb=document.getElementById('clear-cart-btn');
   if(hasContent){cc.innerHTML=html;tc.style.display='flex';document.getElementById('total-amount').textContent='€'+fmtPrice(totalPrice);wb.disabled=false;if(swb)swb.disabled=false;if(ccb)ccb.disabled=false;}
   else{cc.innerHTML=renderEmptyCartSuggestions();tc.style.display='none';wb.disabled=true;if(swb)swb.disabled=true;if(ccb)ccb.disabled=true;}
-  document.getElementById('cart-badge').textContent=totalItems;
+  const cartBadgeEl=document.getElementById('cart-badge');
+  cartBadgeEl.textContent=totalItems;
+  if(totalItems>__lastCartItemCount){
+    cartBadgeEl.classList.remove('pulse');
+    void cartBadgeEl.offsetWidth;
+    cartBadgeEl.classList.add('pulse');
+  }
+  __lastCartItemCount=totalItems;
   Object.keys(ITEMS).forEach(id=>{
     const qd=document.getElementById('qty-'+id);if(qd)qd.textContent=cart.filter(c=>c.itemId===id).length;
     const b=document.getElementById('btn-'+id);if(b)b.classList.toggle('has-items',cart.some(c=>c.itemId===id));
@@ -1815,29 +1870,32 @@ function categoryFor(entry){
 // ── SEND ORDER TO FIREBASE ──
 async function sendOrder(){
   if(!navigator.onLine){
-    alert(currentLang==='it'?'📡 Nessuna connessione internet. Riprova quando torni online.':
+    await showAppModal(currentLang==='it'?'📡 Nessuna connessione internet. Riprova quando torni online.':
           currentLang==='fr'?'📡 Aucune connexion internet. Réessayez une fois reconnecté.':
           currentLang==='de'?'📡 Keine Internetverbindung. Versuchen Sie es erneut, sobald Sie wieder online sind.':
-          '📡 No internet connection. Please try again once you\'re back online.');
+          '📡 No internet connection. Please try again once you\'re back online.', {icon:'📡'});
     return;
   }
   const tableSel=document.getElementById('tableSelect');
   const tableNum=tableSel?tableSel.value:'';
   if(!tableNum){
-    alert(currentLang==='it'?'⚠️ Seleziona il numero del tavolo prima di inviare!':
+    await showAppModal(currentLang==='it'?'⚠️ Seleziona il numero del tavolo prima di inviare!':
           currentLang==='fr'?'⚠️ Veuillez sélectionner le numéro de table!':
           currentLang==='de'?'⚠️ Bitte wählen Sie die Tischnummer!':
-          '⚠️ Please select your table number first!');
+          '⚠️ Please select your table number first!', {icon:'🪑'});
     return;
   }
   if(!cart.length)return;
 
   const hasBevande=cart.some(e=>e.course==='bevande');
   if(!hasBevande){
-    const proceed=confirm(currentLang==='it'?'⚠️ Non hai aggiunto nessuna bevanda. Vuoi inviare comunque l\'ordine?':
+    const proceed=await showAppModal(currentLang==='it'?'⚠️ Non hai aggiunto nessuna bevanda. Vuoi inviare comunque l\'ordine?':
           currentLang==='fr'?'⚠️ Vous n\'avez ajouté aucune boisson. Voulez-vous quand même envoyer la commande?':
           currentLang==='de'?'⚠️ Sie haben kein Getränk hinzugefügt. Möchten Sie die Bestellung trotzdem senden?':
-          '⚠️ You haven\'t added any drinks. Do you want to send the order anyway?');
+          '⚠️ You haven\'t added any drinks. Do you want to send the order anyway?',
+          {icon:'🍷',
+           confirmLabel:currentLang==='it'?'✓ Sì, invia comunque':currentLang==='fr'?'✓ Oui, envoyer quand même':currentLang==='de'?'✓ Ja, trotzdem senden':'✓ Yes, send anyway',
+           cancelLabel:currentLang==='it'?'Torna indietro':currentLang==='fr'?'Retour':currentLang==='de'?'Zurück':'Go back'});
     if(!proceed)return;
   }
 
@@ -1884,10 +1942,10 @@ async function sendOrder(){
     if(orderNoteEl)orderNoteEl.value='';
   }catch(err){
     console.error('Order submission failed:',err);
-    alert(currentLang==='it'?'❌ Errore durante l\'invio. Riprova.':
+    await showAppModal(currentLang==='it'?'❌ Errore durante l\'invio. Riprova.':
           currentLang==='fr'?'❌ Erreur lors de l\'envoi. Réessayez.':
           currentLang==='de'?'❌ Fehler beim Senden. Bitte erneut versuchen.':
-          '❌ Error sending order. Please try again.');
+          '❌ Error sending order. Please try again.', {icon:'❌'});
   }finally{
     btn.disabled=cart.length===0;
     btn.textContent=originalText;
