@@ -523,17 +523,21 @@ body.text-large .add-order-btn { font-size: 14.5px; }
   <h2 class="cat-title" data-it="🍹 Il Nostro Bar" data-fr="🍹 Notre Bar" data-en="🍹 Our Bar" data-de="🍹 Unsere Bar">🍹 Il Nostro Bar</h2>
   <div class="sub-tabs">
     <button class="sub-tab-btn active" onclick="setSubTab('bibite',this)"><span data-it="🥤 Bibite" data-fr="🥤 Boissons" data-en="🥤 Drinks" data-de="🥤 Getränke">🥤 Bibite</span></button>
-<button class="sub-tab-btn" onclick="setSubTab('cocktails',this)"><span data-it="🍹 Cocktails" data-fr="🍹 Cocktails" data-en="🍹 Cocktails" data-de="🍹 Cocktails">🍹 Cocktails</span></button>
+<button class="sub-tab-btn" onclick="setSubTab('birre',this)"><span data-it="🍺 Birre" data-fr="🍺 Bières" data-en="🍺 Beers" data-de="🍺 Biere">🍺 Birre</span></button>
+<button class="sub-tab-btn" onclick="setSubTab('cocktails',this)"><span data-it="🍸 Cocktail & Aperitivi" data-fr="🍸 Cocktails & Apéritifs" data-en="🍸 Cocktails & Aperitifs" data-de="🍸 Cocktails & Aperitifs">🍸 Cocktail & Aperitivi</span></button>
 <button class="sub-tab-btn" onclick="setSubTab('caffetteria',this)"><span data-it="☕ Caffetteria" data-fr="☕ Cafétéria" data-en="☕ Coffee" data-de="☕ Kaffee">☕ Caffetteria</span></button>
-  </div>
-  <div class="sub-section" id="subsec-caffetteria">
-    <div class="cocktail-list" id="bar-list-caffetteria"></div>
   </div>
   <div class="sub-section active" id="subsec-bibite">
     <div class="cocktail-list" id="bar-list-bibite"></div>
   </div>
+  <div class="sub-section" id="subsec-birre">
+    <div class="cocktail-list" id="bar-list-birre"></div>
+  </div>
   <div class="sub-section" id="subsec-cocktails">
     <div class="cocktail-list" id="bar-list-cocktails"></div>
+  </div>
+  <div class="sub-section" id="subsec-caffetteria">
+    <div class="cocktail-list" id="bar-list-caffetteria"></div>
   </div>
 </div>
 
@@ -846,16 +850,16 @@ const PKG_CONFIG={
 const BAR_TRANS={
   'Caffè Espresso':{fr:'Café Espresso',en:'Espresso Coffee',de:'Espresso'},
   'Caffè Decaffeinato':{fr:'Café Décaféiné',en:'Decaf Coffee',de:'Entkoffeinierter Kaffee'},
-  "Caffè D'Orzo":{fr:"Café d'Orge",en:'Barley Coffee',de:'Gerstenkaffee'},
+  "Caffè d'Orzo":{fr:"Café d'Orge",en:'Barley Coffee',de:'Gerstenkaffee'},
   'Caffè Ginseng':{fr:'Café Ginseng',en:'Ginseng Coffee',de:'Ginseng Kaffee'},
   'Caffè Corretto':{fr:'Café Corretto',en:'Coffee with Grappa',de:'Kaffee mit Schnaps'},
   'Caffè Latte':{fr:'Café Latte',en:'Café Latte',de:'Café Latte'},
   'Latte Macchiato':{fr:'Latte Macchiato',en:'Latte Macchiato',de:'Latte Macchiato'},
-  'Thè Caldo':{fr:'Thé Chaud',en:'Hot Tea',de:'Heißer Tee'},
+  'Tè Caldo':{fr:'Thé Chaud',en:'Hot Tea',de:'Heißer Tee'},
   'Infusi':{fr:'Infusions',en:'Herbal Tea',de:'Kräutertee'},
   'Cioccolata Calda':{fr:'Chocolat Chaud',en:'Hot Chocolate',de:'Heiße Schokolade'},
-  'Acqua Naturale 1 lt':{fr:'Eau Plate 1 lt',en:'Still Water 1 lt',de:'Stilles Wasser 1 lt'},
-  'Acqua Gassata 1 lt':{fr:'Eau Gazeuse 1 lt',en:'Sparkling Water 1 lt',de:'Sprudelwasser 1 lt'},
+  'Acqua Naturale 1 L':{fr:'Eau Plate 1 L',en:'Still Water 1 L',de:'Stilles Wasser 1 L'},
+  'Acqua Gassata 1 L':{fr:'Eau Gazeuse 1 L',en:'Sparkling Water 1 L',de:'Sprudelwasser 1 L'},
   'Estathé Limone':{fr:'Estathé Citron',en:'Estathé Lemon',de:'Estathé Zitrone'},
   'Estathé Pesca':{fr:'Estathé Pêche',en:'Estathé Peach',de:'Estathé Pfirsich'},
   'Schweppes':{fr:'Schweppes',en:'Schweppes',de:'Schweppes'},
@@ -866,8 +870,8 @@ const BAR_TRANS={
   'Ricard':{fr:'Ricard',en:'Ricard',de:'Ricard'},
   'Whiskey':{fr:'Whiskey',en:'Whiskey',de:'Whiskey'},
   'Birra Bottiglia 33 cl':{fr:'Bière Bouteille 33 cl',en:'Beer Bottle 33 cl',de:'Bier Flasche 33 cl'},
+  'Birra Analcolica':{fr:'Bière Sans Alcool',en:'Non-Alcoholic Beer',de:'Alkoholfreies Bier'},
   'Digestivi':{fr:'Digestifs',en:'Digestifs',de:'Digestifs'},
-  'Distillati':{fr:'Distillats',en:'Spirits',de:'Destillate'},
   'Shot Alcolici':{fr:'Shots Alcoolisés',en:'Alcohol Shots',de:'Alkohol-Shots'},
   'Whisky & Coca':{fr:'Whisky Coca',en:'Whisky & Coke',de:'Whisky & Cola'},
   'Rhum & Coca':{fr:'Rhum Coca',en:'Rum & Coke',de:'Rum & Cola'},
@@ -951,55 +955,78 @@ function closeBarItemPopup(){
 function closeAnyPopup(){ if(barPopupItemId){closeBarItemPopup();}else{closePopup();} }
 
 const BAR_ITEMS={
-  caffe_espresso:{name:'Caffè Espresso',price:1.50,sub:'caffetteria'},
-  caffe_decaffeinato:{name:'Caffè Decaffeinato',price:1.80,sub:'caffetteria'},
-  caffe_orzo:{name:"Caffè D'Orzo",price:2.00,sub:'caffetteria'},
-  caffe_ginseng:{name:'Caffè Ginseng',price:2.50,sub:'caffetteria'},
-  caffe_corretto:{name:'Caffè Corretto',price:2.50,sub:'caffetteria',popupType:'note'},
-  cappuccino:{name:'Cappuccino',price:2.00,sub:'caffetteria',notrans:true},
-  caffe_latte:{name:'Caffè Latte',price:2.50,sub:'caffetteria'},
-  latte_macchiato:{name:'Latte Macchiato',price:2.50,sub:'caffetteria'},
-  te_caldo:{name:'Thè Caldo',price:2.50,sub:'caffetteria'},
-  infusi:{name:'Infusi',price:2.50,sub:'caffetteria'},
-  cioccolata_calda:{name:'Cioccolata Calda',price:2.50,sub:'caffetteria'},
-  acqua_naturale_1l:{name:'Acqua Naturale 1 lt',price:3.00,sub:'bibite'},
-  acqua_gassata_1l:{name:'Acqua Gassata 1 lt',price:3.00,sub:'bibite'},
-  coca_cola:{name:'Coca Cola',price:4.00,sub:'bibite',notrans:true},
-  coca_cola_zero:{name:'Coca Cola Zero',price:4.00,sub:'bibite',notrans:true},
-  fanta:{name:'Fanta',price:4.00,sub:'bibite',notrans:true},
-  sprite:{name:'Sprite',price:4.00,sub:'bibite',notrans:true},
-  estathe_limone:{name:'Estathé Limone',price:4.00,sub:'bibite'},
-  estathe_pesca:{name:'Estathé Pesca',price:4.00,sub:'bibite'},
-  schweppes:{name:'Schweppes',price:3.00,sub:'bibite'},
-  schweppes_lemon:{name:'Schweppes Lemon',price:3.00,sub:'bibite'},
-  crodino:{name:'Crodino',price:3.00,sub:'bibite'},
-  sanbitter:{name:'Sanbitter',price:3.00,sub:'bibite'},
-  succo_frutta:{name:'Succo di Frutta',price:3.00,sub:'bibite',popupType:'flavor'},
-  birra_bottiglia:{name:'Birra Bottiglia 33 cl',price:4.00,sub:'cocktails',group:'birre'},
-  panache:{name:'Panaché',price:5.00,sub:'cocktails',group:'birre',notrans:true},
-  monaco:{name:'Monaco',price:5.00,sub:'cocktails',group:'birre',notrans:true},
-  martini_bianco:{name:'Martini Bianco',price:5.00,sub:'cocktails',group:'birre',notrans:true},
-  martini_rosso:{name:'Martini Rosso',price:5.00,sub:'cocktails',group:'birre',notrans:true},
-  digestivi:{name:'Digestivi',price:4.00,sub:'cocktails',group:'birre',popupType:'digestivo'},
-  distillati:{name:'Distillati',price:4.00,sub:'cocktails',group:'birre'},
-  shot_alcolici:{name:'Shot Alcolici',price:4.00,sub:'cocktails',group:'birre',popupType:'note'},
-  ricard:{name:'Ricard',price:4.00,sub:'cocktails',group:'birre'},
-  whiskey:{name:'Whiskey',price:5.00,sub:'cocktails',group:'birre'},
+  // ── CAFFETTERIA — Caffè ──
+  caffe_espresso:{name:'Caffè Espresso',price:1.50,sub:'caffetteria',group:'caffe'},
+  caffe_decaffeinato:{name:'Caffè Decaffeinato',price:1.80,sub:'caffetteria',group:'caffe'},
+  caffe_orzo:{name:"Caffè d'Orzo",price:2.00,sub:'caffetteria',group:'caffe'},
+  caffe_ginseng:{name:'Caffè Ginseng',price:2.50,sub:'caffetteria',group:'caffe'},
+  caffe_corretto:{name:'Caffè Corretto',price:2.50,sub:'caffetteria',group:'caffe',popupType:'note'},
+  // Caffè & Latte
+  cappuccino:{name:'Cappuccino',price:2.00,sub:'caffetteria',group:'caffelatte',notrans:true},
+  caffe_latte:{name:'Caffè Latte',price:2.50,sub:'caffetteria',group:'caffelatte'},
+  latte_macchiato:{name:'Latte Macchiato',price:2.50,sub:'caffetteria',group:'caffelatte'},
+  // Tè & Infusi
+  te_caldo:{name:'Tè Caldo',price:2.50,sub:'caffetteria',group:'te'},
+  infusi:{name:'Infusi',price:2.50,sub:'caffetteria',group:'te'},
+  // Cioccolata
+  cioccolata_calda:{name:'Cioccolata Calda',price:2.50,sub:'caffetteria',group:'cioccolata'},
+
+  // ── BIBITE — Acqua ──
+  acqua_naturale_1l:{name:'Acqua Naturale 1 L',price:3.00,sub:'bibite',group:'acqua'},
+  acqua_gassata_1l:{name:'Acqua Gassata 1 L',price:3.00,sub:'bibite',group:'acqua'},
+  // Bibite
+  coca_cola:{name:'Coca-Cola',price:4.00,sub:'bibite',group:'bibite_group',notrans:true},
+  coca_cola_zero:{name:'Coca-Cola Zero',price:4.00,sub:'bibite',group:'bibite_group',notrans:true},
+  fanta:{name:'Fanta',price:4.00,sub:'bibite',group:'bibite_group',notrans:true},
+  sprite:{name:'Sprite',price:4.00,sub:'bibite',group:'bibite_group',notrans:true},
+  estathe_limone:{name:'Estathé Limone',price:4.00,sub:'bibite',group:'bibite_group'},
+  estathe_pesca:{name:'Estathé Pesca',price:4.00,sub:'bibite',group:'bibite_group'},
+  schweppes:{name:'Schweppes',price:3.00,sub:'bibite',group:'bibite_group'},
+  schweppes_lemon:{name:'Schweppes Lemon',price:3.00,sub:'bibite',group:'bibite_group'},
+  // Analcolici
+  crodino:{name:'Crodino',price:3.00,sub:'bibite',group:'analcolici'},
+  sanbitter:{name:'Sanbitter',price:3.00,sub:'bibite',group:'analcolici'},
+  // Succhi
+  succo_frutta:{name:'Succo di Frutta',price:3.00,sub:'bibite',group:'succhi',popupType:'flavor'},
+
+  // ── BIRRE (flat list) ──
+  birra_bottiglia:{name:'Birra Bottiglia 33 cl',price:4.00,sub:'birre'},
+  birra_analcolica:{name:'Birra Analcolica',price:4.00,sub:'birre'},
+  panache:{name:'Panaché',price:5.00,sub:'birre',notrans:true},
+  monaco:{name:'Monaco',price:5.00,sub:'birre',notrans:true},
+
+  // ── COCKTAIL & APERITIVI — Aperitivi ──
+  martini_bianco:{name:'Martini Bianco',price:5.00,sub:'cocktails',group:'aperitivi',notrans:true},
+  martini_rosso:{name:'Martini Rosso',price:5.00,sub:'cocktails',group:'aperitivi',notrans:true},
+  ricard:{name:'Ricard',price:4.00,sub:'cocktails',group:'aperitivi'},
+  // Spritz & Cocktail Classici
   aperol_spritz:{name:'Aperol Spritz',price:6.00,sub:'cocktails',group:'spritz',notrans:true},
   campari_spritz:{name:'Campari Spritz',price:6.00,sub:'cocktails',group:'spritz',notrans:true},
   limoncello_spritz:{name:'Limoncello Spritz',price:6.00,sub:'cocktails',group:'spritz',notrans:true},
   negroni:{name:'Negroni',price:6.00,sub:'cocktails',group:'spritz',notrans:true},
   negroni_sbagliato:{name:'Negroni Sbagliato',price:6.00,sub:'cocktails',group:'spritz',notrans:true},
   americano:{name:'Americano',price:6.00,sub:'cocktails',group:'spritz',notrans:true},
-  whisky_coca:{name:'Whisky & Coca',price:8.00,sub:'cocktails',group:'premium'},
-  rhum_coca:{name:'Rhum & Coca',price:8.00,sub:'cocktails',group:'premium'},
-  gin_tonic:{name:'Gin Tonic',price:8.00,sub:'cocktails',group:'premium'},
-  gin_lemon:{name:'Gin Lemon',price:8.00,sub:'cocktails',group:'premium'}
+  // Long Drink
+  whisky_coca:{name:'Whisky & Coca',price:8.00,sub:'cocktails',group:'longdrink'},
+  rhum_coca:{name:'Rhum & Coca',price:8.00,sub:'cocktails',group:'longdrink'},
+  gin_tonic:{name:'Gin Tonic',price:8.00,sub:'cocktails',group:'longdrink'},
+  gin_lemon:{name:'Gin Lemon',price:8.00,sub:'cocktails',group:'longdrink'},
+  // Digestivi
+  digestivi:{name:'Digestivi',price:4.00,sub:'cocktails',group:'digestivi',popupType:'digestivo'},
+  whiskey:{name:'Whiskey',price:5.00,sub:'cocktails',group:'digestivi'},
+  // Shot
+  shot_alcolici:{name:'Shot Alcolici',price:4.00,sub:'cocktails',group:'shot',popupType:'note'}
 };
 const BAR_GROUP_TITLES={
-  birre:{it:'🍺 Birre & Aperitivi Base',fr:'🍺 Bières & Apéritifs',en:'🍺 Beers & Base Aperitifs',de:'🍺 Biere & Basis-Aperitifs'},
+  acqua:{it:'💧 Acqua',fr:'💧 Eau',en:'💧 Water',de:'💧 Wasser'},
+  bibite_group:{it:'🥤 Bibite',fr:'🥤 Boissons',en:'🥤 Soft Drinks',de:'🥤 Softdrinks'},
+  analcolici:{it:'🍋 Analcolici',fr:'🍋 Sans Alcool',en:'🍋 Non-Alcoholic',de:'🍋 Alkoholfrei'},
+  succhi:{it:'🧃 Succhi',fr:'🧃 Jus',en:'🧃 Juices',de:'🧃 Säfte'},
+  aperitivi:{it:'🍸 Aperitivi',fr:'🍸 Apéritifs',en:'🍸 Aperitifs',de:'🍸 Aperitifs'},
   spritz:{it:'🥂 Spritz & Cocktails Classici — €6,00',fr:'🥂 Spritz & Cocktails Classiques — €6,00',en:'🥂 Spritz & Classic Cocktails — €6,00',de:'🥂 Spritz & Klassische Cocktails — €6,00'},
-  premium:{it:'⭐ Premium Cocktails — €8,00',fr:'⭐ Cocktails Premium — €8,00',en:'⭐ Premium Cocktails — €8,00',de:'⭐ Premium-Cocktails — €8,00'}
+  longdrink:{it:'🥃 Long Drink — €8,00',fr:'🥃 Long Drink — €8,00',en:'🥃 Long Drink — €8,00',de:'🥃 Long Drink — €8,00'},
+  digestivi:{it:'🥃 Digestivi',fr:'🥃 Digestifs',en:'🥃 Digestifs',de:'🥃 Digestifs'},
+  shot:{it:'🥃 Shot',fr:'🥃 Shots',en:'🥃 Shots',de:'🥃 Shots'}
 };
 let barQty={};
 // ── CUSTOM THEMED ALERT/CONFIRM MODAL ──
@@ -1068,7 +1095,7 @@ function renderBarSection(sub){
   });
   container.innerHTML=html;
 }
-function renderAllBarSections(){['caffetteria','bibite','cocktails'].forEach(renderBarSection);}
+function renderAllBarSections(){['caffetteria','bibite','cocktails','birre'].forEach(renderBarSection);}
 function changeBarQty(id,delta){
   const it=BAR_ITEMS[id];if(!it)return;
   if(delta>0){
