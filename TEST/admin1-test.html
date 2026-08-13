@@ -43,6 +43,7 @@ body { font-family: 'Palatino Linotype', Palatino, serif; background: #150e0b; c
 .complete-badge { font-size: 12px; font-weight: bold; padding: 4px 10px; border-radius: 12px; display: inline-block; margin-top: 4px; }
 .complete-badge.done { background: rgba(46,125,50,0.25); color: #6fcf73; }
 .complete-badge.waiting { background: rgba(255,193,7,0.2); color: #ffc107; }
+.complete-badge.serving { background: rgba(212,175,55,0.18); color: #d4af37; }
 
 .area-toggle { display: flex; gap: 8px; }
 .area-btn { padding: 8px 16px; border-radius: 20px; border: 1px solid #d4af37; background: transparent; color: #d4af37; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: bold; }
@@ -96,14 +97,14 @@ body { font-family: 'Palatino Linotype', Palatino, serif; background: #150e0b; c
 .map-legend { display:flex; gap:16px; padding:0 0 14px; flex-wrap:wrap; }
 .map-legend-item { display:flex; align-items:center; gap:6px; font-size:12px; color:#bca07d; }
 .map-legend-dot { width:12px; height:12px; border-radius:3px; display:inline-block; }
-.map-dot-empty { background:#2a1d19; border:1px solid rgba(212,175,55,0.3); }
+.map-dot-empty { background:#0f2417; border:1px solid #1f5c3a; }
 .map-dot-pending { background:#7a1f1f; border:1px solid #b31e1e; }
 .map-dot-occupied { background:#7a5f16; border:1px solid #d4af37; }
 .map-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(80px,1fr)); gap:10px; }
-.map-tile { background:#2a1d19; border:1px solid rgba(212,175,55,0.3); border-radius:10px; padding:10px 8px; min-height:72px; cursor:pointer; position:relative; transition:transform .12s ease; display:flex; flex-direction:column; justify-content:space-between; }
+.map-tile { background:#0f2417; border:1px solid #1f5c3a; border-radius:10px; padding:10px 8px; min-height:72px; cursor:pointer; position:relative; transition:transform .12s ease; display:flex; flex-direction:column; justify-content:space-between; }
 .map-tile:hover { transform:translateY(-2px); }
-.map-tile .map-num { font-size:16px; font-weight:900; color:#f9f1e2; }
-.map-tile .map-meta { font-size:10px; color:#bca07d; line-height:1.3; }
+.map-tile .map-num { font-size:16px; font-weight:900; color:#eafff2; }
+.map-tile .map-meta { font-size:10px; color:#7fbf9a; line-height:1.3; }
 .map-tile.pending { background:#3a1414; border-color:#b31e1e; }
 .map-tile.pending .map-num { color:#ff8a8a; }
 .map-tile.pending::after { content:''; position:absolute; top:6px; right:6px; width:7px; height:7px; border-radius:50%; background:#ff4d4d; box-shadow:0 0 6px #ff4d4d; animation:mappulse 1.4s infinite; }
@@ -122,20 +123,20 @@ body { font-family: 'Palatino Linotype', Palatino, serif; background: #150e0b; c
   body * { visibility: hidden; }
   #print-area, #print-area * { visibility: visible; }
   #print-area { display: block !important; position: absolute; top: 0; left: 0; width: 72mm; padding: 4mm; font-family: 'Courier New', monospace; color: #000; }
-  .receipt-table-big { text-align: center; font-size: 22px; font-weight: bold; margin-bottom: 4px; letter-spacing: 1px; }
-  .receipt-meta-row { font-size: 13px; display: flex; justify-content: space-between; margin-bottom: 2px; }
-  .receipt-tavolo-box { border: 2px solid #000; font-size: 18px; font-weight: bold; padding: 3px 6px; margin: 6px 0; display: flex; justify-content: space-between; }
+  .receipt-table-big { text-align: center; font-size: 27px; font-weight: bold; margin-bottom: 4px; letter-spacing: 1px; }
+  .receipt-meta-row { font-size: 14px; display: flex; justify-content: space-between; margin-bottom: 2px; }
+  .receipt-tavolo-box { border: 2px solid #000; font-size: 20px; font-weight: bold; padding: 3px 6px; margin: 6px 0; display: flex; justify-content: space-between; }
   .receipt-divider-line { border-top: 1px solid #000; margin: 6px 0; }
-  .receipt-footer-row { font-size: 11px; border-top: 1px dashed #000; padding-top: 4px; margin-top: 10px; display: flex; justify-content: space-between; }
+  .receipt-footer-row { font-size: 12px; border-top: 1px dashed #000; padding-top: 4px; margin-top: 10px; display: flex; justify-content: space-between; }
   .rqty { font-weight: bold; }
-  .receipt-online-tag { text-align: center; font-size: 13px; font-weight: bold; border: 1.5px dashed #000; padding: 3px; margin-bottom: 8px; }
-  .receipt-meta { font-size: 12px; margin-bottom: 8px; }
-  .receipt-item { font-size: 13px; margin-bottom: 6px; }
+  .receipt-online-tag { text-align: center; font-size: 14px; font-weight: bold; border: 1.5px dashed #000; padding: 3px; margin-bottom: 8px; }
+  .receipt-meta { font-size: 14px; margin-bottom: 8px; }
+  .receipt-item { font-size: 16px; margin-bottom: 6px; }
   .receipt-item .rname { font-weight: bold; }
-  .receipt-item .rdetail { font-size: 11px; }
-  .receipt-turno { font-weight: bold; font-size: 13px; margin: 8px 0 4px; border-top: 1px dashed #000; padding-top: 4px; }
-  .menu-fisso-tag { font-size: 9px; font-weight: bold; border: 1px solid #000; border-radius: 3px; padding: 1px 5px; margin-left: 4px; letter-spacing: 0.5px; white-space: nowrap; }
-  .receipt-total { border-top: 2px solid #000; margin-top: 10px; padding-top: 6px; font-size: 15px; font-weight: bold; text-align: right; }
+  .receipt-item .rdetail { font-size: 13px; }
+  .receipt-turno { font-weight: bold; font-size: 16px; margin: 8px 0 4px; border-top: 1px dashed #000; padding-top: 4px; }
+  .menu-fisso-tag { font-size: 10px; font-weight: bold; border: 1px solid #000; border-radius: 3px; padding: 1px 5px; margin-left: 4px; letter-spacing: 0.5px; white-space: nowrap; }
+  .receipt-total { border-top: 2px solid #000; margin-top: 10px; padding-top: 6px; font-size: 19px; font-weight: bold; text-align: right; }
   .receipt-divider { border-top: 2px dashed #000; margin: 12px 0 8px; }
   .person-summary-title { font-weight: bold; font-size: 12px; text-align: center; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
   .person-summary-block { font-size: 11px; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px dotted #999; }
@@ -172,12 +173,12 @@ body { font-family: 'Palatino Linotype', Palatino, serif; background: #150e0b; c
     <button class="logout-btn" onclick="doLogout()">Esci</button>
   </div>
   <div class="tab-nav">
-    <button class="main-tab-btn active" id="maintab-orders-btn" onclick="switchMainTab('orders')">📋 Ordini</button>
+    <button class="main-tab-btn active" id="maintab-mappa-btn" onclick="switchMainTab('mappa')">🗺️ Mappa</button>
+    <button class="main-tab-btn" id="maintab-orders-btn" onclick="switchMainTab('orders')">📋 Ordini</button>
     <button class="main-tab-btn" id="maintab-menu-btn" onclick="switchMainTab('menu')">🍽️ Menu</button>
-    <button class="main-tab-btn" id="maintab-mappa-btn" onclick="switchMainTab('mappa')">🗺️ Mappa</button>
   </div>
   <div style="padding:20px 0;">
-    <div id="maintab-orders">
+    <div id="maintab-orders" style="display:none;">
       <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
         <button class="add-item-btn" onclick="toggleHistorySection()" id="history-toggle-btn">📜 Storico Ordini</button>
       </div>
@@ -213,7 +214,7 @@ body { font-family: 'Palatino Linotype', Palatino, serif; background: #150e0b; c
       </div>
     </div>
 
-    <div id="maintab-mappa" style="display:none;">
+    <div id="maintab-mappa">
       <div class="menu-mgmt">
         <h3>🗺️ Mappa Tavoli</h3>
         <div class="mgmt-sub">Tocca un tavolo per vedere lo stato o aprire l'ordine.</div>
@@ -224,9 +225,7 @@ body { font-family: 'Palatino Linotype', Palatino, serif; background: #150e0b; c
         </div>
         <div class="map-grid" id="mapGrid"></div>
         <div class="map-drawer" id="mapDrawer">
-          <div class="map-dtitle" id="mapDtitle"></div>
-          <div class="map-dmeta" id="mapDmeta"></div>
-          <div id="mapDactions"></div>
+          <div id="mapDetailContent"></div>
         </div>
       </div>
     </div>
@@ -554,6 +553,11 @@ const TABLE_NUMBERS = [1,2,3,4,5,6,7,8,9,10,11,12,14,15,16,18,19,20,21,22,23,24,
 let mapPendingState={};
 let mapOccupiedState={};
 let tableStatusUnsub=null;
+let pendingGroupsCache={};
+let openMapTableId=null;
+let mapAnyDocId={};
+let mapPendingCustomize={};
+let mapManualEntryOpen={};
 
 function startTableStatusListener(){
   if(tableStatusUnsub)tableStatusUnsub();
@@ -561,10 +565,11 @@ function startTableStatusListener(){
     const st={};
     snap.forEach(doc=>{
       const d=doc.data();
-      if(d.occupied)st[doc.id]={waiter:d.waiter||'',people:d.people||''};
+      if(d.occupied)st[doc.id]={waiter:d.waiter||'',people:d.people||'',room:d.room||''};
     });
     mapOccupiedState=st;
     if(document.getElementById('maintab-mappa')&&document.getElementById('maintab-mappa').style.display!=='none')renderTableMap();
+    if(openMapTableId)renderMapTableDetail(openMapTableId);
   }, err=>console.error('tableStatus listener error:',err));
 }
 
@@ -596,28 +601,327 @@ function goToOrder(tbl){
 }
 
 function openMapTable(tbl){
-  const drawer=document.getElementById('mapDrawer');
-  const pending=mapPendingState[tbl];
-  const occupied=mapOccupiedState[tbl];
-  drawer.classList.add('open');
-  document.getElementById('mapDtitle').textContent='Tavolo '+tbl;
-  const actionsEl=document.getElementById('mapDactions');
-  if(pending){
-    document.getElementById('mapDmeta').textContent='Ordine in attesa'+(pending.people?' · '+pending.people+' persone':'');
-    actionsEl.innerHTML='<button class="add-item-btn" onclick="goToOrder(\''+tbl+'\')">Apri ordine</button>';
-  }else if(occupied){
-    document.getElementById('mapDmeta').textContent='Occupato'+(occupied.people?' · '+occupied.people+' persone':'');
-    actionsEl.innerHTML='<button class="add-item-btn" onclick="freeTable(\''+tbl+'\')">🔓 Libera Tavolo</button>';
-  }else{
-    document.getElementById('mapDmeta').textContent='Tavolo libero.';
-    actionsEl.innerHTML='';
-  }
+  openMapTableId=tbl;
+  document.getElementById('mapDrawer').classList.add('open');
+  renderMapTableDetail(tbl);
 }
 
 function freeTable(tbl){
   db.collection('tableStatus').doc(tbl).set({occupied:false},{merge:true}).then(()=>{
     document.getElementById('mapDrawer').classList.remove('open');
+    openMapTableId=null;
   }).catch(err=>console.error(err));
+}
+
+// Read-only item rows for already-served (approved) rounds — those are already printed, so no editing.
+function buildReadOnlyItemRowsHTML(items){
+  if(!items||!items.length)return '';
+  let html='<div style="margin-top:8px;">';
+  items.forEach(it=>{
+    html+='<div class="item-row">';
+    html+='  <div class="item-info">';
+    html+='    <div class="item-name '+(it.category==='drink'?'drink':'')+'">'+(it.category==='drink'?'🍷':'🍽️')+' '+(it.person?'<span style="color:#d4af37;">👤 '+it.person+'</span> — ':'')+it.name+(it.turno?' <span style="font-weight:normal;color:#bca07d;">('+it.turno+')</span>':'')+'</div>';
+    if(it.detail)html+='    <div class="item-detail">'+it.detail+'</div>';
+    html+='  </div>';
+    html+='  <div class="item-price">€'+it.price+'</div>';
+    html+='</div>';
+  });
+  html+='</div>';
+  return html;
+}
+
+// Editable item rows for the CURRENT pending round — full access: rename, change price, remove.
+function buildEditableItemRowsHTML(items){
+  if(!items||!items.length)return '<div class="empty-state" style="padding:10px;">Nessun articolo.</div>';
+  let html='<div style="margin-top:8px;">';
+  items.forEach(it=>{
+    const safeName=(it.name||'').replace(/"/g,'&quot;');
+    html+='<div class="item-row" style="align-items:flex-start;flex-wrap:wrap;">';
+    html+='  <div class="item-info" style="min-width:150px;">';
+    html+='    <input type="text" value="'+safeName+'" onchange="mapUpdateItemField(\''+it.__docId+'\','+it.__idx+',\'name\',this.value)" style="width:100%;background:#2a1d19;border:1px solid rgba(212,175,55,0.3);border-radius:6px;color:#f9f1e2;font-family:inherit;font-size:13px;padding:6px 8px;margin-bottom:4px;">';
+    if(it.detail)html+='    <div class="item-detail">'+it.detail+'</div>';
+    if(it.turno)html+='    <div class="item-detail">'+it.turno+'</div>';
+    html+='  </div>';
+    html+='  <input type="number" value="'+it.price+'" onchange="mapUpdateItemField(\''+it.__docId+'\','+it.__idx+',\'price\',this.value)" style="width:72px;background:#2a1d19;border:1px solid rgba(212,175,55,0.3);border-radius:6px;color:#d4af37;font-weight:bold;font-family:inherit;font-size:13px;padding:6px;text-align:center;">';
+    html+='  <button class="item-remove" onclick="removeItem(\''+it.__docId+'\','+it.__idx+')">✕</button>';
+    html+='</div>';
+  });
+  html+='</div>';
+  return html;
+}
+function mapUpdateItemField(docId,idx,field,value){
+  const ref=db.collection('orders').doc(docId);
+  ref.get().then(doc=>{
+    const data=doc.data();
+    const items=(data.items||[]).slice();
+    if(!items[idx])return;
+    items[idx][field]= field==='price' ? (Number(value)||0) : value;
+    const total=items.reduce((s,it)=>s+(Number(it.price)||0),0);
+    return ref.update({items,total});
+  }).catch(err=>console.error(err));
+}
+
+// Builds the full per-table timeline: current pending round (fully editable) on top, then today's approved rounds (read-only).
+async function renderMapTableDetail(tbl){
+  const content=document.getElementById('mapDetailContent');
+  if(!content)return;
+  const pendingDocs=pendingGroupsCache[tbl]||[];
+  const occ=mapOccupiedState[tbl]||{};
+  const pendingItems=[];
+  pendingDocs.forEach(d=>(d.items||[]).forEach((it,idx)=>pendingItems.push({...it,__docId:d.id,__idx:idx})));
+  const pendingTotal=pendingItems.reduce((s,it)=>s+(Number(it.price)||0),0);
+  const roomVal=pendingDocs.find(d=>d.room)?.room || occ.room || '';
+  const peopleVal=pendingDocs.find(d=>d.people)?.people || occ.people || 1;
+  const area=selectedArea[tbl]||'';
+
+  let html='<div class="map-dtitle">🪑 Tavolo <input type="text" value="'+tbl+'" onchange="changeTableNumber(\''+tbl+'\',this.value)" style="width:60px;background:#2a1d19;border:1px solid rgba(212,175,55,0.4);border-radius:6px;color:#d4af37;font-weight:900;font-family:inherit;font-size:16px;padding:3px 6px;text-align:center;"></div>';
+  html+='<div class="map-dmeta">🔑 Camera <input type="text" value="'+roomVal+'" placeholder="n. (opzionale)" style="width:70px;background:#2a1d19;border:1px solid rgba(212,175,55,0.3);border-radius:6px;color:#f9f1e2;font-family:inherit;font-size:12px;padding:4px 6px;" onchange="changeRoomNumber(\''+tbl+'\',this.value)"> · 👥 <input type="number" min="1" value="'+peopleVal+'" style="width:50px;background:#2a1d19;border:1px solid rgba(212,175,55,0.3);border-radius:6px;color:#f9f1e2;font-family:inherit;font-size:12px;padding:4px 6px;" onchange="changePeopleCount(\''+tbl+'\',this.value)"> persone</div>';
+  html+='<div style="margin:10px 0 16px;"><button class="decline-btn" style="border-color:#d4af37;color:#d4af37;" onclick="freeTable(\''+tbl+'\')">🔓 Libera Tavolo</button></div>';
+
+  if(pendingDocs.length){
+    mapAnyDocId[tbl]=pendingDocs[0].id;
+    html+='<div class="order-card" style="margin-bottom:16px;">';
+    html+='  <div class="complete-badge waiting">⏳ Ordine in attesa di approvazione</div>';
+    html+=buildEditableItemRowsHTML(pendingItems);
+    html+='  <div class="add-item-row" style="flex-direction:column;align-items:stretch;">';
+    html+='    <div style="display:flex;gap:8px;flex-wrap:wrap;">';
+    html+='      <select id="mnewcat-'+tbl+'" onchange="mapRenderProductPicker(\''+tbl+'\')"><option value="">📂 Categoria...</option><option value="antipasti">🥗 Antipasti</option><option value="primi">🍝 Primi</option><option value="secondi">🥩 Secondi</option><option value="contorni">🥦 Contorni</option><option value="dolci">🍰 Dolci</option><option value="gelato">🍨 Gelato</option></select>';
+    html+='      <input type="text" id="mnewsearch-'+tbl+'" placeholder="🔎 Cerca piatto..." oninput="mapRenderProductPicker(\''+tbl+'\')" style="flex:1;">';
+    html+='      <select id="mnewturno-'+tbl+'" title="Turno"><option value="">📋 Turno...</option>'+TURNO_OPTIONS.map(t=>'<option value="'+t+'">'+t+'</option>').join('')+'</select>';
+    html+='      <select id="mnewperson-'+tbl+'" title="Persona"><option value="">👤 Persona...</option>'+Array.from({length:peopleVal},(_,i)=>'Persona '+(i+1)).map(p=>'<option value="'+p+'">'+p+'</option>').join('')+'</select>';
+    html+='    </div>';
+    html+='    <div id="mproductlist-'+tbl+'" style="display:flex;flex-direction:column;gap:4px;max-height:160px;overflow-y:auto;margin-top:6px;"></div>';
+    html+='    <div id="mcustomize-'+tbl+'"></div>';
+    html+='    <div style="margin-top:8px;">';
+    html+='      <a href="javascript:void(0)" onclick="mapToggleManualEntry(\''+tbl+'\')" style="color:#bca07d;font-size:12px;text-decoration:underline;">+ Voce manuale (es. vino specifico)</a>';
+    html+='      <div id="mmanualentry-'+tbl+'" style="display:none;gap:8px;flex-wrap:wrap;margin-top:8px;flex-direction:row;">';
+    html+='        <input type="text" id="mnewname-'+tbl+'" placeholder="Nome piatto/bevanda" style="flex:1;min-width:100px;">';
+    html+='        <input type="number" id="mnewprice-'+tbl+'" placeholder="€" style="width:70px;">';
+    html+='        <select id="mnewmancat-'+tbl+'"><option value="food">🍽️ Cibo</option><option value="drink">🍷 Bevanda</option></select>';
+    html+='        <select id="mnewmanturno-'+tbl+'"><option value="">📋 Turno...</option>'+TURNO_OPTIONS.map(t=>'<option value="'+t+'">'+t+'</option>').join('')+'</select>';
+    html+='        <select id="mnewmanperson-'+tbl+'"><option value="">👤 Persona...</option>'+Array.from({length:peopleVal},(_,i)=>'Persona '+(i+1)).map(p=>'<option value="'+p+'">'+p+'</option>').join('')+'</select>';
+    html+='        <button class="add-item-btn" onclick="mapAddManualItem(\''+tbl+'\')">+ Aggiungi</button>';
+    html+='      </div>';
+    html+='    </div>';
+    html+='  </div>';
+    html+='  <div class="card-total">Totale: €'+pendingTotal+'</div>';
+    html+='  <div class="area-toggle" style="margin-bottom:12px;">';
+    html+='    <button class="area-btn '+(area==='esterno'?'active':'')+'" onclick="setArea(\''+tbl+'\',\'esterno\')">🌤️ Esterno</button>';
+    html+='    <button class="area-btn '+(area==='interno'?'active':'')+'" onclick="setArea(\''+tbl+'\',\'interno\')">🏠 Interno</button>';
+    html+='  </div>';
+    html+='  <div class="card-actions">';
+    html+='    <button class="approve-btn" '+(area?'':'disabled')+' onclick="approveTable(\''+tbl+'\')">✅ Approva e Stampa</button>';
+    html+='    <button class="decline-btn" onclick="cancelTable(\''+tbl+'\')">❌ Rifiuta</button>';
+    html+='  </div>';
+    html+='</div>';
+  }else{
+    delete mapAnyDocId[tbl];
+    html+='<div class="empty-state" style="padding:20px;">Nessun ordine in attesa per questo tavolo.</div>';
+  }
+
+  content.innerHTML=html+'<div class="mgmt-section-title" style="margin-top:6px;">📜 Storico di Oggi</div><div id="mapHistorySlot" style="padding:16px 0;color:#7a6a5a;font-style:italic;">Caricamento...</div>';
+  if(mapPendingCustomize[tbl])mapRenderCustomizePanel(tbl);
+
+  // Fetch today's approved rounds for this table (two equality filters — no composite index needed)
+  try{
+    const snap=await db.collection('orders').where('table','==',tbl).where('status','==','approved').get();
+    const todays=[];
+    snap.forEach(doc=>{
+      const d=doc.data();
+      const at=d.approvedAt?.toDate?.();
+      if(at && dateStrOf(at)===todayStr())todays.push({id:doc.id,...d,__time:at});
+    });
+    todays.sort((a,b)=>b.__time-a.__time);
+    const slot=document.getElementById('mapHistorySlot');
+    if(!slot)return; // drawer was closed/changed table while we were fetching
+    if(!todays.length){
+      slot.outerHTML='<div class="empty-state" style="padding:16px 0;">Nessun ordine servito oggi per questo tavolo.</div>';
+      return;
+    }
+    let hHtml='';
+    todays.forEach(o=>{
+      const total=(o.items||[]).reduce((s,it)=>s+(Number(it.price)||0),0);
+      const timeStr=o.__time.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+      hHtml+='<div class="order-card" style="padding:14px 16px;margin-bottom:10px;">';
+      hHtml+='  <div class="order-count">🟡 Servito alle '+timeStr+(o.approvedByName?' · '+o.approvedByName:'')+'</div>';
+      hHtml+=buildReadOnlyItemRowsHTML(o.items||[]);
+      hHtml+='  <div class="card-total">Totale: €'+total+'</div>';
+      hHtml+='  <button class="decline-btn" style="border-color:#d4af37;color:#d4af37;" onclick="reprintOrder(\''+o.id+'\')">🖨️ Ristampa</button>';
+      hHtml+='</div>';
+    });
+    slot.outerHTML='<div>'+hHtml+'</div>';
+  }catch(err){
+    console.error('Map table history error:',err);
+    const slot=document.getElementById('mapHistorySlot');
+    if(slot)slot.outerHTML='<div class="empty-state" style="padding:16px 0;">Errore nel caricamento dello storico.</div>';
+  }
+}
+
+// ── Mappa drawer's own "add item from menu" flow (mirrors the Ordini tab's picker,
+// but with its own element-id namespace and state so the two tabs never collide) ──
+function mapToggleManualEntry(tbl){
+  mapManualEntryOpen[tbl]=!mapManualEntryOpen[tbl];
+  const el=document.getElementById('mmanualentry-'+tbl);
+  if(el)el.style.display=mapManualEntryOpen[tbl]?'flex':'none';
+}
+function mapRenderProductPicker(tbl){
+  const listEl=document.getElementById('mproductlist-'+tbl);
+  if(!listEl)return;
+  const cat=document.getElementById('mnewcat-'+tbl)?.value||'';
+  const q=(document.getElementById('mnewsearch-'+tbl)?.value||'').trim().toLowerCase();
+  let results=ALL_MENU_ITEMS;
+  if(cat)results=results.filter(it=>it.course===cat);
+  if(q)results=results.filter(it=>it.name.toLowerCase().includes(q));
+  if(!cat&&!q){listEl.innerHTML='';return;}
+  if(!results.length){listEl.innerHTML='<div style="color:#7a6a5a;font-size:12px;font-style:italic;padding:6px;">Nessun risultato</div>';return;}
+  listEl.innerHTML=results.slice(0,30).map(it=>
+    '<div style="display:flex;justify-content:space-between;align-items:center;background:#2a1d19;border-radius:8px;padding:8px 12px;cursor:pointer;" onclick="mapSelectMasterItem(\''+tbl+'\',\''+it.id+'\')">'
+    +'<span style="font-size:13px;">'+it.name+'</span><span style="color:#d4af37;font-weight:bold;font-size:13px;">€'+it.price+'</span></div>'
+  ).join('');
+}
+function mapSelectMasterItem(tbl,itemId){
+  const item=ALL_MENU_ITEMS.find(it=>it.id===itemId);
+  if(!item)return;
+  const needsCustomize = (item.sauces&&item.sauces.length) || item.cottura || item.isGelato || item.isSorbetto;
+  if(!needsCustomize){
+    mapFinalizeMasterItemAdd(tbl,item,'');
+    return;
+  }
+  mapPendingCustomize[tbl]={itemId,sauce:'',multiSauces:[],cottura:'',flavors:[],sorbettoType:''};
+  mapRenderCustomizePanel(tbl);
+}
+function mapRenderCustomizePanel(tbl){
+  const c=mapPendingCustomize[tbl];
+  const el=document.getElementById('mcustomize-'+tbl);
+  if(!el)return;
+  if(!c){el.innerHTML='';return;}
+  const item=ALL_MENU_ITEMS.find(it=>it.id===c.itemId);
+  if(!item){el.innerHTML='';return;}
+  let html='<div style="background:#1a110e;border:1px solid rgba(212,175,55,0.5);border-radius:10px;padding:10px 12px;margin-top:8px;">';
+  html+='<div style="font-size:13px;font-weight:bold;color:#d4af37;margin-bottom:8px;">'+item.name+'</div>';
+  if(item.isGelato){
+    html+='<div style="font-size:11px;color:#bca07d;margin-bottom:6px;">🍦 Scegli fino a 3 gusti ('+c.flavors.length+'/3):</div><div style="display:flex;gap:6px;flex-wrap:wrap;">';
+    availableGelatoChipsForAdmin().forEach(f=>{
+      const sel=c.flavors.includes(f.name);
+      const maxed=!sel&&c.flavors.length>=3;
+      html+='<button type="button" '+(maxed?'disabled':'')+' onclick="mapToggleCustomizeFlavor(\''+tbl+'\',\''+f.name.replace(/'/g,"\\'")+'\')" style="border:1.5px solid rgba(212,175,55,0.4);border-radius:20px;background:'+(sel?'#b31e1e':'#2a1d19')+';color:'+(sel?'#fff':'#bca07d')+';font-size:12px;font-weight:bold;padding:5px 12px;cursor:pointer;">'+f.name+'</button>';
+    });
+    html+='</div>';
+  }else if(item.isSorbetto){
+    html+='<div style="font-size:11px;color:#bca07d;margin-bottom:6px;">🍹 Con o senza alcol?</div><div style="display:flex;gap:6px;flex-wrap:wrap;">';
+    [['Alcolico','🍷 Con Alcol'],['Senza Alcol','🧃 Senza Alcol']].forEach(([val,label])=>{
+      const sel=c.sorbettoType===val;
+      html+='<button type="button" onclick="mapSetCustomizeSorbetto(\''+tbl+'\',\''+val+'\')" style="border:1.5px solid rgba(212,175,55,0.4);border-radius:20px;background:'+(sel?'#b31e1e':'#2a1d19')+';color:'+(sel?'#fff':'#bca07d')+';font-size:12px;font-weight:bold;padding:5px 12px;cursor:pointer;">'+label+'</button>';
+    });
+    html+='</div>';
+  }else if(item.multiSelect){
+    html+='<div style="font-size:11px;color:#bca07d;margin-bottom:6px;">🍽️ Scegli '+item.multiSelect+' piatti ('+c.multiSauces.length+'/'+item.multiSelect+'):</div><div style="display:flex;gap:6px;flex-wrap:wrap;">';
+    item.sauces.forEach(s=>{
+      const sel=c.multiSauces.includes(s);
+      const maxed=!sel&&c.multiSauces.length>=item.multiSelect;
+      html+='<button type="button" '+(maxed?'disabled':'')+' onclick="mapToggleCustomizeMultiSauce(\''+tbl+'\',\''+s.replace(/'/g,"\\'")+'\')" style="border:1.5px solid rgba(212,175,55,0.4);border-radius:20px;background:'+(sel?'#b31e1e':'#2a1d19')+';color:'+(sel?'#fff':'#bca07d')+';font-size:12px;font-weight:bold;padding:5px 12px;cursor:pointer;">'+s+'</button>';
+    });
+    html+='</div>';
+  }else if(item.sauces&&item.sauces.length){
+    html+='<div style="font-size:11px;color:#bca07d;margin-bottom:6px;">🍽️ Condimento:</div><div style="display:flex;gap:6px;flex-wrap:wrap;">';
+    item.sauces.forEach(s=>{
+      const sel=c.sauce===s;
+      html+='<button type="button" onclick="mapSetCustomizeSauce(\''+tbl+'\',\''+s.replace(/'/g,"\\'")+'\')" style="border:1.5px solid rgba(212,175,55,0.4);border-radius:20px;background:'+(sel?'#b31e1e':'#2a1d19')+';color:'+(sel?'#fff':'#bca07d')+';font-size:12px;font-weight:bold;padding:5px 12px;cursor:pointer;">'+s+'</button>';
+    });
+    html+='</div>';
+  }
+  if(item.cottura){
+    html+='<div style="font-size:11px;color:#bca07d;margin:8px 0 6px;">🔥 Cottura:</div><div style="display:flex;gap:6px;flex-wrap:wrap;">';
+    COTTURA_OPTIONS.forEach(co=>{
+      const sel=c.cottura===co;
+      html+='<button type="button" onclick="mapSetCustomizeCottura(\''+tbl+'\',\''+co+'\')" style="border:1.5px solid rgba(212,175,55,0.4);border-radius:20px;background:'+(sel?'#b31e1e':'#2a1d19')+';color:'+(sel?'#fff':'#bca07d')+';font-size:12px;font-weight:bold;padding:5px 12px;cursor:pointer;">'+co+'</button>';
+    });
+    html+='</div>';
+  }
+  const ok=isCustomizeComplete(item,c);
+  html+='<div style="margin-top:10px;display:flex;gap:8px;">';
+  html+='<button class="add-item-btn" '+(ok?'':'disabled')+' onclick="mapFinalizeMasterItemAdd(\''+tbl+'\')">✓ Aggiungi</button>';
+  html+='<a href="javascript:void(0)" onclick="mapCancelCustomize(\''+tbl+'\')" style="color:#bca07d;font-size:12px;text-decoration:underline;align-self:center;">Annulla</a>';
+  html+='</div></div>';
+  el.innerHTML=html;
+}
+function mapToggleCustomizeFlavor(tbl,f){
+  const c=mapPendingCustomize[tbl]; if(!c)return;
+  if(c.flavors.includes(f))c.flavors=c.flavors.filter(x=>x!==f);
+  else if(c.flavors.length<3)c.flavors.push(f);
+  mapRenderCustomizePanel(tbl);
+}
+function mapSetCustomizeSorbetto(tbl,v){ const c=mapPendingCustomize[tbl]; if(c){c.sorbettoType=v; mapRenderCustomizePanel(tbl);} }
+function mapToggleCustomizeMultiSauce(tbl,s){
+  const c=mapPendingCustomize[tbl]; if(!c)return;
+  const item=ALL_MENU_ITEMS.find(it=>it.id===c.itemId);
+  if(c.multiSauces.includes(s))c.multiSauces=c.multiSauces.filter(x=>x!==s);
+  else if(c.multiSauces.length<item.multiSelect)c.multiSauces.push(s);
+  mapRenderCustomizePanel(tbl);
+}
+function mapSetCustomizeSauce(tbl,s){ const c=mapPendingCustomize[tbl]; if(c){c.sauce=s; mapRenderCustomizePanel(tbl);} }
+function mapSetCustomizeCottura(tbl,co){ const c=mapPendingCustomize[tbl]; if(c){c.cottura=co; mapRenderCustomizePanel(tbl);} }
+function mapCancelCustomize(tbl){ delete mapPendingCustomize[tbl]; mapRenderCustomizePanel(tbl); }
+function mapFinalizeMasterItemAdd(tbl,directItem,directDetail){
+  let item,detail;
+  if(directItem){
+    item=directItem; detail=directDetail||'';
+  }else{
+    const c=mapPendingCustomize[tbl];
+    if(!c)return;
+    item=ALL_MENU_ITEMS.find(it=>it.id===c.itemId);
+    if(!item||!isCustomizeComplete(item,c))return;
+    const d=[];
+    if(item.isGelato)d.push(c.flavors.join(', '));
+    else if(item.isSorbetto)d.push(c.sorbettoType==='Alcolico'?'🍷 Con Alcol':'🧃 Senza Alcol');
+    else if(item.multiSelect&&c.multiSauces.length)d.push(c.multiSauces.join(' + '));
+    else if(c.sauce)d.push(c.sauce);
+    if(item.cottura&&c.cottura)d.push('Cottura: '+c.cottura);
+    detail=d.join(' · ');
+  }
+  const anyDocId=mapAnyDocId[tbl];
+  if(!anyDocId)return;
+  const turnoEl=document.getElementById('mnewturno-'+tbl);
+  const turno=turnoEl?turnoEl.value:'';
+  const personEl=document.getElementById('mnewperson-'+tbl);
+  const person=personEl?personEl.value:'';
+  const ref=db.collection('orders').doc(anyDocId);
+  ref.get().then(doc=>{
+    const data=doc.data();
+    const items=(data.items||[]).slice();
+    items.push({name:item.name,price:item.price,category:'food',course:item.course,detail,person,turno});
+    const total=items.reduce((s,it)=>s+(Number(it.price)||0),0);
+    return ref.update({items,total});
+  }).then(()=>{
+    const searchEl=document.getElementById('mnewsearch-'+tbl);
+    if(searchEl)searchEl.value='';
+    delete mapPendingCustomize[tbl];
+    mapRenderProductPicker(tbl);
+    mapRenderCustomizePanel(tbl);
+  }).catch(err=>console.error(err));
+}
+function mapAddManualItem(tbl){
+  const anyDocId=mapAnyDocId[tbl];
+  if(!anyDocId)return;
+  const nameEl=document.getElementById('mnewname-'+tbl);
+  const priceEl=document.getElementById('mnewprice-'+tbl);
+  const catEl=document.getElementById('mnewmancat-'+tbl);
+  const turnoEl=document.getElementById('mnewmanturno-'+tbl);
+  const personEl=document.getElementById('mnewmanperson-'+tbl);
+  const name=nameEl.value.trim();
+  const price=Number(priceEl.value)||0;
+  const category=catEl.value;
+  const turno=turnoEl?turnoEl.value:'';
+  const person=personEl?personEl.value:'';
+  if(!name)return;
+  const ref=db.collection('orders').doc(anyDocId);
+  ref.get().then(doc=>{
+    const data=doc.data();
+    const items=(data.items||[]).slice();
+    items.push({name,price,category,course:category==='drink'?'bevande':'manuale',detail:'',person,turno});
+    const total=items.reduce((s,it)=>s+(Number(it.price)||0),0);
+    return ref.update({items,total});
+  }).then(()=>{nameEl.value='';priceEl.value='';}).catch(err=>console.error(err));
 }
 
 // ── USER DISPLAY NAMES & ADMIN ROLE ──
@@ -733,7 +1037,9 @@ function renderOrders(snapshot){
   if(snapshot.empty){
     container.innerHTML='<div class="empty-state">Nessun ordine in attesa al momento.</div>';
     mapPendingState={};
+    pendingGroupsCache={};
     if(document.getElementById('maintab-mappa')&&document.getElementById('maintab-mappa').style.display!=='none')renderTableMap();
+    if(openMapTableId)renderMapTableDetail(openMapTableId);
     return;
   }
   const groups={};
@@ -744,12 +1050,14 @@ function renderOrders(snapshot){
     groups[tbl].push({id:doc.id,...data});
   });
 
+  pendingGroupsCache=groups;
   mapPendingState={};
   Object.keys(groups).forEach(tbl=>{
     const peopleVal=groups[tbl].find(d=>d.people)?.people||'';
     mapPendingState[tbl]={people:peopleVal};
   });
   if(document.getElementById('maintab-mappa')&&document.getElementById('maintab-mappa').style.display!=='none')renderTableMap();
+  if(openMapTableId)renderMapTableDetail(openMapTableId);
 
   let html='';
   Object.keys(groups).sort((a,b)=>Number(a)-Number(b)).forEach(tbl=>{
@@ -827,6 +1135,7 @@ function renderOrders(snapshot){
 function setArea(tbl,area){
   selectedArea[tbl]=area;
   db.collection('orders').where('status','==','pending').get().then(renderOrders);
+  if(openMapTableId===tbl)renderMapTableDetail(tbl);
 }
 
 function changeTableNumber(oldTbl,newTbl){
@@ -835,6 +1144,8 @@ function changeTableNumber(oldTbl,newTbl){
     const batch=db.batch();
     snap.forEach(doc=>batch.update(doc.ref,{table:newTbl}));
     return batch.commit();
+  }).then(()=>{
+    if(openMapTableId===oldTbl)openMapTableId=newTbl;
   }).catch(err=>console.error(err));
 }
 
@@ -1108,7 +1419,16 @@ function doPrint(){
   return new Promise(resolve=>{
     function handler(){window.removeEventListener('afterprint',handler);resolve();}
     window.addEventListener('afterprint',handler);
-    window.print();
+    // Wait for the freshly-injected receipt HTML to actually be laid out and painted
+    // before printing — without this, the very first print after approving could
+    // fire while the browser is still using the previous (smaller) layout/fonts,
+    // which is why reprints ("Ristampa") always looked correct but the first
+    // print sometimes came out with tiny text.
+    requestAnimationFrame(()=>{
+      requestAnimationFrame(()=>{
+        window.print();
+      });
+    });
   });
 }
 
