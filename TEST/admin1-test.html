@@ -131,9 +131,9 @@ body { font-family: 'Palatino Linotype', Palatino, serif; background: #150e0b; c
   .rqty { font-weight: bold; }
   .receipt-online-tag { text-align: center; font-size: 14px; font-weight: bold; border: 1.5px dashed #000; padding: 3px; margin-bottom: 8px; }
   .receipt-meta { font-size: 14px; margin-bottom: 8px; }
-  .receipt-item { font-size: 16px; margin-bottom: 6px; }
+  .receipt-item { font-size: 19px; margin-bottom: 6px; }
   .receipt-item .rname { font-weight: bold; }
-  .receipt-item .rdetail { font-size: 13px; }
+  .receipt-item .rdetail { font-size: 15px; }
   .receipt-turno { font-weight: bold; font-size: 16px; margin: 8px 0 4px; border-top: 1px dashed #000; padding-top: 4px; }
   .menu-fisso-tag { font-size: 10px; font-weight: bold; border: 1px solid #000; border-radius: 3px; padding: 1px 5px; margin-left: 4px; letter-spacing: 0.5px; white-space: nowrap; }
   .receipt-total { border-top: 2px solid #000; margin-top: 10px; padding-top: 6px; font-size: 19px; font-weight: bold; text-align: right; }
@@ -216,14 +216,16 @@ body { font-family: 'Palatino Linotype', Palatino, serif; background: #150e0b; c
 
     <div id="maintab-mappa">
       <div class="menu-mgmt">
-        <h3>🗺️ Mappa Tavoli</h3>
-        <div class="mgmt-sub">Tocca un tavolo per vedere lo stato o aprire l'ordine.</div>
-        <div class="map-legend">
-          <span class="map-legend-item"><span class="map-legend-dot map-dot-empty"></span> Libero</span>
-          <span class="map-legend-item"><span class="map-legend-dot map-dot-pending"></span> In attesa</span>
-          <span class="map-legend-item"><span class="map-legend-dot map-dot-occupied"></span> Occupato</span>
+        <div id="mapGridView">
+          <h3>🗺️ Mappa Tavoli</h3>
+          <div class="mgmt-sub">Tocca un tavolo per vedere lo stato o aprire l'ordine.</div>
+          <div class="map-legend">
+            <span class="map-legend-item"><span class="map-legend-dot map-dot-empty"></span> Libero</span>
+            <span class="map-legend-item"><span class="map-legend-dot map-dot-pending"></span> In attesa</span>
+            <span class="map-legend-item"><span class="map-legend-dot map-dot-occupied"></span> Occupato</span>
+          </div>
+          <div class="map-grid" id="mapGrid"></div>
         </div>
-        <div class="map-grid" id="mapGrid"></div>
         <div class="map-drawer" id="mapDrawer">
           <div id="mapDetailContent"></div>
         </div>
@@ -573,6 +575,37 @@ function startTableStatusListener(){
   }, err=>console.error('tableStatus listener error:',err));
 }
 
+function toggleMapRound(id){
+  const el=document.getElementById(id);
+  const arrow=document.getElementById(id+'-arrow');
+  if(!el)return;
+  const isOpen=el.style.display!=='none';
+  el.style.display=isOpen?'none':'block';
+  if(arrow)arrow.textContent=isOpen?'▾':'▴';
+}
+
+function elapsedLabel(date){
+  if(!date)return '';
+  const mins=Math.max(0,Math.floor((Date.now()-date.getTime())/60000));
+  if(mins<1)return 'ora';
+  if(mins<60)return mins+' min';
+  const h=Math.floor(mins/60), rem=mins%60;
+  return h+'h'+(rem?' '+rem+'m':'');
+}
+function updateMappaBadge(){
+  const btn=document.getElementById('maintab-mappa-btn');
+  if(!btn)return;
+  const n=Object.keys(pendingGroupsCache).length;
+  btn.textContent = n>0 ? '🗺️ Mappa ('+n+')' : '🗺️ Mappa';
+}
+// Cheap periodic refresh of just the elapsed-time text — doesn't touch Firestore.
+function refreshMapElapsedOnly(){
+  if(!openMapTableId)return;
+  const el=document.getElementById('mapPendingElapsed');
+  const info=mapPendingState[openMapTableId];
+  if(el)el.textContent = info ? '⏳ Ordine in attesa'+(info.earliestAt?' — '+elapsedLabel(info.earliestAt)+' fa':'') : '';
+}
+
 function renderTableMap(){
   const grid=document.getElementById('mapGrid');
   if(!grid)return;
@@ -582,8 +615,9 @@ function renderTableMap(){
     const pending=mapPendingState[key];
     const occupied=!pending && mapOccupiedState[key];
     const cls = pending ? 'pending' : (occupied ? 'occupied' : '');
-    const info = pending || occupied;
-    const meta = info ? (info.people?info.people+'p':'') : '';
+    let meta='';
+    if(pending)meta='⏳ '+elapsedLabel(pending.earliestAt);
+    else if(occupied)meta=occupied.people?occupied.people+'p':'';
     html+='<div class="map-tile '+cls+'" onclick="openMapTable(\''+key+'\')">'
       +'<div class="map-num">'+n+'</div>'
       +'<div class="map-meta">'+meta+'</div>'
@@ -602,14 +636,22 @@ function goToOrder(tbl){
 
 function openMapTable(tbl){
   openMapTableId=tbl;
+  const gridView=document.getElementById('mapGridView');
+  if(gridView)gridView.style.display='none';
   document.getElementById('mapDrawer').classList.add('open');
   renderMapTableDetail(tbl);
 }
 
+function closeMapDetailView(){
+  openMapTableId=null;
+  const gridView=document.getElementById('mapGridView');
+  if(gridView)gridView.style.display='block';
+  document.getElementById('mapDrawer').classList.remove('open');
+}
+
 function freeTable(tbl){
   db.collection('tableStatus').doc(tbl).set({occupied:false},{merge:true}).then(()=>{
-    document.getElementById('mapDrawer').classList.remove('open');
-    openMapTableId=null;
+    closeMapDetailView();
   }).catch(err=>console.error(err));
 }
 
@@ -674,14 +716,15 @@ async function renderMapTableDetail(tbl){
   const peopleVal=pendingDocs.find(d=>d.people)?.people || occ.people || 1;
   const area=selectedArea[tbl]||'';
 
-  let html='<div class="map-dtitle">🪑 Tavolo <input type="text" value="'+tbl+'" onchange="changeTableNumber(\''+tbl+'\',this.value)" style="width:60px;background:#2a1d19;border:1px solid rgba(212,175,55,0.4);border-radius:6px;color:#d4af37;font-weight:900;font-family:inherit;font-size:16px;padding:3px 6px;text-align:center;"></div>';
+  let html='<button class="decline-btn" style="border-color:#d4af37;color:#d4af37;margin-bottom:14px;" onclick="closeMapDetailView()">🔙 Torna ai Tavoli</button>';
+  html+='<div class="map-dtitle">🪑 Tavolo <input type="text" value="'+tbl+'" onchange="changeTableNumber(\''+tbl+'\',this.value)" style="width:60px;background:#2a1d19;border:1px solid rgba(212,175,55,0.4);border-radius:6px;color:#d4af37;font-weight:900;font-family:inherit;font-size:16px;padding:3px 6px;text-align:center;"></div>';
   html+='<div class="map-dmeta">🔑 Camera <input type="text" value="'+roomVal+'" placeholder="n. (opzionale)" style="width:70px;background:#2a1d19;border:1px solid rgba(212,175,55,0.3);border-radius:6px;color:#f9f1e2;font-family:inherit;font-size:12px;padding:4px 6px;" onchange="changeRoomNumber(\''+tbl+'\',this.value)"> · 👥 <input type="number" min="1" value="'+peopleVal+'" style="width:50px;background:#2a1d19;border:1px solid rgba(212,175,55,0.3);border-radius:6px;color:#f9f1e2;font-family:inherit;font-size:12px;padding:4px 6px;" onchange="changePeopleCount(\''+tbl+'\',this.value)"> persone</div>';
   html+='<div style="margin:10px 0 16px;"><button class="decline-btn" style="border-color:#d4af37;color:#d4af37;" onclick="freeTable(\''+tbl+'\')">🔓 Libera Tavolo</button></div>';
 
   if(pendingDocs.length){
     mapAnyDocId[tbl]=pendingDocs[0].id;
     html+='<div class="order-card" style="margin-bottom:16px;">';
-    html+='  <div class="complete-badge waiting">⏳ Ordine in attesa di approvazione</div>';
+    html+='  <div class="complete-badge waiting" id="mapPendingElapsed">⏳ Ordine in attesa'+(mapPendingState[tbl]&&mapPendingState[tbl].earliestAt?' — '+elapsedLabel(mapPendingState[tbl].earliestAt)+' fa':'')+'</div>';
     html+=buildEditableItemRowsHTML(pendingItems);
     html+='  <div class="add-item-row" style="flex-direction:column;align-items:stretch;">';
     html+='    <div style="display:flex;gap:8px;flex-wrap:wrap;">';
@@ -739,14 +782,21 @@ async function renderMapTableDetail(tbl){
       return;
     }
     let hHtml='';
-    todays.forEach(o=>{
+    todays.forEach((o,i)=>{
+      const roundNum=todays.length-i;
       const total=(o.items||[]).reduce((s,it)=>s+(Number(it.price)||0),0);
       const timeStr=o.__time.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
-      hHtml+='<div class="order-card" style="padding:14px 16px;margin-bottom:10px;">';
-      hHtml+='  <div class="order-count">🟡 Servito alle '+timeStr+(o.approvedByName?' · '+o.approvedByName:'')+'</div>';
+      const cId='mapRound-'+o.id;
+      hHtml+='<div class="order-card" style="padding:0;overflow:hidden;margin-bottom:10px;">';
+      hHtml+='  <div style="padding:14px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;" onclick="toggleMapRound(\''+cId+'\')">';
+      hHtml+='    <span style="font-weight:bold;color:#d4af37;">Round '+roundNum+' — '+timeStr+(o.approvedByName?' · '+o.approvedByName:'')+'</span>';
+      hHtml+='    <span id="'+cId+'-arrow" style="color:#bca07d;">▾</span>';
+      hHtml+='  </div>';
+      hHtml+='  <div id="'+cId+'" style="display:none;padding:0 16px 16px;">';
       hHtml+=buildReadOnlyItemRowsHTML(o.items||[]);
-      hHtml+='  <div class="card-total">Totale: €'+total+'</div>';
-      hHtml+='  <button class="decline-btn" style="border-color:#d4af37;color:#d4af37;" onclick="reprintOrder(\''+o.id+'\')">🖨️ Ristampa</button>';
+      hHtml+='    <div class="card-total">Totale: €'+total+'</div>';
+      hHtml+='    <button class="decline-btn" style="border-color:#d4af37;color:#d4af37;" onclick="reprintOrder(\''+o.id+'\')">🖨️ Ristampa</button>';
+      hHtml+='  </div>';
       hHtml+='</div>';
     });
     slot.outerHTML='<div>'+hHtml+'</div>';
@@ -1038,6 +1088,7 @@ function renderOrders(snapshot){
     container.innerHTML='<div class="empty-state">Nessun ordine in attesa al momento.</div>';
     mapPendingState={};
     pendingGroupsCache={};
+    updateMappaBadge();
     if(document.getElementById('maintab-mappa')&&document.getElementById('maintab-mappa').style.display!=='none')renderTableMap();
     if(openMapTableId)renderMapTableDetail(openMapTableId);
     return;
@@ -1054,8 +1105,11 @@ function renderOrders(snapshot){
   mapPendingState={};
   Object.keys(groups).forEach(tbl=>{
     const peopleVal=groups[tbl].find(d=>d.people)?.people||'';
-    mapPendingState[tbl]={people:peopleVal};
+    const times=groups[tbl].map(d=>d.createdAt?.toDate?.()).filter(Boolean);
+    const earliestAt=times.length?new Date(Math.min(...times.map(t=>t.getTime()))):null;
+    mapPendingState[tbl]={people:peopleVal,earliestAt};
   });
+  updateMappaBadge();
   if(document.getElementById('maintab-mappa')&&document.getElementById('maintab-mappa').style.display!=='none')renderTableMap();
   if(openMapTableId)renderMapTableDetail(openMapTableId);
 
@@ -1369,14 +1423,23 @@ function cancelTable(tbl){
   }).catch(err=>console.error(err));
 }
 
+function stripEmoji(str){
+  return (str||'').replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{2190}-\u{21FF}\u{2B00}-\u{2BFF}\u{FE0F}]/gu,'').replace(/\s{2,}/g,' ').trim();
+}
+
 function buildReceiptHTML(job,tbl,items,showPrice,room,operatorName,billingItems){
   const now=new Date();
   const dateStr=now.toLocaleDateString('it-IT')+' '+now.toLocaleTimeString('it-IT');
   let html='<div class="receipt-table-big">TAVOLO '+tbl+'</div>';
   html+='<div class="receipt-title">'+job.title+'</div>';
   html+='<div class="receipt-meta">'+(room?'Camera: <b>'+room+'</b><br>':'')+dateStr+(operatorName?'<br>Cameriere: '+operatorName:'')+'</div>';
+
+  // Drinks (wine included) are pulled out and printed together under BEVANDE at the end.
+  const foodItems=items.filter(it=>it.category!=='drink');
+  const drinkItems=items.filter(it=>it.category==='drink');
+
   const byTurno={};
-  items.forEach(it=>{
+  foodItems.forEach(it=>{
     const key=it.turno||'—';
     if(!byTurno[key])byTurno[key]=[];
     byTurno[key].push(it);
@@ -1392,20 +1455,42 @@ function buildReceiptHTML(job,tbl,items,showPrice,room,operatorName,billingItems
     byTurno[turno].forEach(it=>{
       const isMenuFisso = it.name==='Menù del Lago Bin';
       const isMenuComponent = it.course==='menu_component';
+      const isDessert = it.course==='dolci' || it.course==='gelato';
       const key=it.name+'||'+(it.detail||'')+'||'+(it.person||'')+'||'+(isMenuFisso?'F':'')+(isMenuComponent?'C':'');
       const existing=grouped.find(g=>g.key===key);
       if(existing){existing.qty++;}
-      else grouped.push({key,name:it.name,detail:it.detail,person:it.person,isMenuFisso,isMenuComponent,qty:1});
+      else grouped.push({key,name:it.name,detail:it.detail,person:it.person,isMenuFisso,isMenuComponent,isDessert,qty:1});
+    });
+    // Order within each turno: alla carta first, then menu fisso/menu items, then dessert last.
+    grouped.sort((a,b)=>{
+      const rank=g=>(g.isMenuFisso||g.isMenuComponent)?1:(g.isDessert?2:0);
+      return rank(a)-rank(b);
     });
     grouped.forEach(g=>{
       const tag = g.isMenuFisso ? ' <span class="menu-fisso-tag">MENU FISSO</span>' : (g.isMenuComponent ? ' <span class="menu-fisso-tag">MENU</span>' : '');
       const qtyTag = g.qty>1 ? ' <span class="rqty">×'+g.qty+'</span>' : '';
-      html+='<div class="receipt-item"><span class="rname">'+(g.person?g.person+' — ':'')+g.name+qtyTag+tag+'</span>';
+      html+='<div class="receipt-item"><span class="rname">'+(g.person?g.person+' — ':'')+stripEmoji(g.name)+qtyTag+tag+'</span>';
       html+='<br>';
-      if(g.detail && g.name!=='Menù del Lago Bin')html+='<span class="rdetail">'+g.detail+'</span>';
+      if(g.detail && g.name!=='Menù del Lago Bin')html+='<span class="rdetail">'+stripEmoji(g.detail)+'</span>';
       html+='</div>';
     });
   });
+
+  if(drinkItems.length){
+    html+='<div class="receipt-turno">BEVANDE</div>';
+    const groupedDrinks=[];
+    drinkItems.forEach(it=>{
+      const key=it.name+'||'+(it.person||'');
+      const existing=groupedDrinks.find(g=>g.key===key);
+      if(existing){existing.qty++;}
+      else groupedDrinks.push({key,name:it.name,person:it.person,qty:1});
+    });
+    groupedDrinks.forEach(g=>{
+      const qtyTag = g.qty>1 ? ' <span class="rqty">×'+g.qty+'</span>' : '';
+      html+='<div class="receipt-item"><span class="rname">'+(g.person?g.person+' — ':'')+stripEmoji(g.name)+qtyTag+'</span></div>';
+    });
+  }
+
   if(showPrice){
     const billing=billingItems||items;
     const total=billing.reduce((s,it)=>s+(Number(it.price)||0),0);
@@ -1580,6 +1665,12 @@ function deleteHistoryOrder(docId){
   if(!confirm('Eliminare definitivamente questo ordine dallo storico?'))return;
   db.collection('orders').doc(docId).delete().then(loadHistory).catch(err=>console.error(err));
 }
+
+// Keep "⏳ X min fa" labels ticking without any extra Firestore reads.
+setInterval(()=>{
+  if(document.getElementById('maintab-mappa')&&document.getElementById('maintab-mappa').style.display!=='none')renderTableMap();
+  refreshMapElapsedOnly();
+},30000);
 </script>
 </body>
 </html>
