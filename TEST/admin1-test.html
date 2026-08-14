@@ -101,11 +101,11 @@ body { font-family: 'Palatino Linotype', Palatino, serif; background: #150e0b; c
 .map-dot-empty { background:#0f2417; border:1px solid #1f5c3a; }
 .map-dot-pending { background:#7a1f1f; border:1px solid #b31e1e; }
 .map-dot-occupied { background:#7a5f16; border:1px solid #d4af37; }
-.map-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(72px,1fr)); gap:10px; }
-.map-tile { background:#00FF00; border:1px solid #00FF00; border-radius:10px; padding:10px 8px; min-height:72px; cursor:pointer; position:relative; transition:transform .12s ease; display:flex; flex-direction:column; justify-content:space-between; }
+.map-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(95px,1fr)); gap:12px; }
+.map-tile { background:#00FF00; border:1px solid #00FF00; border-radius:12px; padding:14px 10px; min-height:90px; cursor:pointer; position:relative; transition:transform .12s ease; display:flex; flex-direction:column; justify-content:space-between; }
 .map-tile:hover { transform:translateY(-2px); }
-.map-tile .map-num { font-size:16px; font-weight:900; color:#000000; }
-.map-tile .map-meta { font-size:10px; color:#0a3d0a; line-height:1.3; }
+.map-tile .map-num { font-size:20px; font-weight:900; color:#000000; }
+.map-tile .map-meta { font-size:11px; color:#0a3d0a; line-height:1.3; }
 .map-tile.pending { background:#b31e1e; border-color:#ff4d4d; animation: maptilejump 0.6s ease-in-out infinite; box-shadow: 0 0 14px rgba(255,77,77,0.7); }
 .map-tile.pending .map-num { color:#fff; }
 .map-tile.pending::after { content:''; position:absolute; top:6px; right:6px; width:7px; height:7px; border-radius:50%; background:#fff; box-shadow:0 0 6px #fff; animation:mappulse 1.4s infinite; }
@@ -136,7 +136,9 @@ body { font-family: 'Palatino Linotype', Palatino, serif; background: #150e0b; c
   .rqty { font-weight: bold; }
   .receipt-online-tag { text-align: center; font-size: 14px; font-weight: bold; border: 1.5px dashed #000; padding: 3px; margin-bottom: 8px; }
   .receipt-meta { font-size: 16px; margin-bottom: 8px; }
-  .receipt-item { font-size: 19px; margin-bottom: 6px; }
+  .receipt-item { font-size: 19px; margin-bottom: 6px; display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+  .receipt-item .rleft { flex:1; }
+  .ritem-price { font-weight:bold; white-space:nowrap; }
   .receipt-item .rname { font-weight: bold; }
   .receipt-item .rdetail { font-size: 17px; }
   .receipt-turno { font-weight: bold; font-size: 16px; margin: 8px 0 4px; border-top: 1px dashed #000; padding-top: 4px; }
@@ -239,6 +241,10 @@ body { font-family: 'Palatino Linotype', Palatino, serif; background: #150e0b; c
           <div id="mapDetailContent"></div>
         </div>
       </div>
+    </div>
+
+    <div id="mapProductPickerOverlay" style="display:none;position:fixed;inset:0;background:#150e0b;z-index:950;overflow-y:auto;padding:20px 16px 60px;">
+      <div id="mapProductPickerContent"></div>
     </div>
   </div>
 </div>
@@ -737,24 +743,67 @@ function buildReadOnlyItemRowsHTML(items){
   return html;
 }
 
-// Editable item rows for the CURRENT pending round — full access: rename, change price, remove.
+// Editable item rows for the CURRENT pending round — grouped by qty with +/- stepper.
+// Rename/price editing only shown when qty===1 (unambiguous which instance to edit).
+let mapItemGroupsTemp=[];
 function buildEditableItemRowsHTML(items){
+  mapItemGroupsTemp=[];
   if(!items||!items.length)return '<div class="empty-state" style="padding:10px;">Nessun articolo.</div>';
-  let html='<div style="margin-top:8px;">';
+  const groups=[];
   items.forEach(it=>{
-    const safeName=(it.name||'').replace(/"/g,'&quot;');
+    const key=it.name+'||'+(it.detail||'')+'||'+(it.person||'')+'||'+(it.turno||'')+'||'+it.price;
+    let g=groups.find(x=>x.key===key);
+    if(!g){g={key,name:it.name,price:it.price,detail:it.detail,turno:it.turno,person:it.person,category:it.category,course:it.course,instances:[]};groups.push(g);}
+    g.instances.push({docId:it.__docId,idx:it.__idx});
+  });
+  let html='<div style="margin-top:8px;">';
+  groups.forEach(g=>{
+    const qty=g.instances.length;
+    const first=g.instances[0];
+    const gi=mapItemGroupsTemp.push(g)-1;
     html+='<div class="item-row" style="align-items:flex-start;flex-wrap:wrap;">';
     html+='  <div class="item-info" style="min-width:150px;">';
-    html+='    <input type="text" value="'+safeName+'" onchange="mapUpdateItemField(\''+it.__docId+'\','+it.__idx+',\'name\',this.value)" style="width:100%;background:#2a1d19;border:1px solid rgba(212,175,55,0.3);border-radius:6px;color:#f9f1e2;font-family:inherit;font-size:13px;padding:6px 8px;margin-bottom:4px;">';
-    if(it.detail)html+='    <div class="item-detail">'+it.detail+'</div>';
-    if(it.turno)html+='    <div class="item-detail">'+it.turno+'</div>';
+    if(qty===1){
+      const safeName=(g.name||'').replace(/"/g,'&quot;');
+      html+='    <input type="text" value="'+safeName+'" onchange="mapUpdateItemField(\''+first.docId+'\','+first.idx+',\'name\',this.value)" style="width:100%;background:#2a1d19;border:1px solid rgba(212,175,55,0.3);border-radius:6px;color:#f9f1e2;font-family:inherit;font-size:13px;padding:6px 8px;margin-bottom:4px;">';
+    }else{
+      html+='    <div class="item-name">'+g.name+'</div>';
+    }
+    if(g.detail)html+='    <div class="item-detail">'+g.detail+'</div>';
+    if(g.turno)html+='    <div class="item-detail">'+g.turno+'</div>';
     html+='  </div>';
-    html+='  <input type="number" value="'+it.price+'" onchange="mapUpdateItemField(\''+it.__docId+'\','+it.__idx+',\'price\',this.value)" style="width:72px;background:#2a1d19;border:1px solid rgba(212,175,55,0.3);border-radius:6px;color:#d4af37;font-weight:bold;font-family:inherit;font-size:13px;padding:6px;text-align:center;">';
-    html+='  <button class="item-remove" onclick="removeItem(\''+it.__docId+'\','+it.__idx+')">✕</button>';
+    if(qty===1){
+      html+='  <input type="number" value="'+g.price+'" onchange="mapUpdateItemField(\''+first.docId+'\','+first.idx+',\'price\',this.value)" style="width:72px;background:#2a1d19;border:1px solid rgba(212,175,55,0.3);border-radius:6px;color:#d4af37;font-weight:bold;font-family:inherit;font-size:13px;padding:6px;text-align:center;">';
+    }else{
+      html+='  <div style="color:#d4af37;font-weight:bold;font-size:13px;white-space:nowrap;">€'+(g.price*qty)+'</div>';
+    }
+    html+='  <div style="display:flex;align-items:center;gap:6px;">';
+    html+='    <button style="border:1.5px solid #d4af37;background:transparent;color:#d4af37;border-radius:50%;width:28px;height:28px;font-size:16px;font-weight:bold;cursor:pointer;font-family:inherit;" onclick="mapChangeItemQty('+gi+',-1)">−</button>';
+    html+='    <span style="min-width:18px;text-align:center;font-weight:bold;color:#d4af37;font-size:14px;">'+qty+'</span>';
+    html+='    <button style="border:1.5px solid #d4af37;background:transparent;color:#d4af37;border-radius:50%;width:28px;height:28px;font-size:16px;font-weight:bold;cursor:pointer;font-family:inherit;" onclick="mapChangeItemQty('+gi+',1)">+</button>';
+    html+='  </div>';
     html+='</div>';
   });
   html+='</div>';
   return html;
+}
+function mapChangeItemQty(gi,delta){
+  const g=mapItemGroupsTemp[gi];
+  if(!g)return;
+  if(delta<0){
+    const last=g.instances[g.instances.length-1];
+    removeItem(last.docId,last.idx);
+  }else{
+    const first=g.instances[0];
+    const ref=db.collection('orders').doc(first.docId);
+    ref.get().then(doc=>{
+      const data=doc.data();
+      const items=(data.items||[]).slice();
+      items.push({name:g.name,price:g.price,category:g.category||'food',course:g.course||'',detail:g.detail||'',person:g.person||'',turno:g.turno||''});
+      const total=items.reduce((s,it)=>s+(Number(it.price)||0),0);
+      return ref.update({items,total});
+    }).catch(err=>console.error(err));
+  }
 }
 function mapUpdateItemField(docId,idx,field,value){
   const ref=db.collection('orders').doc(docId);
@@ -791,26 +840,8 @@ async function renderMapTableDetail(tbl){
     html+='<div class="order-card" style="margin-bottom:16px;">';
     html+='  <div class="complete-badge waiting" id="mapPendingElapsed">⏳ Ordine in attesa'+(mapPendingState[tbl]&&mapPendingState[tbl].earliestAt?' — '+elapsedLabel(mapPendingState[tbl].earliestAt)+' fa':'')+'</div>';
     html+=buildEditableItemRowsHTML(pendingItems);
-    html+='  <div class="add-item-row" style="flex-direction:column;align-items:stretch;">';
-    html+='    <div style="display:flex;gap:8px;flex-wrap:wrap;">';
-    html+='      <select id="mnewcat-'+tbl+'" onchange="mapRenderProductPicker(\''+tbl+'\')"><option value="">📂 Categoria...</option><option value="antipasti">🥗 Antipasti</option><option value="primi">🍝 Primi</option><option value="secondi">🥩 Secondi</option><option value="contorni">🥦 Contorni</option><option value="dolci">🍰 Dolci</option><option value="gelato">🍨 Gelato</option><option value="bevande">🍹 Bevande</option></select>';
-    html+='      <input type="text" id="mnewsearch-'+tbl+'" placeholder="🔎 Cerca piatto..." oninput="mapRenderProductPicker(\''+tbl+'\')" style="flex:1;">';
-    html+='      <select id="mnewturno-'+tbl+'" title="Turno"><option value="">📋 Turno...</option>'+TURNO_OPTIONS.map(t=>'<option value="'+t+'">'+t+'</option>').join('')+'</select>';
-    html+='      <select id="mnewperson-'+tbl+'" title="Persona"><option value="">👤 Persona...</option>'+Array.from({length:peopleVal},(_,i)=>'Persona '+(i+1)).map(p=>'<option value="'+p+'">'+p+'</option>').join('')+'</select>';
-    html+='    </div>';
-    html+='    <div id="mproductlist-'+tbl+'" style="display:flex;flex-direction:column;gap:4px;max-height:160px;overflow-y:auto;margin-top:6px;"></div>';
-    html+='    <div id="mcustomize-'+tbl+'"></div>';
-    html+='    <div style="margin-top:8px;">';
-    html+='      <a href="javascript:void(0)" onclick="mapToggleManualEntry(\''+tbl+'\')" style="color:#bca07d;font-size:12px;text-decoration:underline;">+ Voce manuale (es. vino specifico)</a>';
-    html+='      <div id="mmanualentry-'+tbl+'" style="display:none;gap:8px;flex-wrap:wrap;margin-top:8px;flex-direction:row;">';
-    html+='        <input type="text" id="mnewname-'+tbl+'" placeholder="Nome piatto/bevanda" style="flex:1;min-width:100px;">';
-    html+='        <input type="number" id="mnewprice-'+tbl+'" placeholder="€" style="width:70px;">';
-    html+='        <select id="mnewmancat-'+tbl+'"><option value="food">🍽️ Cibo</option><option value="drink">🍷 Bevanda</option></select>';
-    html+='        <select id="mnewmanturno-'+tbl+'"><option value="">📋 Turno...</option>'+TURNO_OPTIONS.map(t=>'<option value="'+t+'">'+t+'</option>').join('')+'</select>';
-    html+='        <select id="mnewmanperson-'+tbl+'"><option value="">👤 Persona...</option>'+Array.from({length:peopleVal},(_,i)=>'Persona '+(i+1)).map(p=>'<option value="'+p+'">'+p+'</option>').join('')+'</select>';
-    html+='        <button class="add-item-btn" onclick="mapAddManualItem(\''+tbl+'\')">+ Aggiungi</button>';
-    html+='      </div>';
-    html+='    </div>';
+    html+='  <div style="margin:12px 0;">';
+    html+='    <button class="add-item-btn" style="width:100%;padding:13px;font-size:14px;" onclick="openMapProductPicker(\''+tbl+'\')">➕ Aggiungi Prodotto</button>';
     html+='  </div>';
     html+='  <div class="card-total">Totale: €'+pendingTotal+'</div>';
     html+='  <div class="area-toggle" style="margin-bottom:12px;">';
@@ -1037,6 +1068,94 @@ function mapAddManualItem(tbl){
     const total=items.reduce((s,it)=>s+(Number(it.price)||0),0);
     return ref.update({items,total});
   }).then(()=>{nameEl.value='';priceEl.value='';}).catch(err=>console.error(err));
+}
+
+// ── FULL-SCREEN PRODUCT PICKER ──
+// Reuses mapSelectMasterItem / mapRenderCustomizePanel / mapFinalizeMasterItemAdd /
+// mapAddManualItem as-is by treating 'picker' as a pseudo table key, so there is no
+// duplicated add-item logic — only the browsing screen around it is new.
+let mapPickerTable=null;
+let mapPickerCategory='';
+const MAP_PICKER_CATS=[['antipasti','🥗 Antipasti'],['primi','🍝 Primi'],['secondi','🥩 Secondi'],['contorni','🥦 Contorni'],['dolci','🍰 Dolci'],['gelato','🍨 Gelato'],['bevande','🍹 Bevande']];
+
+function openMapProductPicker(tbl){
+  mapPickerTable=tbl;
+  mapPickerCategory='';
+  mapAnyDocId['picker']=mapAnyDocId[tbl];
+  document.getElementById('mapProductPickerOverlay').style.display='block';
+  renderMapProductPickerScreen();
+}
+function closeMapProductPicker(){
+  document.getElementById('mapProductPickerOverlay').style.display='none';
+  mapPickerTable=null;
+  delete mapPendingCustomize['picker'];
+}
+function renderMapProductPickerScreen(){
+  const tbl=mapPickerTable;
+  if(!tbl)return;
+  const occ=mapOccupiedState[tbl]||{};
+  const pendingDocs=pendingGroupsCache[tbl]||[];
+  const peopleVal=pendingDocs.find(d=>d.people)?.people || occ.people || 1;
+  let html='<div style="max-width:900px;margin:0 auto;">';
+  html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px;">';
+  html+='  <h3 style="color:#d4af37;font-size:19px;">➕ Aggiungi Prodotto — Tavolo '+tbl+'</h3>';
+  html+='  <button onclick="closeMapProductPicker()" style="background:rgba(212,175,55,0.15);border:2px solid #d4af37;color:#d4af37;border-radius:12px;padding:11px 20px;font-weight:bold;font-family:inherit;font-size:14px;cursor:pointer;">✕ Chiudi</button>';
+  html+='</div>';
+  html+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">';
+  html+='  <select id="mnewturno-picker" title="Turno"><option value="">📋 Turno...</option>'+TURNO_OPTIONS.map(t=>'<option value="'+t+'">'+t+'</option>').join('')+'</select>';
+  html+='  <select id="mnewperson-picker" title="Persona"><option value="">👤 Persona...</option>'+Array.from({length:peopleVal},(_,i)=>'Persona '+(i+1)).map(p=>'<option value="'+p+'">'+p+'</option>').join('')+'</select>';
+  html+='  <input type="text" id="mnewsearch-picker" placeholder="🔎 Cerca in tutte le categorie..." oninput="renderMapPickerItems()" style="flex:1;min-width:180px;padding:10px 14px;border-radius:10px;border:1px solid rgba(212,175,55,0.4);background:#2a1d19;color:#f9f1e2;font-family:inherit;">';
+  html+='</div>';
+  html+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;" id="mpCatTabs">';
+  MAP_PICKER_CATS.forEach(([key,label])=>{
+    html+='<button class="mgmt-subtab-btn'+(mapPickerCategory===key?' active':'')+'" id="mpcat-'+key+'" onclick="setMapPickerCategory(\''+key+'\')">'+label+'</button>';
+  });
+  html+='</div>';
+  html+='<div id="mpItemGrid" class="mgmt-grid"></div>';
+  html+='<div id="mcustomize-picker"></div>';
+  html+='<div style="margin-top:24px;border-top:1px solid rgba(212,175,55,0.3);padding-top:16px;">';
+  html+='  <a href="javascript:void(0)" onclick="mapToggleManualEntry(\'picker\')" style="color:#bca07d;font-size:13px;text-decoration:underline;">+ Voce manuale (es. vino specifico)</a>';
+  html+='  <div id="mmanualentry-picker" style="display:none;gap:8px;flex-wrap:wrap;margin-top:10px;">';
+  html+='    <input type="text" id="mnewname-picker" placeholder="Nome piatto/bevanda" style="flex:1;min-width:120px;padding:9px 12px;border-radius:8px;border:1px solid rgba(212,175,55,0.4);background:#2a1d19;color:#f9f1e2;font-family:inherit;">';
+  html+='    <input type="number" id="mnewprice-picker" placeholder="€" style="width:80px;padding:9px 12px;border-radius:8px;border:1px solid rgba(212,175,55,0.4);background:#2a1d19;color:#f9f1e2;font-family:inherit;">';
+  html+='    <select id="mnewmancat-picker"><option value="food">🍽️ Cibo</option><option value="drink">🍷 Bevanda</option></select>';
+  html+='    <select id="mnewmanturno-picker"><option value="">📋 Turno...</option>'+TURNO_OPTIONS.map(t=>'<option value="'+t+'">'+t+'</option>').join('')+'</select>';
+  html+='    <select id="mnewmanperson-picker"><option value="">👤 Persona...</option>'+Array.from({length:peopleVal},(_,i)=>'Persona '+(i+1)).map(p=>'<option value="'+p+'">'+p+'</option>').join('')+'</select>';
+  html+='    <button class="add-item-btn" onclick="mapAddManualItem(\'picker\')">+ Aggiungi</button>';
+  html+='  </div>';
+  html+='</div>';
+  html+='</div>';
+  document.getElementById('mapProductPickerContent').innerHTML=html;
+  renderMapPickerItems();
+}
+function setMapPickerCategory(key){
+  mapPickerCategory = mapPickerCategory===key ? '' : key;
+  document.querySelectorAll('#mpCatTabs .mgmt-subtab-btn').forEach(b=>b.classList.remove('active'));
+  const activeBtn=document.getElementById('mpcat-'+mapPickerCategory);
+  if(activeBtn)activeBtn.classList.add('active');
+  renderMapPickerItems();
+}
+function renderMapPickerItems(){
+  const grid=document.getElementById('mpItemGrid');
+  if(!grid)return;
+  const q=(document.getElementById('mnewsearch-picker')?.value||'').trim().toLowerCase();
+  let results=ALL_MENU_ITEMS;
+  if(mapPickerCategory)results=results.filter(it=>it.course===mapPickerCategory);
+  if(q)results=results.filter(it=>it.name.toLowerCase().includes(q));
+  if(!mapPickerCategory && !q){
+    grid.innerHTML='<div class="mgmt-no-results">Scegli una categoria qui sopra, oppure cerca un articolo.</div>';
+    return;
+  }
+  if(!results.length){
+    grid.innerHTML='<div class="mgmt-no-results">Nessun risultato.</div>';
+    return;
+  }
+  grid.innerHTML=results.map(it=>
+    '<div class="mgmt-row" style="cursor:pointer;" onclick="mapSelectMasterItem(\'picker\',\''+it.id+'\')">'
+    +'<span class="mgmt-name">'+it.name+'</span>'
+    +'<span style="color:#d4af37;font-weight:bold;">€'+it.price+'</span>'
+    +'</div>'
+  ).join('');
 }
 
 // ── USER DISPLAY NAMES & ADMIN ROLE ──
@@ -1524,7 +1643,7 @@ function buildReceiptHTML(job,tbl,items,showPrice,room,operatorName,billingItems
       const key=it.name+'||'+(it.detail||'')+'||'+(it.person||'')+'||'+(isMenuFisso?'F':'')+(isMenuComponent?'C':'');
       const existing=grouped.find(g=>g.key===key);
       if(existing){existing.qty++;}
-      else grouped.push({key,name:it.name,detail:it.detail,person:it.person,isMenuFisso,isMenuComponent,isDessert,qty:1});
+      else grouped.push({key,name:it.name,detail:it.detail,person:it.person,isMenuFisso,isMenuComponent,isDessert,price:it.price,qty:1});
     });
     // Order within each turno: alla carta first, then menu fisso/menu items, then dessert last.
     grouped.sort((a,b)=>{
@@ -1534,10 +1653,10 @@ function buildReceiptHTML(job,tbl,items,showPrice,room,operatorName,billingItems
     grouped.forEach(g=>{
       const tag = g.isMenuFisso ? ' <span class="menu-fisso-tag">MENU FISSO</span>' : (g.isMenuComponent ? ' <span class="menu-fisso-tag">MENU</span>' : '');
       const qtyTag = g.qty>1 ? ' <span class="rqty">×'+g.qty+'</span>' : '';
-      html+='<div class="receipt-item"><span class="rname">'+(g.person?g.person+' — ':'')+stripEmoji(g.name)+qtyTag+tag+'</span>';
-      html+='<br>';
-      if(g.detail && g.name!=='Menù del Lago Bin')html+='<span class="rdetail">'+stripEmoji(g.detail)+'</span>';
-      html+='</div>';
+      const lineTotal=(Number(g.price)||0)*g.qty;
+      html+='<div class="receipt-item"><div class="rleft"><span class="rname">'+(g.person?g.person+' — ':'')+stripEmoji(g.name)+qtyTag+tag+'</span>';
+      if(g.detail && g.name!=='Menù del Lago Bin')html+='<br><span class="rdetail">'+stripEmoji(g.detail)+'</span>';
+      html+='</div><span class="ritem-price">€'+lineTotal+'</span></div>';
     });
   });
 
@@ -1551,13 +1670,14 @@ function buildReceiptHTML(job,tbl,items,showPrice,room,operatorName,billingItems
       const key=it.name+'||'+(showDetail?it.detail:'')+'||'+(it.person||'');
       const existing=groupedDrinks.find(g=>g.key===key);
       if(existing){existing.qty++;}
-      else groupedDrinks.push({key,name:it.name,detail:showDetail?it.detail:'',person:it.person,qty:1});
+      else groupedDrinks.push({key,name:it.name,detail:showDetail?it.detail:'',person:it.person,price:it.price,qty:1});
     });
     groupedDrinks.forEach(g=>{
       const qtyTag = g.qty>1 ? ' <span class="rqty">×'+g.qty+'</span>' : '';
-      html+='<div class="receipt-item"><span class="rname">'+(g.person?g.person+' — ':'')+stripEmoji(g.name)+qtyTag+'</span>';
+      const lineTotal=(Number(g.price)||0)*g.qty;
+      html+='<div class="receipt-item"><div class="rleft"><span class="rname">'+(g.person?g.person+' — ':'')+stripEmoji(g.name)+qtyTag+'</span>';
       if(g.detail)html+='<br><span class="rdetail">'+stripEmoji(g.detail)+'</span>';
-      html+='</div>';
+      html+='</div><span class="ritem-price">€'+lineTotal+'</span></div>';
     });
   }
 
