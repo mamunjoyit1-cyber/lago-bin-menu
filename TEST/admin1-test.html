@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Lago Bin – Admin Dashboard (TEST — con Mappa Tavoli)</title>
 <style>
+/* ── RECEIPT TYPOGRAPHY — self-hosted Montserrat (print only) ──
+   Files live in fonts/ next to this HTML file on GitHub Pages. */
+@font-face { font-family: 'Montserrat'; src: url('fonts/Montserrat-Regular.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Montserrat'; src: url('fonts/Montserrat-Medium.woff2') format('woff2'); font-weight: 500; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Montserrat'; src: url('fonts/Montserrat-SemiBold.woff2') format('woff2'); font-weight: 600; font-style: normal; font-display: swap; }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Palatino Linotype', Palatino, serif; background: #150e0b; color: #f9f1e2; min-height: 100vh; }
 .header { background: linear-gradient(135deg, #0f0303 0%, #260707 50%, #0f0303 100%); padding: 24px 20px; text-align: center; border-bottom: 4px solid #d4af37; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
@@ -127,27 +132,58 @@ body { font-family: 'Palatino Linotype', Palatino, serif; background: #150e0b; c
   @page { size: 72mm auto; margin: 0; }
   body * { visibility: hidden; }
   #print-area, #print-area * { visibility: visible; }
-  #print-area { display: block !important; position: absolute; top: 0; left: 0; width: 72mm; padding: 4mm; font-family: 'Courier New', monospace; color: #000; }
-  .receipt-table-big { text-align: center; font-size: 27px; font-weight: bold; margin-bottom: 4px; letter-spacing: 1px; }
-  .receipt-meta-row { font-size: 14px; display: flex; justify-content: space-between; margin-bottom: 2px; }
-  .receipt-tavolo-box { border: 2px solid #000; font-size: 20px; font-weight: bold; padding: 3px 6px; margin: 6px 0; display: flex; justify-content: space-between; }
-  .receipt-divider-line { border-top: 1px solid #000; margin: 6px 0; }
-  .receipt-footer-row { font-size: 12px; border-top: 1px dashed #000; padding-top: 4px; margin-top: 10px; display: flex; justify-content: space-between; }
-  .rqty { font-weight: bold; }
-  .receipt-online-tag { text-align: center; font-size: 14px; font-weight: bold; border: 1.5px dashed #000; padding: 3px; margin-bottom: 8px; }
-  .receipt-meta { font-size: 16px; margin-bottom: 8px; }
-  .receipt-item { font-size: 19px; margin-bottom: 6px; display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+
+  /* ── RECEIPT DESIGN TOKENS — single source of truth ──
+     When this system is ported to React Native / ESC-POS in the future,
+     these values map 1:1 onto that renderer's style spec. Nothing about
+     these tokens is tied to "browser printing" — they describe the
+     receipt's typography and spacing contract, independent of how it's
+     eventually rendered. */
+  #print-area {
+    --receipt-font: 'Montserrat', -apple-system, sans-serif;
+    --w-regular: 400;
+    --w-medium: 500;
+    --w-semibold: 600;
+    --size-heading: 23px;   /* Main heading — TAVOLO N */
+    --size-important: 22px; /* Tavolo/important info — TOTALE */
+    --size-section: 21px;   /* TURNO / section heading */
+    --size-dish: 19px;      /* Dish/menu name */
+    --size-normal: 18px;    /* Normal text — meta line */
+    --size-desc: 16px;      /* Description / detail */
+    --size-footer: 16px;    /* Footer */
+    --sp-after-heading: 10px;
+    --sp-after-box: 10px;
+    --sp-section-gap: 14px;
+    --sp-name-desc: 4px;
+    --sp-before-footer: 16px;
+
+    display: block !important; position: absolute; top: 0; left: 0; width: 72mm; padding: 4mm;
+    font-family: var(--receipt-font); color: #000;
+  }
+
+  .receipt-table-big { text-align: center; font-size: var(--size-heading); font-weight: var(--w-semibold); margin-bottom: var(--sp-after-heading); letter-spacing: 0.5px; }
+  .receipt-title { text-align: center; font-size: var(--size-normal); font-weight: var(--w-medium); margin-bottom: 6px; color: #333; }
+  .receipt-meta { font-size: var(--size-normal); font-weight: var(--w-regular); line-height: 1.5; margin-bottom: var(--sp-after-box); padding-bottom: var(--sp-after-box); border-bottom: 1px solid #000; }
+  .receipt-meta b { font-weight: var(--w-semibold); }
+
+  .receipt-turno { text-align: center; font-weight: var(--w-semibold); font-size: var(--size-section); margin: var(--sp-section-gap) 0 8px; padding-top: 10px; border-top: 1px dashed #000; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  .receipt-item { font-size: var(--size-dish); font-weight: var(--w-regular); margin-bottom: 10px; display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
   .receipt-item .rleft { flex:1; }
-  .ritem-price { font-weight:bold; white-space:nowrap; }
-  .receipt-item .rname { font-weight: bold; }
-  .receipt-item .rdetail { font-size: 17px; }
-  .receipt-turno { font-weight: bold; font-size: 16px; margin: 8px 0 4px; border-top: 1px dashed #000; padding-top: 4px; }
-  .menu-fisso-tag { font-size: 10px; font-weight: bold; border: 1px solid #000; border-radius: 3px; padding: 1px 5px; margin-left: 4px; letter-spacing: 0.5px; white-space: nowrap; }
-  .receipt-total { border-top: 2px solid #000; margin-top: 10px; padding-top: 6px; font-size: 19px; font-weight: bold; text-align: right; }
-  .receipt-divider { border-top: 2px dashed #000; margin: 12px 0 8px; }
-  .person-summary-title { font-weight: bold; font-size: 12px; text-align: center; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
-  .person-summary-block { font-size: 11px; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px dotted #999; }
-  .person-summary-name { font-weight: bold; font-size: 12px; margin-bottom: 2px; }
+  .receipt-item .rname { font-weight: var(--w-medium); }
+  .receipt-item .rdetail { display:block; font-size: var(--size-desc); font-weight: var(--w-regular); color: #333; margin-top: var(--sp-name-desc); }
+  .ritem-price { font-weight: var(--w-medium); font-size: var(--size-dish); white-space: nowrap; }
+  .rqty { font-weight: var(--w-medium); }
+  .menu-fisso-tag { font-size: 12px; font-weight: var(--w-medium); border: 1px solid #000; border-radius: 4px; padding: 1px 6px; margin-left: 4px; letter-spacing: 0.3px; white-space: nowrap; }
+
+  .receipt-total { border-top: 1.5px solid #000; margin-top: 12px; padding-top: 10px; font-size: var(--size-important); font-weight: var(--w-semibold); text-align: right; }
+  .receipt-online-tag { text-align: center; font-size: var(--size-desc); font-weight: var(--w-medium); border: 1.5px dashed #000; border-radius: 4px; padding: 6px; margin-top: 10px; }
+  .receipt-footer { text-align: center; font-size: var(--size-footer); font-weight: var(--w-medium); letter-spacing: 1px; margin-top: var(--sp-before-footer); padding-top: 10px; border-top: 1px solid #000; text-transform: uppercase; }
+
+  .receipt-divider { border-top: 1px dashed #000; margin: 12px 0 8px; }
+  .person-summary-title { font-weight: var(--w-semibold); font-size: 15px; text-align: center; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .person-summary-block { font-size: var(--size-desc); font-weight: var(--w-regular); margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px dotted #999; }
+  .person-summary-name { font-weight: var(--w-medium); font-size: var(--size-desc); margin-bottom: 2px; }
   .person-summary-item { margin-left: 8px; }
   .person-summary-subtotal { text-align: right; font-weight: bold; font-size: 11px; margin-top: 2px; }
 }
@@ -770,7 +806,14 @@ function buildEditableItemRowsHTML(items){
       html+='    <div class="item-name">'+g.name+'</div>';
     }
     if(g.detail)html+='    <div class="item-detail">'+g.detail+'</div>';
-    if(g.turno)html+='    <div class="item-detail">'+g.turno+'</div>';
+    if(qty===1){
+      html+='    <select onchange="mapUpdateItemField(\''+first.docId+'\','+first.idx+',\'turno\',this.value)" style="margin-top:4px;padding:4px 6px;border-radius:6px;border:1px solid rgba(212,175,55,0.3);background:#2a1d19;color:#bca07d;font-family:inherit;font-size:11px;">';
+      html+='<option value=""'+(!g.turno?' selected':'')+'>📋 Nessun turno</option>';
+      TURNO_OPTIONS.forEach(t=>{ html+='<option value="'+t+'"'+(g.turno===t?' selected':'')+'>'+t+'</option>'; });
+      html+='</select>';
+    }else if(g.turno){
+      html+='    <div class="item-detail">'+g.turno+'</div>';
+    }
     html+='  </div>';
     if(qty===1){
       html+='  <input type="number" value="'+g.price+'" onchange="mapUpdateItemField(\''+first.docId+'\','+first.idx+',\'price\',this.value)" style="width:72px;background:#2a1d19;border:1px solid rgba(212,175,55,0.3);border-radius:6px;color:#d4af37;font-weight:bold;font-family:inherit;font-size:13px;padding:6px;text-align:center;">';
@@ -1044,6 +1087,7 @@ function mapFinalizeMasterItemAdd(tbl,directItem,directDetail){
     delete mapPendingCustomize[tbl];
     mapRenderProductPicker(tbl);
     mapRenderCustomizePanel(tbl);
+    if(tbl==='picker')showPickerToast('✅ '+item.name+' aggiunto all\'ordine!');
   }).catch(err=>console.error(err));
 }
 function mapAddManualItem(tbl){
@@ -1067,7 +1111,10 @@ function mapAddManualItem(tbl){
     items.push({name,price,category,course:category==='drink'?'bevande':'manuale',detail:'',person,turno});
     const total=items.reduce((s,it)=>s+(Number(it.price)||0),0);
     return ref.update({items,total});
-  }).then(()=>{nameEl.value='';priceEl.value='';}).catch(err=>console.error(err));
+  }).then(()=>{
+    nameEl.value='';priceEl.value='';
+    if(tbl==='picker')showPickerToast('✅ '+name+' aggiunto all\u2019ordine!');
+  }).catch(err=>console.error(err));
 }
 
 // ── FULL-SCREEN PRODUCT PICKER ──
@@ -1077,6 +1124,19 @@ function mapAddManualItem(tbl){
 let mapPickerTable=null;
 let mapPickerCategory='';
 const MAP_PICKER_CATS=[['antipasti','🥗 Antipasti'],['primi','🍝 Primi'],['secondi','🥩 Secondi'],['contorni','🥦 Contorni'],['dolci','🍰 Dolci'],['gelato','🍨 Gelato'],['bevande','🍹 Bevande']];
+
+function showPickerToast(msg){
+  const el=document.getElementById('mpToast');
+  if(!el)return;
+  el.textContent=msg;
+  el.style.display='block';
+  el.style.opacity='1';
+  clearTimeout(window.__mpToastTimer);
+  window.__mpToastTimer=setTimeout(()=>{
+    el.style.opacity='0';
+    setTimeout(()=>{ if(el)el.style.display='none'; },300);
+  },1800);
+}
 
 function openMapProductPicker(tbl){
   mapPickerTable=tbl;
@@ -1101,6 +1161,7 @@ function renderMapProductPickerScreen(){
   html+='  <h3 style="color:#d4af37;font-size:19px;">➕ Aggiungi Prodotto — Tavolo '+tbl+'</h3>';
   html+='  <button onclick="closeMapProductPicker()" style="background:rgba(212,175,55,0.15);border:2px solid #d4af37;color:#d4af37;border-radius:12px;padding:11px 20px;font-weight:bold;font-family:inherit;font-size:14px;cursor:pointer;">✕ Chiudi</button>';
   html+='</div>';
+  html+='<div id="mpToast" style="display:none;background:#1e5c2e;border:1px solid #4caf50;color:#c8ffd4;padding:11px 16px;border-radius:10px;margin-bottom:14px;font-weight:bold;font-size:14px;transition:opacity 0.3s;"></div>';
   html+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">';
   html+='  <select id="mnewturno-picker" title="Turno"><option value="">📋 Turno...</option>'+TURNO_OPTIONS.map(t=>'<option value="'+t+'">'+t+'</option>').join('')+'</select>';
   html+='  <select id="mnewperson-picker" title="Persona"><option value="">👤 Persona...</option>'+Array.from({length:peopleVal},(_,i)=>'Persona '+(i+1)).map(p=>'<option value="'+p+'">'+p+'</option>').join('')+'</select>';
@@ -1652,7 +1713,7 @@ function buildReceiptHTML(job,tbl,items,showPrice,room,operatorName,billingItems
     });
     grouped.forEach(g=>{
       const tag = g.isMenuFisso ? ' <span class="menu-fisso-tag">MENU FISSO</span>' : (g.isMenuComponent ? ' <span class="menu-fisso-tag">MENU</span>' : '');
-      const qtyTag = g.qty>1 ? ' <span class="rqty">×'+g.qty+'</span>' : '';
+      const qtyTag = ' <span class="rqty">×'+g.qty+'</span>';
       const lineTotal=(Number(g.price)||0)*g.qty;
       html+='<div class="receipt-item"><div class="rleft"><span class="rname">'+(g.person?g.person+' — ':'')+stripEmoji(g.name)+qtyTag+tag+'</span>';
       if(g.detail && g.name!=='Menù del Lago Bin')html+='<br><span class="rdetail">'+stripEmoji(g.detail)+'</span>';
@@ -1673,7 +1734,7 @@ function buildReceiptHTML(job,tbl,items,showPrice,room,operatorName,billingItems
       else groupedDrinks.push({key,name:it.name,detail:showDetail?it.detail:'',person:it.person,price:it.price,qty:1});
     });
     groupedDrinks.forEach(g=>{
-      const qtyTag = g.qty>1 ? ' <span class="rqty">×'+g.qty+'</span>' : '';
+      const qtyTag = ' <span class="rqty">×'+g.qty+'</span>';
       const lineTotal=(Number(g.price)||0)*g.qty;
       html+='<div class="receipt-item"><div class="rleft"><span class="rname">'+(g.person?g.person+' — ':'')+stripEmoji(g.name)+qtyTag+'</span>';
       if(g.detail)html+='<br><span class="rdetail">'+stripEmoji(g.detail)+'</span>';
@@ -1687,6 +1748,7 @@ function buildReceiptHTML(job,tbl,items,showPrice,room,operatorName,billingItems
     html+='<div class="receipt-total">TOTALE: €'+total+'</div>';
     html+='<div class="receipt-online-tag">🌐 ORDINE ONLINE — Da inserire nel gestionale</div>';
   }
+  html+='<div class="receipt-footer">Buon Appetito · Grazie</div>';
   return html;
 }
 
