@@ -130,6 +130,12 @@ body { font-family: 'Palatino Linotype', Palatino, serif; background: #150e0b; c
 .cart-badge.pulse { animation: badgePulse 0.4s ease; }
 .scroll-top-btn { position: fixed; bottom: 20px; left: 16px; background: rgba(212,175,55,0.15); border: 2px solid #d4af37; color: #d4af37; width: 44px; height: 44px; border-radius: 50%; cursor: pointer; display: none; align-items: center; justify-content: center; font-size: 19px; z-index: 199; box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
 .scroll-top-btn.show { display: flex; }
+.pwa-refresh-btn { display: none; position: fixed; top: 14px; right: 14px; width: 44px; height: 44px; border-radius: 50%; background: rgba(21,14,11,0.92); border: 2px solid #d4af37; color: #d4af37; font-size: 19px; align-items: center; justify-content: center; cursor: pointer; z-index: 1500; box-shadow: 0 4px 12px rgba(0,0,0,0.5); transition: transform 0.35s ease; }
+.pwa-refresh-btn.show { display: flex; }
+.pwa-refresh-btn.spinning { transform: rotate(360deg); }
+.pwa-refresh-badge { position: absolute; top: -3px; right: -3px; width: 14px; height: 14px; border-radius: 50%; background: #e74c3c; border: 2px solid #150e0b; display: none; }
+.pwa-refresh-badge.show { display: block; animation: pwaBadgePulse 1.6s infinite; }
+@keyframes pwaBadgePulse { 0%,100%{ box-shadow: 0 0 0 0 rgba(231,76,60,0.6); } 50%{ box-shadow: 0 0 0 6px rgba(231,76,60,0); } }
 .cart-panel { display: none; position: fixed; bottom: 80px; right: 16px; width: 310px; background: #221815; border: 2px solid #d4af37; border-radius: 16px; padding: 16px; z-index: 200; box-shadow: 0 8px 30px rgba(0,0,0,0.6); max-height: 72vh; overflow-y: auto; }
 .cart-panel.open { display: block; }
 .cart-title { color: #d4af37; font-size: 14px; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 12px; border-bottom: 1px solid rgba(212,175,55,0.3); padding-bottom: 8px; }
@@ -603,6 +609,9 @@ body.text-large .add-order-btn { font-size: 14.5px; }
 
 <!-- CART FAB -->
 <button class="scroll-top-btn" id="scrollTopBtn" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Torna su / Back to top">⬆️</button>
+<button class="pwa-refresh-btn" id="pwaRefreshBtn" onclick="forceAppRefresh()" title="Aggiorna / Refresh">
+  🔄<span class="pwa-refresh-badge" id="pwaRefreshBadge"></span>
+</button>
 <div class="cart-fab" onclick="toggleCart()">
   🛒 <span data-it="Ordine" data-fr="Commande" data-en="Order" data-de="Bestellung">Ordine</span>
   <span class="cart-badge" id="cart-badge">0</span>
@@ -1891,7 +1900,44 @@ window.addEventListener('scroll', ()=>{
   btn.classList.toggle('show', window.scrollY>400);
 });
 
-document.addEventListener('DOMContentLoaded',()=>{loadCartFromStorage();applyFontSizePref();populateTableSelect();renderAllBarSections();updateCart();renderInlineGelato();applyMenuAvailability();refreshRepeatOrderButton();updateOfflineBar();});
+// ── PWA UPDATE CHECK & REFRESH BUTTON (for home-screen installed app) ──
+// ⚠️ Bump this string every time you redeploy the site, and match it in version.json
+const APP_VERSION = '2026-08-15-1';
+function isStandaloneApp(){
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+}
+function forceAppRefresh(){
+  const btn=document.getElementById('pwaRefreshBtn');
+  if(btn){ btn.classList.add('spinning'); }
+  const url = window.location.pathname + '?_r=' + Date.now();
+  window.location.href = url;
+}
+async function checkForAppUpdate(){
+  try{
+    const res = await fetch('version.json?_=' + Date.now(), { cache: 'no-store' });
+    if(!res.ok) return;
+    const data = await res.json();
+    const badge = document.getElementById('pwaRefreshBadge');
+    if(!badge) return;
+    if(data.version && data.version !== APP_VERSION){
+      badge.classList.add('show');
+    }else{
+      badge.classList.remove('show');
+    }
+  }catch(e){ /* offline or file missing — ignore silently */ }
+}
+function initPwaRefreshButton(){
+  const btn=document.getElementById('pwaRefreshBtn');
+  if(!btn) return;
+  if(isStandaloneApp()){
+    btn.classList.add('show');
+    checkForAppUpdate();
+    setInterval(checkForAppUpdate, 5*60*1000);
+    document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) checkForAppUpdate(); });
+  }
+}
+
+document.addEventListener('DOMContentLoaded',()=>{loadCartFromStorage();applyFontSizePref();populateTableSelect();renderAllBarSections();updateCart();renderInlineGelato();applyMenuAvailability();refreshRepeatOrderButton();updateOfflineBar();initPwaRefreshButton();});
 window.addEventListener('load',()=>{renderAllBarSections();});
 document.addEventListener('click',e=>{
   if(!e.target.closest('.translate-wrap'))closeDropdown();
