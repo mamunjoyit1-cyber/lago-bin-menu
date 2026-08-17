@@ -594,6 +594,16 @@ function updateItemPrice(itemId,newPrice){
   if(isNaN(p)||p<0)return;
   db.collection('menuPrices').doc(itemId).set({price:p},{merge:true}).catch(err=>console.error(err));
 }
+// Explicit edit action for the ✏️ button — a stray tap/scroll can never
+// change a price by accident, since this requires typing a new value into
+// the prompt and confirming (Cancel leaves everything untouched).
+function promptEditPrice(itemId,currentPrice){
+  const input=prompt('Nuovo prezzo (€):', currentPrice);
+  if(input===null)return; // cancelled
+  const p=Number(String(input).replace(',','.'));
+  if(isNaN(p)||p<0){ alert('Prezzo non valido.'); return; }
+  updateItemPrice(itemId,p);
+}
 let activeMgmtSubTab='piatti';
 let mgmtSearchQuery='';
 let showOnlyDisabled=false;
@@ -624,8 +634,8 @@ function mgmtRow(it,state,forcePrice){
   let html='<div class="mgmt-row"><span class="mgmt-name">'+it.name+'</span>';
   html+='<div style="display:flex;align-items:center;gap:8px;">';
   if(hasPrice){
-    html+='<span style="color:#d4af37;font-weight:bold;font-size:12px;">€</span>';
-    html+='<input type="number" step="0.50" min="0" value="'+priceVal+'" onchange="updateItemPrice(\''+it.id+'\',this.value)" style="width:60px;padding:5px 6px;border-radius:6px;border:1px solid rgba(212,175,55,0.4);background:#1a110e;color:#f9f1e2;font-family:inherit;font-size:12px;text-align:center;">';
+    html+='<span style="color:#d4af37;font-weight:bold;font-size:13px;white-space:nowrap;">€'+priceVal+'</span>';
+    html+='<button type="button" onclick="promptEditPrice(\''+it.id+'\','+priceVal+')" style="background:rgba(212,175,55,0.15);border:1px solid rgba(212,175,55,0.4);color:#d4af37;border-radius:6px;padding:5px 9px;font-size:12px;cursor:pointer;font-family:inherit;">✏️</button>';
   }
   html+='<div class="mgmt-switch '+(isOn?'on':'')+'" onclick="toggleAvailability(\''+it.id+'\','+(!isOn)+')"><div class="knob"></div></div>';
   html+='</div></div>';
