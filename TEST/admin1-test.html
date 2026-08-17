@@ -419,107 +419,130 @@ const ALL_MENU_ITEMS = [
 ];
 const COTTURA_OPTIONS=['🔴 Al Sangue','🟠 Blue','🟡 Media Cottura','✅ Ben Cotto'];
 
+// ── VINO DELLA CASA (house wine — from the real carta-dei-vini.html) ──
+// Two separate pricing systems there:
+//  1) CASA_SIMPLE_WINES: 5 individually-priced house wines (glass only)
+//  2) HOUSE_WINE_KIND_PRICES: one shared price per size (calice/0.5L/0.25L),
+//     applied the same across rosso/bianco/rosato
+const HOUSE_WINE_TIERS = [
+  {id:'vdc_calice',name:'Vino della Casa al Calice (Rosso/Bianco/Rosato) — prezzo unico',price:3},
+  {id:'vdc_05',name:'Vino della Casa Caraffa 0,5L (Rosso/Bianco/Rosato) — prezzo unico',price:8},
+  {id:'vdc_025',name:'Vino della Casa Caraffa 0,25L (Rosso/Bianco/Rosato) — prezzo unico',price:6},
+  {id:'housewine_prosecco',name:'Prosecco DOC',price:5},
+  {id:'housewine_bollicine',name:'Bollicine',price:5},
+  {id:'housewine_rossese',name:'Rossese',price:5},
+  {id:'housewine_vermentino',name:'Vermentino',price:5},
+  {id:'housewine_pigato',name:'Pigato',price:5}
+];
+// ── MENU FISSI (set menu packages — from index.html PKG_CONFIG) ──
+const PKG_ITEMS = [
+  {id:'pkg_lago_bin',name:'Menù del Lago Bin',price:45},
+  {id:'pkg_gastro',name:'Menù Gastronomico',price:40},
+  {id:'pkg_degu',name:'Menù Degustazione',price:30},
+  {id:'pkg_bambini',name:'Menù Bambini (4/10 Anni)',price:15}
+];
+
 // ── WINE LIST (Carta dei Vini) — for availability toggling only ──
 const WINE_ITEMS = [
-  {id:'bollicine-lago',name:'Le Bollicine del Lago'},
-  {id:'lago-bianco',name:'Lago Bianco'},
-  {id:'lago-rose',name:'Lago Rosè'},
-  {id:'lago-rosso',name:'Lago Rosso'},
-  {id:'bolle-lago',name:'Le Bolle del Lago'},
-  {id:'prosecco-valdobbiadene',name:'Prosecco di Valdobbiadene Superiore Extra Brut'},
-  {id:'prosecco-rose',name:'Prosecco Rosé Extra Dry'},
-  {id:'franciacorta-berlucchi',name:"Franciacorta Brut '61 – Berlucchi"},
-  {id:'franciacorta-manti',name:'Franciacorta Brut – Manti'},
-  {id:'cuvee-lago-bin',name:'Cuveè Lago Bin'},
-  {id:'gardet',name:'Gardet "Tradition"'},
-  {id:'veuve-clicquot',name:'Veuve Cliquot'},
-  {id:'michel-tixier',name:'Michel Tixier'},
-  {id:'deutz',name:'Deutz'},
-  {id:'gh-mumm',name:'G H Mumm'},
-  {id:'ruinart-magnum',name:'Ruinart "Magnum"'},
-  {id:'laurent-perrier',name:'Laurent Perrier'},
-  {id:'don-perignon',name:'Don Perignon'},
-  {id:'vermentino-poggio-elmo',name:"Vermentino RLP – Poggio dell' Elmo"},
-  {id:'vermentino-terre-bianche',name:'Vermentino RLP – Terre Bianche'},
-  {id:'vermentino-foresti',name:'Vermentino RLP – Foresti'},
-  {id:'pigato-soli-foresti',name:'Pigato RLP – I Soli – Foresti'},
-  {id:'pigato-nemu',name:'Pigato RLP – Nemu'},
-  {id:'pigato-cygnus',name:'Pigato RLP Cygnus – Poggio dei Gorleri'},
-  {id:'tabaka-ka-mancine',name:'Tabaka (Tabaka e Vermentino) – Ka Mancine'},
-  {id:'flavia-foresti',name:'Flavia (Vermentino e Pigato) – Foresti'},
-  {id:'vermentino-trecoli-lombardi',name:'Vermentino "Treçoli" – Lombardi'},
-  {id:'rossese-poggi-elmo-2022',name:"Rossese di Dolceacqua – Poggi dell' Elmo"},
-  {id:'rossese-pini-2022',name:'Rossese di Dolceacqua Superiore Pini'},
-  {id:'rossese-cima-tramontina',name:'Rossese di Dolceacqua Cima Tramontina – Du Nemu'},
-  {id:'rossese-superiore-nemu-2021',name:'Rossese di Dolceacqua Superiore – Du Nemu'},
-  {id:'rossese-foresti-2022',name:'Rossese di Dolceacqua – Foresti'},
-  {id:'rossese-luvaira-foresti',name:'Rossese di Dolceacqua Luvaira – Foresti'},
-  {id:'rossese-beragna-ka-mancine',name:'Rossese di Dolceacqua Beragna – Ka Mancine'},
-  {id:'rossese-galeae-2022',name:'Rossese di Dolceacqua Galeae – Ka Mancine'},
-  {id:'rossese-ange-2024',name:'Rossese di Dolceacqua Ange – Ka Mancine'},
-  {id:'rossese-terre-bianche-2022',name:'Rossese di Dolceacqua – Terre Bianche'},
-  {id:'rossese-bricco-arcagna',name:'Rossese di Dolceacqua Bricco Arcagna – Terre Bianche'},
-  {id:'rossese-testalonga',name:'Rossese di Dolceacqua Testalonga'},
-  {id:'roccese-masala',name:'Roccese – Masala'},
-  {id:'roccese-barricato-masala',name:'Roccese Barricato – Masala'},
-  {id:'rossese-dolceacqua-generic',name:'Rossese di Dolceacqua Doc Posaù'},
-  {id:'rossese-peverelli',name:'Rossese di Dolceacqua Superiore Peverelli'},
-  {id:'roccese-du-nemu',name:'Roccese dolceacqua et rossa du nemu'},
-  {id:'roccese-bucciardino',name:'Roccese dolceacqua bucciardino ka mancine'},
-  {id:'rossese-maccario-ringenberg',name:'Rossese di dolceacqua Maccario Dringenberg'},
-  {id:'rossese-fratelli-maccario',name:'Rossese di Dolceacqua Fratelli Macario'},
-  {id:'rossese-curli',name:'Rossese Curli'},
-  {id:'rossese-rosato-du-nemu',name:'Rossese di Dolceacqua Rosato – Du Nemu'},
-  {id:'rossese-rosato-ka-mancine',name:'Rossese di Dolceacqua Rosato – Ka Mancine'},
-  {id:'rossese-rosato-poggi-elmo',name:"Rossese di Dolceacqua Rosato – Poggi dell' Elmo"},
-  {id:'rosato-postu-da-ve-lombardi',name:'Rosato "Postu da Vé" – Lombardi'},
-  {id:'rossese-crespi',name:'Rossese di Dolceacqua – Crespi'},
-  {id:'crespi-rosato',name:'Rosato – Crespi'},
-  {id:'roero-arneis-2023',name:'Roero Arneis Ero – Clavesana'},
-  {id:'falanghina-2022',name:'Falanghina Beneventano – Vinosia'},
-  {id:'greco-di-tufo-vinosia',name:'Greco di Tufo – Vinosia'},
-  {id:'gewurztraminer-2022',name:'A.A. Gewürztraminer – Muri-Gries'},
-  {id:'soave-latium-2021',name:'Soave (Garganega 100%) – Latium'},
-  {id:'sauvignon',name:'Sauvignon'},
-  {id:'andaras',name:'Vermentino di Sardegna "Andaras"'},
-  {id:'chardonnay-kreuth-terlan',name:'Chardonnay "Kreuth" – Cantina Terlan'},
-  {id:'bardolino-chiaretto',name:'Bardolino Chiaretto Classico – Negrar Domìni Veneti'},
-  {id:'pallido-capecci',name:'Pallido – Capecci'},
-  {id:'roccese-rose-masala',name:'Roccese Rosè – Masala'},
-  {id:'maixei_rose_rosse',name:'Maixei "Rosé Rosse" Vino Rosato'},
-  {id:'castel_des_maures',name:'Château Castel des Maures Rosé'},
-  {id:'barbaresco-biologico',name:'Barbaresco Biologico – Nada'},
-  {id:'barbera-pio-cesare',name:"Barbera d'Alba – Pio Cesare"},
-  {id:'barbera-clavesana',name:"Barbera d'Alba – Clavesana"},
-  {id:'barolo-palladino',name:'Barolo Serralunga – Palladino'},
-  {id:'dolcetto-palladino',name:"Dolcetto d'Alba – Palladino"},
-  {id:'nebbiolo-clavesana',name:"Nebbiolo d'Alba Nhe – Clavesana"},
-  {id:'amarone-latium',name:'Amarone della Valpolicella Campo Leòn – Latium'},
-  {id:'bellaja-bolgheri',name:"Bell'Aja Bolgheri – San Felice"},
-  {id:'brunello-campogiovanni',name:'Brunello di Montalcino Campogiovanni – San Felice'},
-  {id:'chianti-classico-grigio',name:'Chianti Classico Riserva il Grigio – San Felice'},
-  {id:'chianti-classico-berardenga',name:'Chianti Classico – Berardenga'},
-  {id:'le-volte-ornellaia',name:"Le Volte dell'Ornellaia"},
-  {id:'rosso-montalcino-casanova',name:'Rosso di Montalcino – Casanova di Neri'},
-  {id:'rosso-montalcino-scopone',name:'Rosso di Montalcino – Scopone'},
-  {id:'nobile-montepulciano-barbicaia',name:'Nobile di Montepulciano – Barbicaia'},
-  {id:'i-tirreni-bolgheri-hydra',name:'I Tirreni Bolgheri – Hydra'},
-  {id:'rosso-montepulciano-sabazio',name:'Rosso di Montepulciano Sabazio – La Braccesca'},
-  {id:'ruit-hora-bolgheri',name:'Ruit Hora Bolgheri – Caccia al Piano'},
-  {id:'promis-ca-marcanda-gaja-2023',name:"Promis – Ca' Marcanda Gaja"},
-  {id:'grottaia-caccia-al-piano-2023',name:'Grottaia – Caccia al Piano 1868'},
-  {id:'tignanello-antinori',name:'Tignanello – Marchesi Antinori'},
-  {id:'montepulciano-abruzzo',name:"Montepulciano d'Abruzzo – Masciarelli"},
-  {id:'aglianico-neromora',name:'Aglianico Neromora – Vinosia'},
-  {id:'mora-aglianico-campania',name:'"Mora" – Aglianico Campania IGP'},
-  {id:'primitivo-salento',name:'Primitivo Salento Orus – Vinosia'},
-  {id:'nero-davola',name:"Nero d'Avola – Musita"},
-  {id:'brunello-poggio-oro',name:'Brunello di Montalcino "Poggio all\' Oro"'},
-  {id:'5050-avignonesi',name:'50 & 50 – Capannelle Avignonesi'},
-  {id:'lambrusco-ambasciatori',name:'Ambasciatori Lambrusco Emilia'},
-  {id:'barbera-asti-la-villa',name:'Barbera d\'Asti "La Villa"'},
-  {id:'dogliani-terra',name:'Dogliani "Terra"'},
-  {id:'vermentino-masala',name:'Vermentino – Masala'}
+  {id:'bollicine-lago',name:'Le Bollicine del Lago',price:16},
+  {id:'lago-bianco',name:'Lago Bianco',price:12},
+  {id:'lago-rose',name:'Lago Rosè',price:12},
+  {id:'lago-rosso',name:'Lago Rosso',price:12},
+  {id:'bolle-lago',name:'Le Bolle del Lago',price:21},
+  {id:'prosecco-valdobbiadene',name:'Prosecco di Valdobbiadene Superiore Extra Brut',price:23},
+  {id:'prosecco-rose',name:'Prosecco Rosé Extra Dry',price:22},
+  {id:'franciacorta-berlucchi',name:"Franciacorta Brut '61 – Berlucchi",price:39},
+  {id:'franciacorta-manti',name:'Franciacorta Brut – Manti',price:45},
+  {id:'cuvee-lago-bin',name:'Cuveè Lago Bin',price:55},
+  {id:'gardet',name:'Gardet "Tradition"',price:65},
+  {id:'veuve-clicquot',name:'Veuve Cliquot',price:80},
+  {id:'michel-tixier',name:'Michel Tixier',price:60},
+  {id:'deutz',name:'Deutz',price:90},
+  {id:'gh-mumm',name:'G H Mumm',price:70},
+  {id:'ruinart-magnum',name:'Ruinart "Magnum"',price:190},
+  {id:'laurent-perrier',name:'Laurent Perrier',price:75},
+  {id:'don-perignon',name:'Don Perignon',price:280},
+  {id:'vermentino-poggio-elmo',name:"Vermentino RLP – Poggio dell' Elmo",price:28},
+  {id:'vermentino-terre-bianche',name:'Vermentino RLP – Terre Bianche',price:33},
+  {id:'vermentino-foresti',name:'Vermentino RLP – Foresti',price:26},
+  {id:'pigato-soli-foresti',name:'Pigato RLP – I Soli – Foresti',price:26},
+  {id:'pigato-nemu',name:'Pigato RLP – Nemu',price:24},
+  {id:'pigato-cygnus',name:'Pigato RLP Cygnus – Poggio dei Gorleri',price:38},
+  {id:'tabaka-ka-mancine',name:'Tabaka (Tabaka e Vermentino) – Ka Mancine',price:30},
+  {id:'flavia-foresti',name:'Flavia (Vermentino e Pigato) – Foresti',price:34},
+  {id:'vermentino-trecoli-lombardi',name:'Vermentino "Treçoli" – Lombardi',price:29},
+  {id:'rossese-poggi-elmo-2022',name:"Rossese di Dolceacqua – Poggi dell' Elmo",price:32},
+  {id:'rossese-pini-2022',name:'Rossese di Dolceacqua Superiore Pini',price:41},
+  {id:'rossese-cima-tramontina',name:'Rossese di Dolceacqua Cima Tramontina – Du Nemu',price:24},
+  {id:'rossese-superiore-nemu-2021',name:'Rossese di Dolceacqua Superiore – Du Nemu',price:34},
+  {id:'rossese-foresti-2022',name:'Rossese di Dolceacqua – Foresti',price:26},
+  {id:'rossese-luvaira-foresti',name:'Rossese di Dolceacqua Luvaira – Foresti',price:32},
+  {id:'rossese-beragna-ka-mancine',name:'Rossese di Dolceacqua Beragna – Ka Mancine',price:32},
+  {id:'rossese-galeae-2022',name:'Rossese di Dolceacqua Galeae – Ka Mancine',price:36},
+  {id:'rossese-ange-2024',name:'Rossese di Dolceacqua Ange – Ka Mancine',price:44},
+  {id:'rossese-terre-bianche-2022',name:'Rossese di Dolceacqua – Terre Bianche',price:35},
+  {id:'rossese-bricco-arcagna',name:'Rossese di Dolceacqua Bricco Arcagna – Terre Bianche',price:64},
+  {id:'rossese-testalonga',name:'Rossese di Dolceacqua Testalonga',price:56},
+  {id:'roccese-masala',name:'Roccese – Masala',price:49},
+  {id:'roccese-barricato-masala',name:'Roccese Barricato – Masala',price:63},
+  {id:'rossese-dolceacqua-generic',name:'Rossese di Dolceacqua Doc Posaù',price:45},
+  {id:'rossese-peverelli',name:'Rossese di Dolceacqua Superiore Peverelli',price:39},
+  {id:'roccese-du-nemu',name:'Roccese dolceacqua et rossa du nemu',price:24},
+  {id:'roccese-bucciardino',name:'Roccese dolceacqua bucciardino ka mancine',price:39},
+  {id:'rossese-maccario-ringenberg',name:'Rossese di dolceacqua Maccario Dringenberg',price:37},
+  {id:'rossese-fratelli-maccario',name:'Rossese di Dolceacqua Fratelli Macario',price:45},
+  {id:'rossese-curli',name:'Rossese Curli',price:54},
+  {id:'rossese-rosato-du-nemu',name:'Rossese di Dolceacqua Rosato – Du Nemu',price:21},
+  {id:'rossese-rosato-ka-mancine',name:'Rossese di Dolceacqua Rosato – Ka Mancine',price:23},
+  {id:'rossese-rosato-poggi-elmo',name:"Rossese di Dolceacqua Rosato – Poggi dell' Elmo",price:21},
+  {id:'rosato-postu-da-ve-lombardi',name:'Rosato "Postu da Vé" – Lombardi',price:28},
+  {id:'rossese-crespi',name:'Rossese di Dolceacqua – Crespi',price:21},
+  {id:'crespi-rosato',name:'Rosato – Crespi',price:23},
+  {id:'roero-arneis-2023',name:'Roero Arneis Ero – Clavesana',price:23},
+  {id:'falanghina-2022',name:'Falanghina Beneventano – Vinosia',price:18},
+  {id:'greco-di-tufo-vinosia',name:'Greco di Tufo – Vinosia',price:21},
+  {id:'gewurztraminer-2022',name:'A.A. Gewürztraminer – Muri-Gries',price:27},
+  {id:'soave-latium-2021',name:'Soave (Garganega 100%) – Latium',price:18},
+  {id:'sauvignon',name:'Sauvignon',price:21},
+  {id:'andaras',name:'Vermentino di Sardegna "Andaras"',price:27},
+  {id:'chardonnay-kreuth-terlan',name:'Chardonnay "Kreuth" – Cantina Terlan',price:37},
+  {id:'bardolino-chiaretto',name:'Bardolino Chiaretto Classico – Negrar Domìni Veneti',price:16},
+  {id:'pallido-capecci',name:'Pallido – Capecci',price:27},
+  {id:'roccese-rose-masala',name:'Roccese Rosè – Masala',price:39},
+  {id:'maixei_rose_rosse',name:'Maixei "Rosé Rosse" Vino Rosato',price:24},
+  {id:'castel_des_maures',name:'Château Castel des Maures Rosé',price:18},
+  {id:'barbaresco-biologico',name:'Barbaresco Biologico – Nada',price:59},
+  {id:'barbera-pio-cesare',name:"Barbera d'Alba – Pio Cesare",price:32},
+  {id:'barbera-clavesana',name:"Barbera d'Alba – Clavesana",price:24},
+  {id:'barolo-palladino',name:'Barolo Serralunga – Palladino',price:64},
+  {id:'dolcetto-palladino',name:"Dolcetto d'Alba – Palladino",price:24},
+  {id:'nebbiolo-clavesana',name:"Nebbiolo d'Alba Nhe – Clavesana",price:24},
+  {id:'amarone-latium',name:'Amarone della Valpolicella Campo Leòn – Latium',price:92},
+  {id:'bellaja-bolgheri',name:"Bell'Aja Bolgheri – San Felice",price:44},
+  {id:'brunello-campogiovanni',name:'Brunello di Montalcino Campogiovanni – San Felice',price:80},
+  {id:'chianti-classico-grigio',name:'Chianti Classico Riserva il Grigio – San Felice',price:33},
+  {id:'chianti-classico-berardenga',name:'Chianti Classico – Berardenga',price:33},
+  {id:'le-volte-ornellaia',name:"Le Volte dell'Ornellaia",price:43},
+  {id:'rosso-montalcino-casanova',name:'Rosso di Montalcino – Casanova di Neri',price:45},
+  {id:'rosso-montalcino-scopone',name:'Rosso di Montalcino – Scopone',price:33},
+  {id:'nobile-montepulciano-barbicaia',name:'Nobile di Montepulciano – Barbicaia',price:40},
+  {id:'i-tirreni-bolgheri-hydra',name:'I Tirreni Bolgheri – Hydra',price:43},
+  {id:'rosso-montepulciano-sabazio',name:'Rosso di Montepulciano Sabazio – La Braccesca',price:21},
+  {id:'ruit-hora-bolgheri',name:'Ruit Hora Bolgheri – Caccia al Piano',price:63},
+  {id:'promis-ca-marcanda-gaja-2023',name:"Promis – Ca' Marcanda Gaja",price:45},
+  {id:'grottaia-caccia-al-piano-2023',name:'Grottaia – Caccia al Piano 1868',price:34},
+  {id:'tignanello-antinori',name:'Tignanello – Marchesi Antinori',price:170},
+  {id:'montepulciano-abruzzo',name:"Montepulciano d'Abruzzo – Masciarelli",price:19},
+  {id:'aglianico-neromora',name:'Aglianico Neromora – Vinosia',price:21},
+  {id:'mora-aglianico-campania',name:'"Mora" – Aglianico Campania IGP',price:21},
+  {id:'primitivo-salento',name:'Primitivo Salento Orus – Vinosia',price:18},
+  {id:'nero-davola',name:"Nero d'Avola – Musita",price:22},
+  {id:'brunello-poggio-oro',name:'Brunello di Montalcino "Poggio all\' Oro"',price:180},
+  {id:'5050-avignonesi',name:'50 & 50 – Capannelle Avignonesi',price:170},
+  {id:'lambrusco-ambasciatori',name:'Ambasciatori Lambrusco Emilia',price:18},
+  {id:'barbera-asti-la-villa',name:'Barbera d\'Asti "La Villa"',price:27},
+  {id:'dogliani-terra',name:'Dogliani "Terra"',price:24},
+  {id:'vermentino-masala',name:'Vermentino – Masala',price:48}
 ];
 
 // ── GELATO FLAVOR LIST (for availability toggling only — separate from dish list) ──
@@ -544,6 +567,33 @@ function startMenuAvailabilityListener(){
     renderMenuMgmt(state);
   }, err=>console.error('Menu availability listener error:',err));
 }
+// ── LIVE PRICE OVERRIDES ──
+// Lets staff change a dish/drink's price from the Menu tab without touching
+// code. Stored in Firestore so the customer-facing menu (index.html) can
+// read the same collection and stay in sync — see the patch notes given
+// separately for wiring that side up.
+let menuPricesUnsub=null;
+let priceOverrides={};
+function startMenuPricesListener(){
+  if(menuPricesUnsub)menuPricesUnsub();
+  menuPricesUnsub=db.collection('menuPrices').onSnapshot(snap=>{
+    const overrides={};
+    snap.forEach(doc=>{
+      const p=doc.data().price;
+      if(typeof p==='number')overrides[doc.id]=p;
+    });
+    priceOverrides=overrides;
+    renderMenuMgmt(availabilityState);
+  }, err=>console.error('Menu prices listener error:',err));
+}
+function effectivePrice(item){
+  return (item && priceOverrides[item.id]!==undefined) ? priceOverrides[item.id] : (item?item.price:0);
+}
+function updateItemPrice(itemId,newPrice){
+  const p=Number(newPrice);
+  if(isNaN(p)||p<0)return;
+  db.collection('menuPrices').doc(itemId).set({price:p},{merge:true}).catch(err=>console.error(err));
+}
 let activeMgmtSubTab='piatti';
 let mgmtSearchQuery='';
 let showOnlyDisabled=false;
@@ -567,10 +617,19 @@ function toggleShowOnlyDisabled(){
   renderMenuMgmt(availabilityState);
 }
 
-function mgmtRow(it,state){
+function mgmtRow(it,state,forcePrice){
   const isOn = state[it.id]!==false;
-  return '<div class="mgmt-row"><span class="mgmt-name">'+it.name+'</span>'
-    + '<div class="mgmt-switch '+(isOn?'on':'')+'" onclick="toggleAvailability(\''+it.id+'\','+(!isOn)+')"><div class="knob"></div></div></div>';
+  const hasPrice = it.price!==undefined || forcePrice;
+  const priceVal = priceOverrides[it.id]!==undefined ? priceOverrides[it.id] : (it.price!==undefined?it.price:0);
+  let html='<div class="mgmt-row"><span class="mgmt-name">'+it.name+'</span>';
+  html+='<div style="display:flex;align-items:center;gap:8px;">';
+  if(hasPrice){
+    html+='<span style="color:#d4af37;font-weight:bold;font-size:12px;">€</span>';
+    html+='<input type="number" step="0.50" min="0" value="'+priceVal+'" onchange="updateItemPrice(\''+it.id+'\',this.value)" style="width:60px;padding:5px 6px;border-radius:6px;border:1px solid rgba(212,175,55,0.4);background:#1a110e;color:#f9f1e2;font-family:inherit;font-size:12px;text-align:center;">';
+  }
+  html+='<div class="mgmt-switch '+(isOn?'on':'')+'" onclick="toggleAvailability(\''+it.id+'\','+(!isOn)+')"><div class="knob"></div></div>';
+  html+='</div></div>';
+  return html;
 }
 function passesMgmtFilters(it,state,q){
   if(q && !it.name.toLowerCase().includes(q))return false;
@@ -586,6 +645,13 @@ function renderMenuMgmt(state){
   let anyResults=false;
 
   if(activeMgmtSubTab==='piatti'){
+    const pkgs=PKG_ITEMS.filter(it=>passesMgmtFilters(it,state,q));
+    if(pkgs.length){
+      anyResults=true;
+      html+='<div class="mgmt-section-title">🍽️ Menu Fissi</div><div class="mgmt-grid">';
+      pkgs.forEach(it=>{ html+=mgmtRow(it,state,true); });
+      html+='</div>';
+    }
     const byCourse={};
     ALL_MENU_ITEMS.filter(it=>it.course!=='gelato').forEach(it=>{
       if(!passesMgmtFilters(it,state,q))return;
@@ -616,11 +682,18 @@ function renderMenuMgmt(state){
       html+='</div>';
     }
   }else if(activeMgmtSubTab==='vino'){
+    const houseWines=HOUSE_WINE_TIERS.filter(it=>passesMgmtFilters(it,state,q));
+    if(houseWines.length){
+      anyResults=true;
+      html+='<div class="mgmt-section-title">🍷 Vino della Casa</div><div class="mgmt-grid">';
+      houseWines.forEach(it=>{ html+=mgmtRow(it,state,true); });
+      html+='</div>';
+    }
     const wines=WINE_ITEMS.filter(it=>passesMgmtFilters(it,state,q));
     if(wines.length){
       anyResults=true;
-      html+='<div class="mgmt-section-title">🍷 Vini (Carta dei Vini)</div><div class="mgmt-grid">';
-      wines.forEach(it=>{ html+=mgmtRow(it,state); });
+      html+='<div class="mgmt-section-title">🍷 Vini (Carta dei Vini) — imposta il prezzo attuale</div><div class="mgmt-grid">';
+      wines.forEach(it=>{ html+=mgmtRow(it,state,true); });
       html+='</div>';
     }
   }
@@ -965,7 +1038,7 @@ function mapRenderProductPicker(tbl){
   if(!results.length){listEl.innerHTML='<div style="color:#7a6a5a;font-size:12px;font-style:italic;padding:6px;">Nessun risultato</div>';return;}
   listEl.innerHTML=results.slice(0,30).map(it=>
     '<div style="display:flex;justify-content:space-between;align-items:center;background:#2a1d19;border-radius:8px;padding:8px 12px;cursor:pointer;" onclick="mapSelectMasterItem(\''+tbl+'\',\''+it.id+'\')">'
-    +'<span style="font-size:13px;">'+it.name+'</span><span style="color:#d4af37;font-weight:bold;font-size:13px;">€'+it.price+'</span></div>'
+    +'<span style="font-size:13px;">'+it.name+'</span><span style="color:#d4af37;font-weight:bold;font-size:13px;">€'+effectivePrice(it)+'</span></div>'
   ).join('');
 }
 function mapSelectMasterItem(tbl,itemId){
@@ -1078,7 +1151,7 @@ function mapFinalizeMasterItemAdd(tbl,directItem,directDetail){
   ref.get().then(doc=>{
     const data=doc.data();
     const items=(data.items||[]).slice();
-    items.push({name:item.name,price:item.price,category:(item.course==='bevande'?'drink':'food'),course:item.course,detail,person,turno});
+    items.push({name:item.name,price:effectivePrice(item),category:(item.course==='bevande'?'drink':'food'),course:item.course,detail,person,turno});
     const total=items.reduce((s,it)=>s+(Number(it.price)||0),0);
     return ref.update({items,total});
   }).then(()=>{
@@ -1214,7 +1287,7 @@ function renderMapPickerItems(){
   grid.innerHTML=results.map(it=>
     '<div class="mgmt-row" style="cursor:pointer;" onclick="mapSelectMasterItem(\'picker\',\''+it.id+'\')">'
     +'<span class="mgmt-name">'+it.name+'</span>'
-    +'<span style="color:#d4af37;font-weight:bold;">€'+it.price+'</span>'
+    +'<span style="color:#d4af37;font-weight:bold;">€'+effectivePrice(it)+'</span>'
     +'</div>'
   ).join('');
 }
@@ -1324,6 +1397,7 @@ function startListening(){
       renderOrders(snap);
     }, err=>console.error('Listener error:',err));
   startMenuAvailabilityListener();
+  startMenuPricesListener();
   startTableStatusListener();
 }
 
@@ -1493,7 +1567,7 @@ function renderProductPicker(tbl){
   if(!results.length){listEl.innerHTML='<div style="color:#7a6a5a;font-size:12px;font-style:italic;padding:6px;">Nessun risultato</div>';return;}
   listEl.innerHTML=results.slice(0,30).map(it=>
     '<div style="display:flex;justify-content:space-between;align-items:center;background:#2a1d19;border-radius:8px;padding:8px 12px;cursor:pointer;" onclick="selectMasterItem(\''+tbl+'\',\''+it.id+'\')">'
-    +'<span style="font-size:13px;">'+it.name+'</span><span style="color:#d4af37;font-weight:bold;font-size:13px;">€'+it.price+'</span></div>'
+    +'<span style="font-size:13px;">'+it.name+'</span><span style="color:#d4af37;font-weight:bold;font-size:13px;">€'+effectivePrice(it)+'</span></div>'
   ).join('');
 }
 
@@ -1625,7 +1699,7 @@ function finalizeMasterItemAdd(tbl,directItem,directDetail){
   ref.get().then(doc=>{
     const data=doc.data();
     const items=(data.items||[]).slice();
-    items.push({name:item.name,price:item.price,category:(item.course==='bevande'?'drink':'food'),course:item.course,detail,person,turno});
+    items.push({name:item.name,price:effectivePrice(item),category:(item.course==='bevande'?'drink':'food'),course:item.course,detail,person,turno});
     const total=items.reduce((s,it)=>s+(Number(it.price)||0),0);
     return ref.update({items,total});
   }).then(()=>{
@@ -1772,9 +1846,21 @@ function doPrint(){
 async function printJobs(jobs,tbl,room,operatorName){
   for(const job of jobs){
     if(!job.items.length)continue;
-    document.getElementById('print-area').innerHTML=buildReceiptHTML(job,tbl,job.items,job.showPrice,room,operatorName,job.billingItems);
-    alert('🖨️ Nella finestra di stampa, seleziona la stampante:\n\n"'+job.printer+'"\n\nPremi OK per continuare, poi clicca Stampa.');
-    await doPrint();
+    const receiptHtml=buildReceiptHTML(job,tbl,job.items,job.showPrice,room,operatorName,job.billingItems);
+    if(window.electronAPI && window.electronAPI.isElectron){
+      // Desktop app: print straight to the named printer, no dialog, no popup.
+      try{
+        await window.electronAPI.silentPrint(receiptHtml, job.printer);
+      }catch(err){
+        console.error('Silent print failed:',err);
+        alert('❌ Stampa fallita su "'+job.printer+'".\nControlla che la stampante sia accesa e collegata.\n\n'+(err&&err.message?err.message:err));
+      }
+    }else{
+      // Browser fallback (testing on GitHub Pages / any normal browser): unchanged behavior.
+      document.getElementById('print-area').innerHTML=receiptHtml;
+      alert('🖨️ Nella finestra di stampa, seleziona la stampante:\n\n"'+job.printer+'"\n\nPremi OK per continuare, poi clicca Stampa.');
+      await doPrint();
+    }
   }
 }
 
@@ -1923,6 +2009,19 @@ setInterval(()=>{
   if(document.getElementById('maintab-mappa')&&document.getElementById('maintab-mappa').style.display!=='none')renderTableMap();
   refreshMapElapsedOnly();
 },30000);
+
+// ── DESKTOP APP UPDATE BANNER ──
+// Only fires when running inside the Electron desktop app (window.electronAPI
+// exists there and nowhere else), so this is a silent no-op in any browser.
+if(window.electronAPI && window.electronAPI.isElectron && window.electronAPI.onUpdateAvailable){
+  window.electronAPI.onUpdateAvailable(function(data){
+    const bar=document.createElement('div');
+    bar.style.cssText='position:fixed;top:0;left:0;right:0;background:#d4af37;color:#150e0b;text-align:center;padding:12px;font-weight:bold;font-size:14px;z-index:99999;font-family:inherit;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,0.4);';
+    bar.textContent='🔔 Nuova versione disponibile ('+data.remoteVersion+') — Clicca qui per scaricarla';
+    bar.onclick=function(){ window.electronAPI.openDownloadPage(); };
+    document.body.appendChild(bar);
+  });
+}
 </script>
 </body>
 </html>
