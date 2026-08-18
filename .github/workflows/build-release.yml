@@ -1,11 +1,5 @@
 name: Build and Publish Admin App
 
-# Builds the Windows portable .exe on GitHub's own Windows runner (no wine
-# needed, no local Mac build step) and publishes it straight into
-# downloads/ — the same folder the download page and the app's own
-# update-check read from. Push a version bump to electron-app/package.json
-# (or run this manually from the Actions tab) and it takes care of the rest.
-
 on:
   push:
     branches: [main]
@@ -19,9 +13,11 @@ permissions:
 jobs:
   build-windows:
     runs-on: windows-latest
+
     defaults:
       run:
         working-directory: electron-app
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -29,7 +25,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
 
       - name: Install dependencies
         run: npm install
@@ -44,11 +40,30 @@ jobs:
           VERSION=$(node -p "require('./package.json').version")
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
+      - name: Check build output
+        shell: bash
+        run: |
+          echo "=== dist folder ==="
+          ls -la dist || true
+          echo "=== Looking for EXE ==="
+          find dist -type f -iname "*.exe" -print || true
+
       - name: Publish exe and version.json to downloads/
         shell: bash
         run: |
           mkdir -p ../downloads
-          cp dist/LagoBinAdmin.exe ../downloads/LagoBinAdmin.exe
+
+          EXE=$(find dist -maxdepth 1 -type f -iname "*.exe" | head -n 1)
+
+          if [ -z "$EXE" ]; then
+            echo "ERROR: No .exe file was found in dist/"
+            exit 1
+          fi
+
+          echo "Found EXE: $EXE"
+
+          cp "$EXE" ../downloads/LagoBinAdmin.exe
+
           cat > ../downloads/version.json <<EOF
           {
             "version": "${{ steps.pkg.outputs.version }}",
@@ -59,9 +74,16 @@ jobs:
 
       - name: Commit and push updated downloads/
         shell: bash
+        working-directory: .
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+
           git add downloads/LagoBinAdmin.exe downloads/version.json
-          git diff --cached --quiet && echo "Nessuna modifica da pubblicare" || git commit -m "Auto-publish admin app v${{ steps.pkg.outputs.version }}"
-          git push
+
+          if git diff --cached --quiet; then
+            echo "Nessuna modifica da pubblicare"
+          else
+            git commit -m "Auto-publish admin app v${{ steps.pkg.outputs.version }}"
+            git push
+          fi
