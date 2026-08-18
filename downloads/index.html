@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lago Bin Admin — Download</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Palatino Linotype', Palatino, serif; background: #150e0b; color: #f9f1e2; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .box { background: #221815; border: 2px solid #d4af37; border-radius: 20px; padding: 44px 34px; max-width: 420px; width: 100%; text-align: center; }
+  h1 { color: #d4af37; letter-spacing: 3px; font-size: 22px; margin-bottom: 6px; }
+  .sub { color: #bca07d; font-size: 13px; font-style: italic; margin-bottom: 28px; }
+  .version-badge { display: inline-block; background: rgba(212,175,55,0.15); border: 1px solid #d4af37; color: #d4af37; padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: bold; margin-bottom: 18px; }
+  .notes { color: #bca07d; font-size: 13px; margin-bottom: 26px; line-height: 1.6; }
+  a.download-btn { display: block; background: #d4af37; color: #150e0b; font-weight: bold; font-size: 15px; padding: 15px; border-radius: 25px; text-decoration: none; margin-bottom: 14px; }
+  a.download-btn:hover { background: #f0c93a; }
+  .note { color: #7a6a5a; font-size: 11px; margin-top: 18px; line-height: 1.6; }
+</style>
+</head>
+<body>
+  <div class="box">
+    <h1>✦ LAGO BIN ✦</h1>
+    <div class="sub">Admin Desktop App</div>
+    <div class="version-badge" id="versionBadge">Versione —</div>
+    <div class="notes" id="notesText">Caricamento informazioni...</div>
+    <a class="download-btn" href="LagoBinAdmin.exe" download>⬇️ Scarica per Windows</a>
+    <div class="note">Se l'app è già aperta, chiudila prima di sostituire il file scaricato in precedenza.<br>Windows potrebbe mostrare un avviso "editore sconosciuto" — è normale, cliccare "Esegui comunque".</div>
+  </div>
+  <script>
+    fetch('version.json?t=' + Date.now()).then(r => r.json()).then(data => {
+      document.getElementById('versionBadge').textContent = 'Versione ' + data.version;
+      document.getElementById('notesText').textContent = data.notes || '';
+    }).catch(() => {
+      document.getElementById('notesText').textContent = '';
+    });
+  </script>
+</body>
+</html>
