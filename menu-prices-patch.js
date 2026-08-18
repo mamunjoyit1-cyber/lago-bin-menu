@@ -16,6 +16,21 @@
 // them — nothing in the main file needs to change.
 
 (function () {
+  // Finds the on-screen "€45,00" element for a given package key, since
+  // that text is hand-written in the HTML rather than rendered from
+  // PKG_CONFIG — it has to be located and patched directly.
+  function findPkgPriceEl(pkgKey) {
+    if (pkgKey === 'lago_bin') {
+      const qtyEl = document.getElementById('qty-pkg-lago_bin');
+      return qtyEl ? qtyEl.closest('.pkg-right')?.querySelector('.pkg-price') : null;
+    }
+    const acc = document.getElementById('acc-' + pkgKey);
+    if (acc && acc.previousElementSibling) {
+      return acc.previousElementSibling.querySelector('.pkg-price');
+    }
+    return null;
+  }
+
   async function applyMenuPrices() {
     try {
       const snap = await db.collection('menuPrices').get();
@@ -24,12 +39,13 @@
         const price = doc.data().price;
         if (typeof price !== 'number') return;
         const id = doc.id;
+        const priceText = '€' + price.toFixed(2).replace('.', ',');
 
         // Regular dishes (antipasti/primi/secondi/contorni/dolci/gelato)
         if (typeof ITEMS !== 'undefined' && ITEMS[id]) {
           ITEMS[id].price = price;
           const el = document.querySelector('#item-' + id + ' .item-price');
-          if (el) el.textContent = '€' + price.toFixed(2).replace('.', ',');
+          if (el) el.textContent = priceText;
         }
 
         // Bar / Bevande items — rendered dynamically, renderAllBarSections()
@@ -38,12 +54,15 @@
           BAR_ITEMS[id].price = price;
         }
 
-        // Set menu packages (affects the cart price; the big static
-        // "€45,00" text on the package card itself is not auto-updated —
-        // see the note in the admin's price-patch docs if that's needed too)
+        // Set menu packages — updates both the cart price AND the visible
+        // "€45,00" text on the package card.
         if (typeof PKG_CONFIG !== 'undefined') {
           const pkgMap = { pkg_lago_bin: 'lago_bin', pkg_gastro: 'gastro', pkg_degu: 'degu', pkg_bambini: 'bambini' };
-          if (pkgMap[id] && PKG_CONFIG[pkgMap[id]]) PKG_CONFIG[pkgMap[id]].price = price;
+          if (pkgMap[id] && PKG_CONFIG[pkgMap[id]]) {
+            PKG_CONFIG[pkgMap[id]].price = price;
+            const priceEl = findPkgPriceEl(pkgMap[id]);
+            if (priceEl) priceEl.textContent = priceText;
+          }
         }
 
         // Vino della Casa (glass/carafe tiers)
