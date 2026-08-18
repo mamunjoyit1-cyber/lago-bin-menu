@@ -1,5 +1,7 @@
 const { app, BrowserWindow, ipcMain, shell } = require('electron');
 const path = require('path');
+const fs = require('fs');
+const os = require('os');
 
 let mainWindow;
 
@@ -73,15 +75,25 @@ app.on('activate', () => {
 // Renders the given receipt HTML off-screen (with the same self-hosted
 // Montserrat fonts as the on-screen app), then sends it straight to the
 // named Windows printer with no dialog and no confirmation popup.
-ipcMain.handle('silent-print', async (event, { html, printerName }) => {
-  return new Promise((resolve, reject) => {
-    const printWin = new BrowserWindow({ show: false });
+//
+// IMPORTANT: this writes the receipt to a real temporary .html file and
+// loads it with loadFile() rather than a data: URL. A data: URL was used
+// originally, but on long/complex receipts it caused Chromium to render
+// the raw <style> block as literal printed text instead of applying it as
+// CSS — loadFile() avoids that entirely and is the standard, reliable way
+// to load dynamically generated content in Electron.
+const fontDir = app.isPackaged
+  ? path.join(process.resourcesPath, 'fonts')
+  : path.join(__dirname, 'fonts');
 
-    const fontDir = path.join(__dirname, 'fonts').replace(/\\/g, '/');
-    const fullHtml = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
-      @font-face{font-family:'Montserrat';src:url('file://${fontDir}/Montserrat-Regular.woff2') format('woff2');font-weight:400;}
-      @font-face{font-family:'Montserrat';src:url('file://${fontDir}/Montserrat-Medium.woff2') format('woff2');font-weight:500;}
-      @font-face{font-family:'Montserrat';src:url('file://${fontDir}/Montserrat-SemiBold.woff2') format('woff2');font-weight:600;}
+ipcMain.handle('silent-print', async (event, { html, printerName }) => {
+  const tempPath = path.join(os.tmpdir(), 'lagobin-receipt-' + Date.now() + '-' + Math.random().toString(36).slice(2) + '.html');
+
+  const fontDirUrl = fontDir.replace(/\\/g, '/');
+  const fullHtml = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+      @font-face{font-family:'Montserrat';src:url('file:///${fontDirUrl}/Montserrat-Regular.woff2') format('woff2');font-weight:400;}
+      @font-face{font-family:'Montserrat';src:url('file:///${fontDirUrl}/Montserrat-Medium.woff2') format('woff2');font-weight:500;}
+      @font-face{font-family:'Montserrat';src:url('file:///${fontDirUrl}/Montserrat-SemiBold.woff2') format('woff2');font-weight:600;}
       *{box-sizing:border-box;}
       body{margin:0;padding:4mm;width:72mm;font-family:'Montserrat',sans-serif;color:#000;}
       .receipt-table-big{text-align:center;font-size:23px;font-weight:600;margin-bottom:10px;letter-spacing:0.5px;}
@@ -101,7 +113,18 @@ ipcMain.handle('silent-print', async (event, { html, printerName }) => {
       .receipt-footer{text-align:center;font-size:16px;font-weight:500;letter-spacing:1px;margin-top:16px;padding-top:10px;border-top:1px solid #000;text-transform:uppercase;}
       </style></head><body>${html}</body></html>`;
 
-    printWin.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(fullHtml));
+  try {
+    fs.writeFileSync(tempPath, fullHtml, 'utf8');
+  } catch (err) {
+    throw new Error('Could not write temp receipt file: ' + err.message);
+  }
+
+  return new Promise((resolve, reject) => {
+    const printWin = new BrowserWindow({ show: false });
+
+    function cleanup() {
+      fs.unlink(tempPath, () => {}); // best-effort delete, ignore errors
+    }
 
     printWin.webContents.once('did-finish-load', () => {
       // Small delay lets the embedded fonts finish loading before print —
@@ -116,6 +139,7 @@ ipcMain.handle('silent-print', async (event, { html, printerName }) => {
           },
           (success, errorType) => {
             printWin.close();
+            cleanup();
             if (success) resolve(true);
             else reject(new Error(errorType || 'Print failed'));
           }
@@ -125,8 +149,11 @@ ipcMain.handle('silent-print', async (event, { html, printerName }) => {
 
     printWin.webContents.once('did-fail-load', (e, code, desc) => {
       printWin.close();
+      cleanup();
       reject(new Error('Failed to render receipt: ' + desc));
     });
+
+    printWin.loadFile(tempPath);
   });
 });
 
