@@ -1,0 +1,67 @@
+name: Build and Publish Admin App
+
+# Builds the Windows portable .exe on GitHub's own Windows runner (no wine
+# needed, no local Mac build step) and publishes it straight into
+# downloads/ — the same folder the download page and the app's own
+# update-check read from. Push a version bump to electron-app/package.json
+# (or run this manually from the Actions tab) and it takes care of the rest.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'electron-app/**'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: electron-app
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build portable Windows app
+        run: npm run build:win
+
+      - name: Read version from package.json
+        id: pkg
+        shell: bash
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Publish exe and version.json to downloads/
+        shell: bash
+        run: |
+          mkdir -p ../downloads
+          cp dist/LagoBinAdmin.exe ../downloads/LagoBinAdmin.exe
+          cat > ../downloads/version.json <<EOF
+          {
+            "version": "${{ steps.pkg.outputs.version }}",
+            "notes": "Build automatico da GitHub Actions.",
+            "releasedAt": "$(date -u +%Y-%m-%d)"
+          }
+          EOF
+
+      - name: Commit and push updated downloads/
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add downloads/LagoBinAdmin.exe downloads/version.json
+          git diff --cached --quiet && echo "Nessuna modifica da pubblicare" || git commit -m "Auto-publish admin app v${{ steps.pkg.outputs.version }}"
+          git push
