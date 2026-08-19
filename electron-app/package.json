@@ -1,6 +1,6 @@
 {
   "name": "lagobin-admin-desktop",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "description": "Lago Bin Admin Dashboard — desktop app with silent multi-printer support",
   "main": "main.js",
   "author": "Lago Bin",
@@ -19,7 +19,8 @@
     "asar": false,
     "win": {
       "target": "portable",
-      "artifactName": "LagoBinAdmin.exe"
+      "artifactName": "LagoBinAdmin.exe",
+      "icon": "icon.ico"
     },
     "files": [
       "main.js",
