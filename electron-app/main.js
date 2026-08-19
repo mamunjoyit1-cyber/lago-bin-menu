@@ -3,6 +3,24 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 
+// ── FIX: keep login persistent across launches ──
+// The portable .exe unpacks itself into a fresh temp folder every time it
+// runs. If the app's login/session data lived inside that temp folder, it
+// would vanish the moment the app closes — forcing a re-login every time.
+// Pinning userData to a stable, permanent location (%APPDATA%) fixes this:
+// Firebase Auth's session (stored here via localStorage/IndexedDB) now
+// survives closing the app, restarting the PC, and even updating to a new
+// build.
+app.setPath('userData', path.join(app.getPath('appData'), 'LagoBinAdmin'));
+
+// ── FIX: keep the taskbar pin working across updates ──
+// Windows ties a pinned taskbar shortcut to the app's identity (its
+// AppUserModelID), not just the filename. Every rebuilt .exe has different
+// file content, so without an explicit, stable ID, Windows can treat each
+// new version as a "different" program and drop the pin. Setting this
+// keeps the same pin working release after release.
+app.setAppUserModelId('it.lagobin.admin');
+
 let mainWindow;
 
 // ── UPDATE SOURCE ──
