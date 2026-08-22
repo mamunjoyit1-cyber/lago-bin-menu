@@ -89,46 +89,50 @@ app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) createMainWindow();
 });
 
-// ── SILENT PRINT ──
-// Renders the given receipt HTML off-screen (with the same self-hosted
-// Montserrat fonts as the on-screen app), then sends it straight to the
-// named Windows printer with no dialog and no confirmation popup.
+// ── SILENT PRINT (IMAGE MODE) ──
+// Renders the receipt off-screen with the same self-hosted Montserrat
+// fonts as the on-screen app, takes a screenshot of it, and prints THAT
+// IMAGE instead of the HTML page itself.
 //
-// IMPORTANT: this writes the receipt to a real temporary .html file and
-// loads it with loadFile() rather than a data: URL. A data: URL was used
-// originally, but on long/complex receipts it caused Chromium to render
-// the raw <style> block as literal printed text instead of applying it as
-// CSS — loadFile() avoids that entirely and is the standard, reliable way
-// to load dynamically generated content in Electron.
+// Why: the HTML/CSS approach kept producing a garbled printout on this
+// printer's Windows driver — it appeared to dump the raw <style> block as
+// visible text above an otherwise-correct render, a known quirk with some
+// thermal-printer drivers when handed complex CSS/web-font HTML. Printing
+// a plain image sidesteps that entirely: the printer receives pixels, not
+// markup, so there is nothing for the driver to misinterpret. This matches
+// what a "screenshot of the browser preview" would look like — guaranteed
+// to be pixel-identical to the correct on-screen render.
 const fontDir = app.isPackaged
   ? path.join(process.resourcesPath, 'fonts')
   : path.join(__dirname, 'fonts');
 
+const PRINT_WIDTH_PX = 576; // ≈72mm at 203dpi, a common thermal-printer resolution
+
 ipcMain.handle('silent-print', async (event, { html, printerName }) => {
   const tempPath = path.join(os.tmpdir(), 'lagobin-receipt-' + Date.now() + '-' + Math.random().toString(36).slice(2) + '.html');
-
   const fontDirUrl = fontDir.replace(/\\/g, '/');
   const fullHtml = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
       @font-face{font-family:'Montserrat';src:url('file:///${fontDirUrl}/Montserrat-Regular.woff2') format('woff2');font-weight:400;}
       @font-face{font-family:'Montserrat';src:url('file:///${fontDirUrl}/Montserrat-Medium.woff2') format('woff2');font-weight:500;}
       @font-face{font-family:'Montserrat';src:url('file:///${fontDirUrl}/Montserrat-SemiBold.woff2') format('woff2');font-weight:600;}
       *{box-sizing:border-box;}
-      body{margin:0;padding:4mm;width:72mm;font-family:'Montserrat',sans-serif;color:#000;}
-      .receipt-table-big{text-align:center;font-size:23px;font-weight:600;margin-bottom:10px;letter-spacing:0.5px;}
-      .receipt-title{text-align:center;font-size:18px;font-weight:500;margin-bottom:6px;color:#333;}
-      .receipt-meta{font-size:18px;font-weight:400;line-height:1.5;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #000;}
+      html,body{margin:0;padding:0;}
+      body{width:${PRINT_WIDTH_PX}px;padding:16px;font-family:'Montserrat',sans-serif;color:#000;background:#fff;}
+      .receipt-table-big{text-align:center;font-size:34px;font-weight:600;margin-bottom:14px;letter-spacing:0.5px;}
+      .receipt-title{text-align:center;font-size:26px;font-weight:500;margin-bottom:8px;color:#333;}
+      .receipt-meta{font-size:26px;font-weight:400;line-height:1.5;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid #000;}
       .receipt-meta b{font-weight:600;}
-      .receipt-turno{text-align:center;font-weight:600;font-size:21px;margin:14px 0 8px;padding-top:10px;border-top:1px dashed #000;text-transform:uppercase;letter-spacing:0.5px;}
-      .receipt-item{font-size:19px;font-weight:400;margin-bottom:10px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
+      .receipt-turno{text-align:center;font-weight:600;font-size:30px;margin:18px 0 10px;padding-top:14px;border-top:1px dashed #000;text-transform:uppercase;letter-spacing:0.5px;}
+      .receipt-item{font-size:27px;font-weight:400;margin-bottom:14px;display:flex;justify-content:space-between;align-items:flex-start;gap:14px;}
       .receipt-item .rleft{flex:1;}
       .receipt-item .rname{font-weight:500;}
-      .receipt-item .rdetail{display:block;font-size:16px;font-weight:400;color:#333;margin-top:4px;}
-      .ritem-price{font-weight:500;font-size:19px;white-space:nowrap;}
+      .receipt-item .rdetail{display:block;font-size:22px;font-weight:400;color:#333;margin-top:6px;}
+      .ritem-price{font-weight:500;font-size:27px;white-space:nowrap;}
       .rqty{font-weight:500;}
-      .menu-fisso-tag{font-size:12px;font-weight:500;border:1px solid #000;border-radius:4px;padding:1px 6px;margin-left:4px;letter-spacing:0.3px;white-space:nowrap;}
-      .receipt-total{border-top:1.5px solid #000;margin-top:12px;padding-top:10px;font-size:22px;font-weight:600;text-align:right;}
-      .receipt-online-tag{text-align:center;font-size:16px;font-weight:500;border:1.5px dashed #000;border-radius:4px;padding:6px;margin-top:10px;}
-      .receipt-footer{text-align:center;font-size:16px;font-weight:500;letter-spacing:1px;margin-top:16px;padding-top:10px;border-top:1px solid #000;text-transform:uppercase;}
+      .menu-fisso-tag{font-size:17px;font-weight:500;border:1px solid #000;border-radius:4px;padding:2px 8px;margin-left:6px;letter-spacing:0.3px;white-space:nowrap;}
+      .receipt-total{border-top:1.5px solid #000;margin-top:16px;padding-top:14px;font-size:32px;font-weight:600;text-align:right;}
+      .receipt-online-tag{text-align:center;font-size:22px;font-weight:500;border:1.5px dashed #000;border-radius:4px;padding:8px;margin-top:14px;}
+      .receipt-footer{text-align:center;font-size:22px;font-weight:500;letter-spacing:1px;margin-top:22px;padding-top:14px;border-top:1px solid #000;text-transform:uppercase;}
       </style></head><body>${html}</body></html>`;
 
   try {
@@ -138,40 +142,71 @@ ipcMain.handle('silent-print', async (event, { html, printerName }) => {
   }
 
   return new Promise((resolve, reject) => {
-    const printWin = new BrowserWindow({ show: false });
+    const renderWin = new BrowserWindow({ show: false, width: PRINT_WIDTH_PX, height: 800 });
+    let imgTempPath = null;
 
     function cleanup() {
-      fs.unlink(tempPath, () => {}); // best-effort delete, ignore errors
+      fs.unlink(tempPath, () => {});
+      if (imgTempPath) fs.unlink(imgTempPath, () => {});
     }
 
-    printWin.webContents.once('did-finish-load', () => {
-      // Small delay lets the embedded fonts finish loading before print —
-      // same reasoning as the double-rAF fix used in the browser version.
-      setTimeout(() => {
-        printWin.webContents.print(
-          {
-            silent: true,
-            deviceName: printerName,
-            printBackground: true,
-            margins: { marginType: 'none' }
-          },
-          (success, errorType) => {
-            printWin.close();
-            cleanup();
-            if (success) resolve(true);
-            else reject(new Error(errorType || 'Print failed'));
-          }
-        );
-      }, 300);
+    renderWin.webContents.once('did-finish-load', async () => {
+      try {
+        // Let fonts finish loading, then size the window to the receipt's
+        // actual rendered height so the screenshot captures all of it.
+        await new Promise(r => setTimeout(r, 350));
+        const contentHeight = await renderWin.webContents.executeJavaScript('Math.ceil(document.body.scrollHeight)');
+        renderWin.setContentSize(PRINT_WIDTH_PX, Math.max(contentHeight, 50));
+        await new Promise(r => setTimeout(r, 150)); // let layout settle after resize
+
+        const image = await renderWin.webContents.capturePage();
+        const dataUrl = image.toDataURL();
+
+        const imgHtml = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+          *{margin:0;padding:0;}
+          @page{size:72mm auto;margin:0;}
+          body{width:72mm;}
+          img{width:100%;display:block;}
+        </style></head><body><img src="${dataUrl}"></body></html>`;
+        imgTempPath = tempPath.replace('.html', '-img.html');
+        fs.writeFileSync(imgTempPath, imgHtml, 'utf8');
+
+        const printWin = new BrowserWindow({ show: false });
+        printWin.webContents.once('did-finish-load', () => {
+          setTimeout(() => {
+            printWin.webContents.print(
+              { silent: true, deviceName: printerName, printBackground: true, margins: { marginType: 'none' } },
+              (success, errorType) => {
+                renderWin.close();
+                printWin.close();
+                cleanup();
+                if (success) resolve(true);
+                else reject(new Error(errorType || 'Print failed'));
+              }
+            );
+          }, 150);
+        });
+        printWin.webContents.once('did-fail-load', (e, code, desc) => {
+          renderWin.close();
+          printWin.close();
+          cleanup();
+          reject(new Error('Failed to render receipt image: ' + desc));
+        });
+        printWin.loadFile(imgTempPath);
+      } catch (err) {
+        renderWin.close();
+        cleanup();
+        reject(err);
+      }
     });
 
-    printWin.webContents.once('did-fail-load', (e, code, desc) => {
-      printWin.close();
+    renderWin.webContents.once('did-fail-load', (e, code, desc) => {
+      renderWin.close();
       cleanup();
       reject(new Error('Failed to render receipt: ' + desc));
     });
 
-    printWin.loadFile(tempPath);
+    renderWin.loadFile(tempPath);
   });
 });
 
