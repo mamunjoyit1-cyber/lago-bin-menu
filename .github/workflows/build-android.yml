@@ -11,12 +11,12 @@ on:
       - 'android-app/**'
   workflow_dispatch: {}
 
+permissions:
+  contents: write   # needed to commit the built APK + version.json back into downloads/
+
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: android-app
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -33,13 +33,15 @@ jobs:
           java-version: '17'
 
       - name: Install npm dependencies
+        working-directory: android-app
         run: npm install
 
       - name: Sync web assets into the Android project
+        working-directory: android-app
         run: npx cap sync android
 
       - name: Make gradlew executable
-        run: chmod +x android/gradlew
+        run: chmod +x android-app/android/gradlew
 
       - name: Build debug APK
         working-directory: android-app/android
@@ -53,3 +55,32 @@ jobs:
         with:
           name: LagoBinAdmin-android
           path: android-app/android/app/build/outputs/apk/debug/app-debug.apk
+
+      # Read the version straight out of build.gradle so it can never drift
+      # out of sync with what's actually inside the APK — bump versionName
+      # (and versionCode) there before pushing a release.
+      - name: Extract version name
+        id: appversion
+        run: |
+          VERSION=$(grep -oP 'versionName\s+"\K[^"]+' android-app/android/app/build.gradle)
+          echo "Detected versionName: $VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      # Publishes the APK + a small version.json to the same public
+      # downloads/ folder the Windows exe uses (served via GitHub Pages) —
+      # this is what the in-app "new version available" banner reads.
+      - name: Publish APK + version.json to downloads
+        run: |
+          mkdir -p downloads
+          cp android-app/android/app/build/outputs/apk/debug/app-debug.apk downloads/LagoBinAdmin-android.apk
+          cat > downloads/version-android.json <<EOF
+          { "version": "${{ steps.appversion.outputs.version }}", "notes": "" }
+          EOF
+
+      - name: Commit and push to downloads
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add downloads/LagoBinAdmin-android.apk downloads/version-android.json
+          git diff --cached --quiet || git commit -m "Auto-publish Android admin app v${{ steps.appversion.outputs.version }}"
+          git push
