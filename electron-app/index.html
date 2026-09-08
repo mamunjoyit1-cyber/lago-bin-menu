@@ -215,15 +215,24 @@ body { font-family: 'Palatino Linotype', Palatino, serif; background: #faf8f3; c
     <button class="logout-btn" id="notif-btn" onclick="enableNotifications()" style="margin-right:8px;">🔔 Notifiche</button>
     <button class="logout-btn" onclick="doLogout()">Esci</button>
   </div>
+  <div style="display:flex;align-items:center;gap:10px;padding:10px 0 0;flex-wrap:wrap;">
+    <span style="color:#8a6a50;font-size:13px;">Oggi si lavora in:</span>
+    <div class="area-toggle" style="margin:0;">
+      <button class="area-btn active" id="defaultAreaBtn-esterno" onclick="setDefaultArea('esterno')">🌤️ Esterno</button>
+      <button class="area-btn" id="defaultAreaBtn-interno" onclick="setDefaultArea('interno')">🏠 Interno</button>
+    </div>
+  </div>
   <div class="tab-nav">
     <button class="main-tab-btn active" id="maintab-mappa-btn" onclick="switchMainTab('mappa')">🗺️ Mappa</button>
     <button class="main-tab-btn" id="maintab-orders-btn" onclick="switchMainTab('orders')">📋 Ordini</button>
     <button class="main-tab-btn" id="maintab-menu-btn" onclick="switchMainTab('menu')">🍽️ Menu</button>
+    <button class="main-tab-btn" id="maintab-settings-btn" onclick="switchMainTab('settings')">⚙️ Impostazioni</button>
   </div>
   <div style="padding:20px 0;">
     <div id="maintab-orders" style="display:none;">
-      <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
         <button class="add-item-btn" onclick="toggleHistorySection()" id="history-toggle-btn">📜 Storico Ordini</button>
+        <button class="decline-btn" onclick="toggleRejectedHistorySection()" id="rejected-history-toggle-btn">❌ Storico Rifiuti</button>
       </div>
       <div id="orders-container"></div>
 
@@ -233,9 +242,23 @@ body { font-family: 'Palatino Linotype', Palatino, serif; background: #faf8f3; c
           <div class="mgmt-sub">Ordini approvati, per data (oggi selezionato di default).</div>
           <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap;">
             <input type="date" id="historyDate" onchange="loadHistory()" style="padding:8px 12px;border-radius:8px;border:1px solid #d4af37;background: #f5f0e6;color: #2a1a10;font-family:inherit;">
+            <input type="text" id="historyTableSearch" placeholder="🔎 Cerca tavolo n." oninput="filterHistoryByTable(this.value)" style="padding:8px 12px;border-radius:8px;border:1px solid #d4af37;background: #f5f0e6;color: #2a1a10;font-family:inherit;width:160px;">
             <button class="add-item-btn" onclick="loadHistory()">🔄 Aggiorna</button>
           </div>
           <div id="history-container"><div class="empty-state">Caricamento...</div></div>
+        </div>
+      </div>
+
+      <div id="rejected-history-section" style="display:none;margin-top:20px;">
+        <div class="menu-mgmt">
+          <h3>❌ Storico Rifiuti</h3>
+          <div class="mgmt-sub">Ordini rifiutati, per data (oggi selezionato di default).</div>
+          <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap;">
+            <input type="date" id="rejectedHistoryDate" onchange="loadRejectedHistory()" style="padding:8px 12px;border-radius:8px;border:1px solid #ff6b6b;background: #f5f0e6;color: #2a1a10;font-family:inherit;">
+            <input type="text" id="rejectedHistoryTableSearch" placeholder="🔎 Cerca tavolo n." oninput="filterRejectedHistoryByTable(this.value)" style="padding:8px 12px;border-radius:8px;border:1px solid #ff6b6b;background: #f5f0e6;color: #2a1a10;font-family:inherit;width:160px;">
+            <button class="add-item-btn" onclick="loadRejectedHistory()">🔄 Aggiorna</button>
+          </div>
+          <div id="rejected-history-container"><div class="empty-state">Caricamento...</div></div>
         </div>
       </div>
     </div>
@@ -254,6 +277,49 @@ body { font-family: 'Palatino Linotype', Palatino, serif; background: #faf8f3; c
           <button class="mgmt-disabled-toggle" id="mgmtDisabledToggleBtn" onclick="toggleShowOnlyDisabled()">🔴 Solo Disattivi</button>
         </div>
         <div id="menu-mgmt-container"></div>
+      </div>
+    </div>
+
+    <div id="maintab-settings" style="display:none;">
+      <div class="menu-mgmt">
+        <h3>🔔 Avviso Sonoro</h3>
+        <div class="mgmt-sub">Un beep ripetuto finché c'è almeno un ordine in attesa da approvare.</div>
+        <div style="display:flex;align-items:center;gap:10px;margin:14px 0;flex-wrap:wrap;">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;color:#2a1a10;">
+            <input type="checkbox" id="alertSoundEnabledInput" checked> Avviso sonoro attivo
+          </label>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+          <span style="color:#2a1a10;">Ripeti ogni</span>
+          <input type="number" id="alertSoundSecondsInput" min="3" max="300" value="10" style="width:70px;padding:8px 10px;border-radius:8px;border:1px solid #d4af37;background:#f5f0e6;color:#2a1a10;font-family:inherit;">
+          <span style="color:#2a1a10;">secondi</span>
+        </div>
+        <button class="add-item-btn" onclick="saveAlertSettings()">💾 Salva Avviso Sonoro</button>
+      </div>
+
+      <div class="menu-mgmt" style="margin-top:20px;">
+        <h3>🖨️ Stampanti Windows (Electron)</h3>
+        <div class="mgmt-sub">Scegli quale stampante Windows usare per Esterno e Interno — utile se cambi o aggiungi una stampante, senza dover modificare il codice.</div>
+        <div id="printer-settings-container"><div class="empty-state">Caricamento stampanti...</div></div>
+        <button class="add-item-btn" style="margin-top:10px;" onclick="savePrinterSettings()">💾 Salva Stampanti</button>
+      </div>
+
+      <div class="menu-mgmt" style="margin-top:20px;">
+        <h3>📶 Stampanti Tablet Android (IP di rete)</h3>
+        <div class="mgmt-sub">Il tablet Android invia la stampa direttamente all'indirizzo IP della stampante sulla rete WiFi (porta 9100). Trova l'IP dal display della stampante o stampando la sua pagina di configurazione di rete.</div>
+        <div style="margin-bottom:14px;">
+          <label style="display:block;margin-bottom:6px;color:#2a1a10;font-weight:bold;">🌤️ IP Stampante Esterno</label>
+          <input type="text" id="printerIPEsterno" placeholder="192.168.1.101" style="width:100%;padding:10px;border-radius:8px;border:1px solid #d4af37;background:#f5f0e6;color:#2a1a10;font-family:inherit;">
+        </div>
+        <div style="margin-bottom:14px;">
+          <label style="display:block;margin-bottom:6px;color:#2a1a10;font-weight:bold;">🏠 IP Stampante Interno</label>
+          <input type="text" id="printerIPInterno" placeholder="192.168.1.102" style="width:100%;padding:10px;border-radius:8px;border:1px solid #d4af37;background:#f5f0e6;color:#2a1a10;font-family:inherit;">
+        </div>
+        <div>
+          <label style="display:block;margin-bottom:6px;color:#2a1a10;font-weight:bold;">🍹 IP Stampante Bar (Interno)</label>
+          <input type="text" id="printerIPInternoBar" placeholder="192.168.1.103" style="width:100%;padding:10px;border-radius:8px;border:1px solid #d4af37;background:#f5f0e6;color:#2a1a10;font-family:inherit;">
+        </div>
+        <button class="add-item-btn" style="margin-top:10px;" onclick="savePrinterIPs()">💾 Salva IP Stampanti</button>
       </div>
     </div>
 
@@ -716,18 +782,174 @@ function toggleAvailability(itemId,newValue){
 
 // ── MAIN TAB SWITCHING (Ordini is the default/home tab) ──
 function switchMainTab(tab){
-  ['orders','menu','mappa'].forEach(t=>{
+  ['orders','menu','mappa','settings'].forEach(t=>{
     document.getElementById('maintab-'+t).style.display = (t===tab)?'block':'none';
     document.getElementById('maintab-'+t+'-btn').classList.toggle('active', t===tab);
   });
   document.getElementById('dashboard').classList.toggle('mappa-fullwidth', tab==='mappa');
   if(tab==='mappa')renderTableMap();
+  if(tab==='settings'){loadPrinterSettingsUI();renderPrinterIPSettingsUI();}
 }
+// ── DEFAULT AREA (Esterno/Interno) FOR THE WHOLE DAY ──
+// The restaurant only ever runs one area at a time (never both esterno and
+// interno on the same day), so instead of picking Esterno/Interno on every
+// single table before approving, staff sets it ONCE here — synced through
+// Firestore so every device/tab sees the same choice — and every table's
+// area defaults to it automatically. A table can still be overridden
+// individually via setArea() if ever needed.
+let defaultArea='esterno';
+let appSettingsUnsub=null;
+let lastOrdersSnapshot=null;
+let alertSoundEnabled=true;
+let alertSoundSeconds=10;
+let printerOverrides={esterno:'',interno:'',internoBar:''};
+// Real network IPs for the Android tablet's ESC/POS printing — can still be
+// changed anytime from ⚙️ Impostazioni without rebuilding the app.
+let printerIPs={esterno:'192.168.0.53',interno:'192.168.0.136',internoBar:'192.168.0.54'};
+function startAppSettingsListener(){
+  if(appSettingsUnsub)appSettingsUnsub();
+  appSettingsUnsub=db.collection('appSettings').doc('general').onSnapshot(doc=>{
+    const d=doc.data()||{};
+    defaultArea=d.activeArea||'esterno';
+    alertSoundEnabled = d.alertSoundEnabled!==false; // default true if never set
+    alertSoundSeconds = Number(d.alertSoundSeconds)||10;
+    printerOverrides = {esterno:d.printerEsterno||'', interno:d.printerInterno||'', internoBar:d.printerInternoBar||''};
+    printerIPs = {
+      esterno:d.printerEsternoIP||printerIPs.esterno,
+      interno:d.printerInternoIP||printerIPs.interno,
+      internoBar:d.printerInternoBarIP||printerIPs.internoBar
+    };
+    updateDefaultAreaToggleUI();
+    updateAlertSettingsUI();
+    renderPrinterIPSettingsUI();
+    scheduleNextAlert(); // pick up new interval/on-off immediately
+    if(lastOrdersSnapshot)renderOrders(lastOrdersSnapshot);
+    if(openMapTableId)renderMapTableDetail(openMapTableId);
+  },err=>console.error('App settings listener error:',err));
+}
+function updateAlertSettingsUI(){
+  const en=document.getElementById('alertSoundEnabledInput');
+  const sec=document.getElementById('alertSoundSecondsInput');
+  if(en)en.checked=alertSoundEnabled;
+  if(sec)sec.value=alertSoundSeconds;
+}
+function saveAlertSettings(){
+  const en=document.getElementById('alertSoundEnabledInput');
+  const sec=document.getElementById('alertSoundSecondsInput');
+  const enabled=en?en.checked:true;
+  const seconds=Math.max(3,Number(sec?sec.value:10)||10);
+  db.collection('appSettings').doc('general').set({
+    alertSoundEnabled:enabled,
+    alertSoundSeconds:seconds
+  },{merge:true}).then(()=>alert('✅ Impostazioni avviso sonoro salvate.')).catch(err=>{
+    console.error('Save alert settings error:',err);
+    alert('Errore durante il salvataggio.');
+  });
+}
+
+// ── PRINTER SETTINGS ──
+// Lets the admin pick, from the actual list of Windows printers, which one
+// each area (Esterno/Interno) prints to — no code change needed if a
+// printer is replaced or renamed. Only available inside the Electron app.
+async function loadPrinterSettingsUI(){
+  const container=document.getElementById('printer-settings-container');
+  if(!container)return;
+  if(!(window.electronAPI && window.electronAPI.isElectron && window.electronAPI.listPrinters)){
+    container.innerHTML='<div class="empty-state">Disponibile solo nell\'app desktop Windows (non nel browser).</div>';
+    return;
+  }
+  container.innerHTML='<div class="empty-state">Caricamento stampanti...</div>';
+  try{
+    const printers=await window.electronAPI.listPrinters();
+    if(!printers||!printers.length){
+      container.innerHTML='<div class="empty-state">Nessuna stampante trovata su questo computer.</div>';
+      return;
+    }
+    const currentEsterno=printerOverrides.esterno||PRINTER_ROUTES.esterno.full.printer;
+    const currentInterno=printerOverrides.interno||PRINTER_ROUTES.interno.full.printer;
+    const currentInternoBar=printerOverrides.internoBar||PRINTER_ROUTES.interno.bar.printer;
+    function optionsHtml(selected){
+      return printers.map(p=>'<option value="'+p+'" '+(p===selected?'selected':'')+'>'+p+'</option>').join('');
+    }
+    let html='';
+    html+='<div style="margin-bottom:14px;"><label style="display:block;margin-bottom:6px;color:#2a1a10;font-weight:bold;">🌤️ Stampante Esterno</label>';
+    html+='<select id="printerSelectEsterno" style="width:100%;padding:10px;border-radius:8px;border:1px solid #d4af37;background:#f5f0e6;color:#2a1a10;font-family:inherit;">'+optionsHtml(currentEsterno)+'</select></div>';
+    html+='<div style="margin-bottom:14px;"><label style="display:block;margin-bottom:6px;color:#2a1a10;font-weight:bold;">🏠 Stampante Interno (scontrino completo)</label>';
+    html+='<select id="printerSelectInterno" style="width:100%;padding:10px;border-radius:8px;border:1px solid #d4af37;background:#f5f0e6;color:#2a1a10;font-family:inherit;">'+optionsHtml(currentInterno)+'</select></div>';
+    html+='<div><label style="display:block;margin-bottom:6px;color:#2a1a10;font-weight:bold;">🍹 Stampante Bar (solo bevande, Interno)</label>';
+    html+='<div class="mgmt-sub" style="margin-top:0;margin-bottom:6px;">Quando approvi un tavolo in Interno, questa stampante riceve un secondo scontrino con SOLO le bevande (senza prezzi) — la Stampante Interno sopra riceve comunque tutto.</div>';
+    html+='<select id="printerSelectInternoBar" style="width:100%;padding:10px;border-radius:8px;border:1px solid #d4af37;background:#f5f0e6;color:#2a1a10;font-family:inherit;">'+optionsHtml(currentInternoBar)+'</select></div>';
+    container.innerHTML=html;
+  }catch(err){
+    console.error('List printers error:',err);
+    container.innerHTML='<div class="empty-state">Errore nel recupero delle stampanti.</div>';
+  }
+}
+function savePrinterSettings(){
+  const es=document.getElementById('printerSelectEsterno');
+  const it=document.getElementById('printerSelectInterno');
+  const bar=document.getElementById('printerSelectInternoBar');
+  if(!es||!it){alert('Le stampanti non sono ancora caricate.');return;}
+  db.collection('appSettings').doc('general').set({
+    printerEsterno:es.value,
+    printerInterno:it.value,
+    printerInternoBar:bar?bar.value:''
+  },{merge:true}).then(()=>alert('✅ Stampanti salvate.')).catch(err=>{
+    console.error('Save printer settings error:',err);
+    alert('Errore durante il salvataggio.');
+  });
+}
+
+function renderPrinterIPSettingsUI(){
+  const es=document.getElementById('printerIPEsterno');
+  const it=document.getElementById('printerIPInterno');
+  const bar=document.getElementById('printerIPInternoBar');
+  // Don't clobber text the person is actively typing.
+  if(es && document.activeElement!==es)es.value=printerIPs.esterno;
+  if(it && document.activeElement!==it)it.value=printerIPs.interno;
+  if(bar && document.activeElement!==bar)bar.value=printerIPs.internoBar;
+}
+function savePrinterIPs(){
+  const es=document.getElementById('printerIPEsterno');
+  const it=document.getElementById('printerIPInterno');
+  const bar=document.getElementById('printerIPInternoBar');
+  if(!es||!it||!bar)return;
+  const ipPattern=/^(\d{1,3}\.){3}\d{1,3}$/;
+  const values=[es.value.trim(),it.value.trim(),bar.value.trim()];
+  if(values.some(v=>v && !ipPattern.test(v))){
+    alert('Uno degli indirizzi IP non sembra valido (es. 192.168.1.101).');
+    return;
+  }
+  db.collection('appSettings').doc('general').set({
+    printerEsternoIP:es.value.trim(),
+    printerInternoIP:it.value.trim(),
+    printerInternoBarIP:bar.value.trim()
+  },{merge:true}).then(()=>alert('✅ Indirizzi IP salvati.')).catch(err=>{
+    console.error('Save printer IP settings error:',err);
+    alert('Errore durante il salvataggio.');
+  });
+}
+function setDefaultArea(area){
+  db.collection('appSettings').doc('general').set({activeArea:area},{merge:true}).catch(err=>console.error(err));
+}
+function updateDefaultAreaToggleUI(){
+  const eb=document.getElementById('defaultAreaBtn-esterno'), ib=document.getElementById('defaultAreaBtn-interno');
+  if(eb)eb.classList.toggle('active',defaultArea==='esterno');
+  if(ib)ib.classList.toggle('active',defaultArea==='interno');
+}
+
 function toggleHistorySection(){
   const sec=document.getElementById('history-section');
   const isOpen=sec.style.display!=='none';
   sec.style.display=isOpen?'none':'block';
   if(!isOpen)loadHistory();
+}
+
+function toggleRejectedHistorySection(){
+  const sec=document.getElementById('rejected-history-section');
+  const isOpen=sec.style.display!=='none';
+  sec.style.display=isOpen?'none':'block';
+  if(!isOpen)loadRejectedHistory();
 }
 
 // ── TABLE MAP VIEW (NEW) ──
@@ -749,6 +971,8 @@ let openMapTableId=null;
 let mapAnyDocId={};
 let mapPendingCustomize={};
 let mapManualEntryOpen={};
+let todaysRoundsCache={}; // tbl -> array of today's approved round docs (for multi-select reprint)
+let selectedRoundIds={};  // tbl -> Set of selected round docIds
 
 function startTableStatusListener(){
   if(tableStatusUnsub)tableStatusUnsub();
@@ -771,6 +995,88 @@ function toggleMapRound(id){
   const isOpen=el.style.display!=='none';
   el.style.display=isOpen?'none':'block';
   if(arrow)arrow.textContent=isOpen?'▾':'▴';
+}
+
+// ── MULTI-ROUND RISTAMPA ──
+// Renders today's approved rounds for a table with a checkbox on each one,
+// a "Seleziona tutto" toggle, and a "Stampa Selezionati" button. Selecting
+// several rounds and printing them together merges all their items into a
+// SINGLE combined receipt (one summary), instead of printing each round's
+// receipt separately.
+function renderTodaysRoundsSlot(tbl){
+  const slot=document.getElementById('mapHistorySlot');
+  if(!slot)return;
+  const todays=todaysRoundsCache[tbl]||[];
+  if(!todays.length){
+    slot.outerHTML='<div class="empty-state" style="padding:16px 0;">Nessun ordine servito oggi per questo tavolo.</div>';
+    return;
+  }
+  const sel=selectedRoundIds[tbl]||new Set();
+  const allSelected=todays.every(o=>sel.has(o.id));
+  let hHtml='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:10px;">';
+  hHtml+='  <label style="display:flex;align-items:center;gap:6px;color:#8a6a50;font-size:13px;cursor:pointer;"><input type="checkbox" '+(allSelected?'checked':'')+' onchange="toggleSelectAllRounds(\''+tbl+'\')"> Seleziona tutto</label>';
+  hHtml+='  <button class="add-item-btn" '+(sel.size?'':'disabled')+' onclick="printSelectedRounds(\''+tbl+'\')">🖨️ Stampa Selezionati ('+sel.size+')</button>';
+  hHtml+='</div>';
+  todays.forEach((o,i)=>{
+    const roundNum=todays.length-i;
+    const total=(o.items||[]).reduce((s,it)=>s+(Number(it.price)||0),0);
+    const timeStr=o.__time.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+    const cId='mapRound-'+o.id;
+    const checked=sel.has(o.id);
+    hHtml+='<div class="order-card" style="padding:0;overflow:hidden;margin-bottom:10px;">';
+    hHtml+='  <div style="padding:14px 16px;display:flex;justify-content:space-between;align-items:center;gap:10px;">';
+    hHtml+='    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;flex:1;" onclick="event.stopPropagation()">';
+    hHtml+='      <input type="checkbox" '+(checked?'checked':'')+' onchange="toggleRoundCheck(\''+tbl+'\',\''+o.id+'\',this.checked)">';
+    hHtml+='      <span style="font-weight:bold;color:#d4af37;cursor:pointer;" onclick="toggleMapRound(\''+cId+'\')">Round '+roundNum+' — '+timeStr+(o.approvedByName?' · '+o.approvedByName:'')+'</span>';
+    hHtml+='    </label>';
+    hHtml+='    <span id="'+cId+'-arrow" style="color:#8a6a50;cursor:pointer;" onclick="toggleMapRound(\''+cId+'\')">▾</span>';
+    hHtml+='  </div>';
+    hHtml+='  <div id="'+cId+'" style="display:none;padding:0 16px 16px;">';
+    hHtml+=buildReadOnlyItemRowsHTML(o.items||[]);
+    hHtml+='    <div class="card-total">Totale: €'+total+'</div>';
+    hHtml+='    <button class="decline-btn" style="border-color:#d4af37;color:#d4af37;" onclick="reprintOrder(\''+o.id+'\')">🖨️ Ristampa</button>';
+    hHtml+='  </div>';
+    hHtml+='</div>';
+  });
+  slot.outerHTML='<div>'+hHtml+'</div>';
+}
+
+function toggleRoundCheck(tbl,docId,checked){
+  if(!selectedRoundIds[tbl])selectedRoundIds[tbl]=new Set();
+  if(checked)selectedRoundIds[tbl].add(docId);
+  else selectedRoundIds[tbl].delete(docId);
+  renderTodaysRoundsSlot(tbl);
+}
+
+function toggleSelectAllRounds(tbl){
+  const todays=todaysRoundsCache[tbl]||[];
+  if(!selectedRoundIds[tbl])selectedRoundIds[tbl]=new Set();
+  const allSelected=todays.length>0 && todays.every(o=>selectedRoundIds[tbl].has(o.id));
+  if(allSelected)selectedRoundIds[tbl].clear();
+  else todays.forEach(o=>selectedRoundIds[tbl].add(o.id));
+  renderTodaysRoundsSlot(tbl);
+}
+
+async function printSelectedRounds(tbl){
+  const sel=selectedRoundIds[tbl];
+  if(!sel||!sel.size)return;
+  const todays=todaysRoundsCache[tbl]||[];
+  const chosen=todays.filter(o=>sel.has(o.id)).sort((a,b)=>a.__time-b.__time); // oldest → newest
+  if(!chosen.length)return;
+  const mergedItems=[];
+  chosen.forEach(o=>(o.items||[]).forEach(it=>mergedItems.push(it)));
+  if(!mergedItems.length){alert('Nessun articolo da stampare.');return;}
+  // Area/room/operator taken from the most recently approved of the selected rounds.
+  const latest=chosen[chosen.length-1];
+  const area=latest.area||'esterno';
+  const jobs=buildJobsForArea(area,mergedItems);
+  const operatorName=latest.approvedByName||staffName(currentUserEmail);
+  try{
+    await printJobs(jobs,tbl,latest.room||'',operatorName);
+  }catch(err){
+    console.error('Combined reprint error:',err);
+    alert('Errore durante la ristampa combinata.');
+  }
 }
 
 function elapsedLabel(date){
@@ -839,10 +1145,29 @@ function closeMapDetailView(){
   document.getElementById('mapDrawer').classList.remove('open');
 }
 
-function freeTable(tbl){
-  db.collection('tableStatus').doc(tbl).set({occupied:false},{merge:true}).then(()=>{
+async function freeTable(tbl){
+  try{
+    // A table with a still-pending (unapproved) order shows as "pending" on
+    // the map regardless of tableStatus — so freeing it must also reject
+    // any leftover pending order, or it will look like nothing happened.
+    const pendingSnap=await db.collection('orders').where('table','==',tbl).where('status','==','pending').get();
+    if(!pendingSnap.empty){
+      if(!confirm('Il Tavolo '+tbl+' ha un ordine in attesa. Liberando il tavolo, questo ordine verrà rifiutato automaticamente. Continuare?'))return;
+      const batch=db.batch();
+      pendingSnap.forEach(doc=>batch.update(doc.ref,{
+        status:'cancelled',
+        cancelledAt:firebase.firestore.FieldValue.serverTimestamp(),
+        cancelledByEmail:currentUserEmail,
+        cancelledByName:staffName(currentUserEmail)
+      }));
+      await batch.commit();
+    }
+    await db.collection('tableStatus').doc(tbl).set({occupied:false},{merge:true});
     closeMapDetailView();
-  }).catch(err=>console.error(err));
+  }catch(err){
+    console.error('Free table error:',err);
+    alert('Errore durante la liberazione del tavolo.');
+  }
 }
 
 // Read-only item rows for already-served (approved) rounds — those are already printed, so no editing.
@@ -954,7 +1279,7 @@ async function renderMapTableDetail(tbl){
   const pendingTotal=pendingItems.reduce((s,it)=>s+(Number(it.price)||0),0);
   const roomVal=pendingDocs.find(d=>d.room)?.room || occ.room || '';
   const peopleVal=pendingDocs.find(d=>d.people)?.people || occ.people || 1;
-  const area=selectedArea[tbl]||'';
+  const area=selectedArea[tbl]||defaultArea;
 
   let html='<button onclick="closeMapDetailView()" style="width:100%;padding:15px;border-radius:14px;border:2px solid #d4af37;background:rgba(212,175,55,0.15);color:#d4af37;font-weight:bold;font-size:17px;font-family:inherit;cursor:pointer;margin-bottom:18px;display:flex;align-items:center;justify-content:center;gap:10px;">⬅ TORNA AI TAVOLI</button>';
   html+='<div class="map-dtitle">🪑 Tavolo <input type="text" value="'+tbl+'" onchange="changeTableNumber(\''+tbl+'\',this.value)" style="width:60px;background: #f5f0e6;border:1px solid rgba(212,175,55,0.4);border-radius:6px;color:#d4af37;font-weight:900;font-family:inherit;font-size:16px;padding:3px 6px;text-align:center;"></div>';
@@ -999,29 +1324,12 @@ async function renderMapTableDetail(tbl){
     todays.sort((a,b)=>b.__time-a.__time);
     const slot=document.getElementById('mapHistorySlot');
     if(!slot)return; // drawer was closed/changed table while we were fetching
-    if(!todays.length){
-      slot.outerHTML='<div class="empty-state" style="padding:16px 0;">Nessun ordine servito oggi per questo tavolo.</div>';
-      return;
-    }
-    let hHtml='';
-    todays.forEach((o,i)=>{
-      const roundNum=todays.length-i;
-      const total=(o.items||[]).reduce((s,it)=>s+(Number(it.price)||0),0);
-      const timeStr=o.__time.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
-      const cId='mapRound-'+o.id;
-      hHtml+='<div class="order-card" style="padding:0;overflow:hidden;margin-bottom:10px;">';
-      hHtml+='  <div style="padding:14px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;" onclick="toggleMapRound(\''+cId+'\')">';
-      hHtml+='    <span style="font-weight:bold;color:#d4af37;">Round '+roundNum+' — '+timeStr+(o.approvedByName?' · '+o.approvedByName:'')+'</span>';
-      hHtml+='    <span id="'+cId+'-arrow" style="color:#8a6a50;">▾</span>';
-      hHtml+='  </div>';
-      hHtml+='  <div id="'+cId+'" style="display:none;padding:0 16px 16px;">';
-      hHtml+=buildReadOnlyItemRowsHTML(o.items||[]);
-      hHtml+='    <div class="card-total">Totale: €'+total+'</div>';
-      hHtml+='    <button class="decline-btn" style="border-color:#d4af37;color:#d4af37;" onclick="reprintOrder(\''+o.id+'\')">🖨️ Ristampa</button>';
-      hHtml+='  </div>';
-      hHtml+='</div>';
-    });
-    slot.outerHTML='<div>'+hHtml+'</div>';
+    todaysRoundsCache[tbl]=todays;
+    if(!selectedRoundIds[tbl])selectedRoundIds[tbl]=new Set();
+    // Drop selections for rounds that no longer exist (table changed, day rolled over, etc.)
+    const validIds=new Set(todays.map(o=>o.id));
+    Array.from(selectedRoundIds[tbl]).forEach(id=>{ if(!validIds.has(id))selectedRoundIds[tbl].delete(id); });
+    renderTodaysRoundsSlot(tbl);
   }catch(err){
     console.error('Map table history error:',err);
     const slot=document.getElementById('mapHistorySlot');
@@ -1335,6 +1643,7 @@ auth.onAuthStateChanged(user=>{
     document.getElementById('dashboard').style.display='block';
     startListening();
     loadHistory();
+    startRepeatingAlert();
     if('Notification' in window && Notification.permission==='default'){
       Notification.requestPermission().then(updateNotifBtn);
     }
@@ -1373,6 +1682,25 @@ function playBeep(){
     setTimeout(()=>{o.stop(); ctx.close();},400);
   }catch(e){console.error('Beep error:',e);}
 }
+// Repeats the beep every N seconds (configurable in ⚙️ Impostazioni, default
+// 10s) while at least one order is still waiting, so a new order can't get
+// missed during a busy service. pendingOrderCount is kept up to date by the
+// live orders listener in startListening(). Uses a restartable setTimeout
+// (not setInterval) so changing the settings takes effect immediately.
+let pendingOrderCount=0;
+let repeatingAlertTimer=null;
+function scheduleNextAlert(){
+  if(repeatingAlertTimer){clearTimeout(repeatingAlertTimer);repeatingAlertTimer=null;}
+  const seconds=Math.max(3,Number(alertSoundSeconds)||10);
+  repeatingAlertTimer=setTimeout(()=>{
+    if(alertSoundEnabled && pendingOrderCount>0)playBeep();
+    scheduleNextAlert();
+  },seconds*1000);
+}
+function startRepeatingAlert(){
+  scheduleNextAlert();
+}
+
 function notifyNewOrder(tbl){
   playBeep();
   if('Notification' in window && Notification.permission==='granted'){
@@ -1381,6 +1709,46 @@ function notifyNewOrder(tbl){
       n.onclick=()=>{window.focus();n.close();};
     }catch(e){console.error('Notification error:',e);}
   }
+}
+
+// ── VOICE ANNOUNCEMENT FOR NEW ORDERS ──
+// Mirrors the table-level announce queue from the Lago Bin React Native
+// tablet app: when a genuinely NEW table shows up among pending orders
+// (not just a new item added to an already-known table), it's queued and
+// announced out loud one at a time (vibrate, then speak), 3s apart so
+// announcements never overlap or talk over each other.
+// - Android (Capacitor): uses @capacitor-community/text-to-speech, which
+//   wraps Android's native TextToSpeech engine — reliable, unlike the
+//   WebView's built-in speechSynthesis, which is unsupported on many
+//   Android WebView versions and can silently do nothing.
+// - Electron/desktop browser: uses the standard Web Speech API
+//   (speechSynthesis), which works fine in Chromium/Electron.
+let knownPendingTables=new Set();
+let announceQueue=[];
+let isAnnouncing=false;
+function speakAnnouncement(text){
+  if(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform() && window.Capacitor.Plugins && window.Capacitor.Plugins.TextToSpeech){
+    window.Capacitor.Plugins.TextToSpeech.speak({text:text,lang:'it-IT',rate:0.9,queueStrategy:1}).catch(err=>console.error('TTS speak error:',err));
+  }else if('speechSynthesis' in window){
+    try{
+      const utter=new SpeechSynthesisUtterance(text);
+      utter.lang='it-IT';
+      utter.rate=0.95;
+      window.speechSynthesis.speak(utter);
+    }catch(err){console.error('speechSynthesis error:',err);}
+  }
+}
+function processAnnounceQueue(){
+  if(isAnnouncing)return;
+  const next=announceQueue.shift();
+  if(next===undefined)return;
+  isAnnouncing=true;
+  if(navigator.vibrate)navigator.vibrate([0,400,200,400]);
+  speakAnnouncement('Nuovo ordine dal tavolo '+next);
+  setTimeout(()=>{
+    isAnnouncing=false;
+    processAnnounceQueue();
+  },3000);
 }
 
 // ── LIVE ORDERS LISTENER ──
@@ -1403,12 +1771,24 @@ function startListening(){
           }
         });
       }
+      const currentTables=new Set();
+      snap.forEach(d=>currentTables.add(d.data().table||'—'));
+      if(!ordersFirstLoad){
+        currentTables.forEach(tbl=>{
+          if(!knownPendingTables.has(tbl))announceQueue.push(tbl);
+        });
+        processAnnounceQueue();
+      }
+      knownPendingTables=currentTables;
       ordersFirstLoad=false;
+      lastOrdersSnapshot=snap;
+      pendingOrderCount=snap.size;
       renderOrders(snap);
     }, err=>console.error('Listener error:',err));
   startMenuAvailabilityListener();
   startMenuPricesListener();
   startTableStatusListener();
+  startAppSettingsListener();
 }
 
 function renderOrders(snapshot){
@@ -1448,7 +1828,7 @@ function renderOrders(snapshot){
     const allItems=[];
     docs.forEach(d=>(d.items||[]).forEach((it,idx)=>allItems.push({...it,__docId:d.id,__idx:idx})));
     const total=allItems.reduce((s,it)=>s+(Number(it.price)||0),0);
-    const area=selectedArea[tbl]||'';
+    const area=selectedArea[tbl]||defaultArea;
     const earliestTime=docs.map(d=>d.createdAt?.toDate?.()||new Date()).sort((a,b)=>a-b)[0];
     const timeStr=earliestTime?earliestTime.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}):'';
     const roomVal=docs.find(d=>d.room)?.room||'';
@@ -1747,7 +2127,12 @@ function cancelTable(tbl){
   if(!confirm('Annullare tutti gli ordini del Tavolo '+tbl+'?'))return;
   db.collection('orders').where('table','==',tbl).where('status','==','pending').get().then(snap=>{
     const batch=db.batch();
-    snap.forEach(doc=>batch.update(doc.ref,{status:'cancelled'}));
+    snap.forEach(doc=>batch.update(doc.ref,{
+      status:'cancelled',
+      cancelledAt:firebase.firestore.FieldValue.serverTimestamp(),
+      cancelledByEmail:currentUserEmail,
+      cancelledByName:staffName(currentUserEmail)
+    }));
     return batch.commit();
   }).catch(err=>console.error(err));
 }
@@ -1853,9 +2238,181 @@ function doPrint(){
   });
 }
 
+// ── ESC/POS RECEIPT BUILDER (for the Android tablet, network printers) ──
+// Mirrors buildReceiptHTML's content and layout, but instead of HTML it
+// produces raw ESC/POS command bytes that a thermal printer understands
+// natively over a TCP socket. Thermal printers use a single-byte "code
+// page" for anything beyond plain ASCII — CP858 (the most common on
+// Epson-compatible/POS-80 clones) is assumed here for Italian accented
+// letters and the € sign. NOTE: some printer models use a different code
+// page number or table — if accented characters print as garbage, this is
+// the first thing to check/adjust (the ESC t <n> command below).
+const ESC_=0x1B, GS_=0x1D;
+const CP858_MAP={
+  'Ç':0x80,'ü':0x81,'é':0x82,'â':0x83,'ä':0x84,'à':0x85,'å':0x86,'ç':0x87,
+  'ê':0x88,'ë':0x89,'è':0x8A,'ï':0x8B,'î':0x8C,'ì':0x8D,'Ä':0x8E,'Å':0x8F,
+  'É':0x90,'æ':0x91,'Æ':0x92,'ô':0x93,'ö':0x94,'ò':0x95,'û':0x96,'ù':0x97,
+  'ÿ':0x98,'Ö':0x99,'Ü':0x9A,'ø':0x9B,'£':0x9C,'Ø':0x9D,'×':0x9E,'ƒ':0x9F,
+  'á':0xA0,'í':0xA1,'ó':0xA2,'ú':0xA3,'ñ':0xA4,'Ñ':0xA5,'ª':0xA6,'º':0xA7,
+  '¿':0xA8,'®':0xA9,'¬':0xAA,'½':0xAB,'¼':0xAC,'¡':0xAD,'«':0xAE,'»':0xAF,
+  '€':0xD5
+};
+function encodeEscposText(str){
+  const out=[];
+  for(const ch of String(str||'')){
+    const code=ch.codePointAt(0);
+    if(code<128)out.push(code);
+    else if(CP858_MAP[ch]!==undefined)out.push(CP858_MAP[ch]);
+    else out.push(0x3F); // '?' for anything unmappable
+  }
+  return out;
+}
+function bytesToBase64(bytes){
+  let binary='';
+  const chunk=8192;
+  for(let i=0;i<bytes.length;i+=chunk){
+    binary+=String.fromCharCode.apply(null, bytes.slice(i,i+chunk));
+  }
+  return btoa(binary);
+}
+function buildEscposReceipt(job,tbl,items,showPrice,room,operatorName,billingItems){
+  const W=48; // characters per line on an 80mm printer (Font A) — adjust if your printer uses a different width
+  let bytes=[];
+  const raw=arr=>{bytes=bytes.concat(arr);};
+  const text=s=>raw(encodeEscposText(s));
+  const line=s=>{text(s);raw([0x0A]);};
+  const align=n=>raw([ESC_,0x61,n]); // 0 left, 1 center, 2 right
+  const bold=on=>raw([ESC_,0x45,on?1:0]);
+  const bigFont=on=>raw([GS_,0x21,on?0x11:0x00]);
+  const priceLine=(nameStr,priceStr)=>{
+    if(nameStr.length+priceStr.length+1>W){
+      line(nameStr);
+      line(' '.repeat(Math.max(0,W-priceStr.length))+priceStr);
+    }else{
+      line(nameStr+' '.repeat(Math.max(1,W-nameStr.length-priceStr.length))+priceStr);
+    }
+  };
+
+  raw([ESC_,0x40]);        // initialize
+  raw([ESC_,0x74,19]);     // select code page 19 = CP858 on most Epson-compatible printers
+
+  align(1); bigFont(true); bold(true);
+  line('TAVOLO '+tbl);
+  bigFont(false);
+  line(job.title||'');
+  bold(false);
+
+  align(0);
+  const now=new Date();
+  const dateStr=now.toLocaleDateString('it-IT')+' '+now.toLocaleTimeString('it-IT');
+  if(room)line('Camera: '+room);
+  line(dateStr);
+  if(operatorName)line('Cameriere: '+operatorName);
+  line('-'.repeat(W));
+
+  const foodItems=items.filter(it=>it.category!=='drink');
+  const drinkItems=items.filter(it=>it.category==='drink');
+
+  const byTurno={};
+  foodItems.forEach(it=>{
+    const key=it.turno||'—';
+    if(!byTurno[key])byTurno[key]=[];
+    byTurno[key].push(it);
+  });
+  const sortedTurni=Object.keys(byTurno).sort((a,b)=>{
+    if(a==='—')return 1;
+    if(b==='—')return -1;
+    return parseInt(a,10)-parseInt(b,10);
+  });
+
+  sortedTurni.forEach(turno=>{
+    if(turno!=='—'){
+      align(1);bold(true);
+      line(turno.toUpperCase());
+      bold(false);align(0);
+    }
+    const grouped=[];
+    byTurno[turno].forEach(it=>{
+      const isMenuFisso = it.name==='Menù del Lago Bin';
+      const isMenuComponent = it.course==='menu_component';
+      const isDessert = it.course==='dolci' || it.course==='gelato';
+      const key=it.name+'||'+(it.detail||'')+'||'+(it.person||'')+'||'+(isMenuFisso?'F':'')+(isMenuComponent?'C':'');
+      const existing=grouped.find(g=>g.key===key);
+      if(existing){existing.qty++;}
+      else grouped.push({key,name:it.name,detail:it.detail,person:it.person,isMenuFisso,isMenuComponent,isDessert,price:it.price,qty:1});
+    });
+    grouped.sort((a,b)=>{
+      const rank=g=>(g.isMenuFisso||g.isMenuComponent)?1:(g.isDessert?2:0);
+      return rank(a)-rank(b);
+    });
+    grouped.forEach(g=>{
+      const tag = g.isMenuFisso ? ' [MENU FISSO]' : (g.isMenuComponent ? ' [MENU]' : '');
+      const nameStr=(g.person?g.person+' - ':'')+stripEmoji(g.name)+' x'+g.qty+tag;
+      const lineTotal=(Number(g.price)||0)*g.qty;
+      priceLine(nameStr,'€'+lineTotal);
+      if(g.detail && g.name!=='Menù del Lago Bin')line('  '+stripEmoji(g.detail));
+    });
+  });
+
+  if(drinkItems.length){
+    align(1);bold(true);
+    line('BEVANDE');
+    bold(false);align(0);
+    const groupedDrinks=[];
+    drinkItems.forEach(it=>{
+      const showDetail = !it.isWine && it.detail;
+      const key=it.name+'||'+(showDetail?it.detail:'')+'||'+(it.person||'');
+      const existing=groupedDrinks.find(g=>g.key===key);
+      if(existing){existing.qty++;}
+      else groupedDrinks.push({key,name:it.name,detail:showDetail?it.detail:'',person:it.person,price:it.price,qty:1});
+    });
+    groupedDrinks.forEach(g=>{
+      const nameStr=(g.person?g.person+' - ':'')+stripEmoji(g.name)+' x'+g.qty;
+      const lineTotal=(Number(g.price)||0)*g.qty;
+      priceLine(nameStr,'€'+lineTotal);
+      if(g.detail)line('  '+stripEmoji(g.detail));
+    });
+  }
+
+  if(showPrice){
+    const billing=billingItems||items;
+    const total=billing.reduce((s,it)=>s+(Number(it.price)||0),0);
+    line('-'.repeat(W));
+    align(2);bold(true);bigFont(true);
+    line('TOTALE: €'+total);
+    bigFont(false);bold(false);
+    align(1);
+    line('ORDINE ONLINE - Da inserire nel gestionale');
+  }
+
+  align(1);
+  line('');
+  line('Buon Appetito - Grazie');
+  raw([0x0A,0x0A,0x0A]);
+  raw([GS_,0x56,0x00]); // full cut — change to [GS_,0x56,0x01] if your printer only supports partial cut
+  return bytes;
+}
+async function printEscposJob(job,tbl,room,operatorName){
+  const ip=(printerIPs&&printerIPs[job.ipKey])||'';
+  if(!ip)throw new Error('IP non configurato per "'+job.printer+'" — vai su ⚙️ Impostazioni.');
+  const bytes=buildEscposReceipt(job,tbl,job.items,job.showPrice,room,operatorName,job.billingItems);
+  const base64Data=bytesToBase64(bytes);
+  await window.Capacitor.Plugins.EscposPrinter.printRaw({ip:ip,port:9100,data:base64Data});
+}
+
 async function printJobs(jobs,tbl,room,operatorName){
+  const isAndroid = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
   for(const job of jobs){
     if(!job.items.length)continue;
+    if(isAndroid){
+      try{
+        await printEscposJob(job,tbl,room,operatorName);
+      }catch(err){
+        console.error('ESC/POS print failed:',err);
+        alert('❌ Stampa fallita su "'+job.printer+'".\nControlla l\'IP (⚙️ Impostazioni), la rete WiFi e che la stampante sia accesa.\n\n'+(err&&err.message?err.message:err));
+      }
+      continue;
+    }
     const receiptHtml=buildReceiptHTML(job,tbl,job.items,job.showPrice,room,operatorName,job.billingItems);
     if(window.electronAPI && window.electronAPI.isElectron){
       // Desktop app: print straight to the named printer, no dialog, no popup.
@@ -1890,15 +2447,25 @@ function expandForDisplay(rawItems){
 
 function buildJobsForArea(area,allItems){
   const route=PRINTER_ROUTES[area]||PRINTER_ROUTES.esterno;
+  const printerName=(printerOverrides&&printerOverrides[area])||route.full.printer;
   const expandedAll=expandForDisplay(allItems);
   const jobs=[
-    {printer:route.full.printer, title:route.full.title, items:expandedAll, billingItems:allItems, showPrice:true}
+    {printer:printerName, ipKey:area, title:route.full.title, items:expandedAll, billingItems:allItems, showPrice:true}
   ];
+  // Interno has a separate bar printer: it gets its own ticket with ONLY the
+  // drink items (no prices — it's a prep ticket for the bar, not a bill).
+  if(route.bar){
+    const drinkItems=allItems.filter(it=>it.category==='drink');
+    if(drinkItems.length){
+      const barPrinterName=(printerOverrides&&printerOverrides.internoBar)||route.bar.printer;
+      jobs.push({printer:barPrinterName, ipKey:'internoBar', title:route.bar.title, items:expandForDisplay(drinkItems), billingItems:drinkItems, showPrice:false});
+    }
+  }
   return jobs;
 }
 
 async function approveTable(tbl){
-  const area=selectedArea[tbl];
+  const area=selectedArea[tbl]||defaultArea;
   if(!area){alert('Seleziona prima Esterno o Interno.');return;}
 
   const snap=await db.collection('orders').where('table','==',tbl).where('status','==','pending').get();
@@ -1944,6 +2511,7 @@ function dateStrOf(jsDate){
 if(document.getElementById('historyDate') && !document.getElementById('historyDate').value){
   document.getElementById('historyDate').value=todayStr();
 }
+let historyMatchesCache=[];
 async function loadHistory(){
   const dateInput=document.getElementById('historyDate');
   if(dateInput && !dateInput.value)dateInput.value=todayStr();
@@ -1960,11 +2528,18 @@ async function loadHistory(){
       if(approvedAt && dateStrOf(approvedAt)===wantedDate)matches.push({id:doc.id,...data,__time:approvedAt});
     });
     matches.sort((a,b)=>b.__time-a.__time);
-    renderHistory(matches);
+    historyMatchesCache=matches;
+    const searchEl=document.getElementById('historyTableSearch');
+    filterHistoryByTable(searchEl?searchEl.value:'');
   }catch(err){
     console.error('History load error:',err);
     container.innerHTML='<div class="empty-state">Errore nel caricamento dello storico.</div>';
   }
+}
+function filterHistoryByTable(query){
+  const q=(query||'').trim().toLowerCase();
+  const filtered=q?historyMatchesCache.filter(o=>String(o.table||'').toLowerCase().includes(q)):historyMatchesCache;
+  renderHistory(filtered);
 }
 function renderHistory(orders){
   const container=document.getElementById('history-container');
@@ -1993,6 +2568,78 @@ function renderHistory(orders){
   });
   container.innerHTML=html;
 }
+
+if(document.getElementById('rejectedHistoryDate') && !document.getElementById('rejectedHistoryDate').value){
+  document.getElementById('rejectedHistoryDate').value=todayStr();
+}
+let rejectedHistoryMatchesCache=[];
+async function loadRejectedHistory(){
+  const dateInput=document.getElementById('rejectedHistoryDate');
+  if(dateInput && !dateInput.value)dateInput.value=todayStr();
+  const wantedDate=dateInput?dateInput.value:todayStr();
+  const container=document.getElementById('rejected-history-container');
+  if(!container)return;
+  container.innerHTML='<div class="empty-state">Caricamento...</div>';
+  try{
+    const snap=await db.collection('orders').where('status','==','cancelled').get();
+    const matches=[];
+    snap.forEach(doc=>{
+      const data=doc.data();
+      // Older cancelled orders (before this feature) may not have cancelledAt —
+      // fall back to createdAt so they still show up somewhere.
+      const when=data.cancelledAt?.toDate?.()||data.createdAt?.toDate?.();
+      if(when && dateStrOf(when)===wantedDate)matches.push({id:doc.id,...data,__time:when});
+    });
+    matches.sort((a,b)=>b.__time-a.__time);
+    rejectedHistoryMatchesCache=matches;
+    const searchEl=document.getElementById('rejectedHistoryTableSearch');
+    filterRejectedHistoryByTable(searchEl?searchEl.value:'');
+  }catch(err){
+    console.error('Rejected history load error:',err);
+    container.innerHTML='<div class="empty-state">Errore nel caricamento dello storico rifiuti.</div>';
+  }
+}
+function filterRejectedHistoryByTable(query){
+  const q=(query||'').trim().toLowerCase();
+  const filtered=q?rejectedHistoryMatchesCache.filter(o=>String(o.table||'').toLowerCase().includes(q)):rejectedHistoryMatchesCache;
+  renderRejectedHistory(filtered);
+}
+function renderRejectedHistory(orders){
+  const container=document.getElementById('rejected-history-container');
+  if(!container)return;
+  if(!orders.length){
+    container.innerHTML='<div class="empty-state">Nessun ordine rifiutato in questa data.</div>';
+    return;
+  }
+  let html='';
+  orders.forEach(o=>{
+    const total=(o.items||[]).reduce((s,it)=>s+(Number(it.price)||0),0);
+    const timeStr=o.__time.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+    html+='<div class="order-card">';
+    html+='  <div class="order-card-header">';
+    html+='    <div class="table-room-row" style="margin-bottom:0;"><div class="table-badge" style="font-size:16px;padding:5px 12px;">🪑 '+(o.table||'—')+'</div>'+(o.room?'<div class="table-label" style="font-size:13px;">🔑 Camera '+o.room+'</div>':'')+'</div>';
+    html+='    <div class="order-count" style="color:#ff6b6b;">❌ '+timeStr+(o.cancelledByName?' · '+o.cancelledByName:'')+'</div>';
+    html+='  </div>';
+    (o.items||[]).forEach(it=>{
+      html+='<div class="item-row"><div class="item-info"><div class="item-name">'+it.name+'</div></div><div class="item-price">€'+it.price+'</div></div>';
+    });
+    html+='  <div class="card-total">Totale: €'+total+'</div>';
+    html+='  <div class="card-actions"><button class="add-item-btn" onclick="restoreRejectedOrder(\''+o.id+'\')">↩️ Ripristina</button>'
+      +'<button class="cancel-btn" onclick="deleteHistoryOrder(\''+o.id+'\')">🗑️ Elimina</button>'
+      +'</div>';
+    html+='</div>';
+  });
+  container.innerHTML=html;
+}
+function restoreRejectedOrder(docId){
+  if(!confirm('Ripristinare questo ordine come "in attesa"? Tornerà visibile tra gli ordini da approvare.'))return;
+  db.collection('orders').doc(docId).update({status:'pending'}).then(()=>{
+    loadRejectedHistory();
+  }).catch(err=>{
+    console.error('Restore order error:',err);
+    alert('Errore durante il ripristino dell\'ordine.');
+  });
+}
 async function reprintOrder(docId){
   try{
     const doc=await db.collection('orders').doc(docId).get();
@@ -2014,6 +2661,49 @@ function deleteHistoryOrder(docId){
   db.collection('orders').doc(docId).delete().then(loadHistory).catch(err=>console.error(err));
 }
 
+// ── AUTO LIBERA TAVOLO (day-end auto-clear) ──
+// At midnight (00:00) every occupied table is freed automatically, exactly
+// like clicking "Libera Tavolo" by hand on every table — no manual click
+// needed at closing time. This only touches the `tableStatus` collection
+// (the occupied/free flag), so the `orders` themselves are never touched:
+// they stay visible forever afterwards in "Storico Ordini" and in each
+// table's "Storico di Oggi" for that date.
+const AUTO_CLEAR_HOUR = 0; // 00:00 — change just this number if closing time changes
+function autoClearTablesCheck(){
+  if(new Date().getHours()!==AUTO_CLEAR_HOUR)return;
+  const runKey='autoClearDone_'+todayStr();
+  if(localStorage.getItem(runKey))return; // already ran today, don't repeat
+  localStorage.setItem(runKey,'1');
+  // Also auto-reject any leftover pending (unapproved) orders — otherwise
+  // those tables would still show as "pending" on the map after clearing,
+  // for the same reason freeTable() has to do this too.
+  db.collection('orders').where('status','==','pending').get().then(pendingSnap=>{
+    if(pendingSnap.empty)return null;
+    const batch=db.batch();
+    pendingSnap.forEach(doc=>batch.update(doc.ref,{
+      status:'cancelled',
+      cancelledAt:firebase.firestore.FieldValue.serverTimestamp(),
+      cancelledByEmail:currentUserEmail,
+      cancelledByName:staffName(currentUserEmail)||'Auto (chiusura)'
+    }));
+    return batch.commit();
+  }).then(()=>db.collection('tableStatus').get()).then(snap=>{
+    const batch=db.batch();
+    let any=false;
+    snap.forEach(doc=>{
+      if(doc.data().occupied){ batch.set(doc.ref,{occupied:false},{merge:true}); any=true; }
+    });
+    return any?batch.commit():null;
+  }).then(()=>{
+    if(document.getElementById('maintab-mappa')&&document.getElementById('maintab-mappa').style.display!=='none')renderTableMap();
+  }).catch(err=>{
+    console.error('Auto clear tables error:',err);
+    localStorage.removeItem(runKey); // let it retry on the next check if it failed
+  });
+}
+setInterval(autoClearTablesCheck, 4*60*1000); // check every 4 minutes
+autoClearTablesCheck(); // also check right away in case the app was opened at/after 00:00
+
 // Keep "⏳ X min fa" labels ticking without any extra Firestore reads.
 setInterval(()=>{
   if(document.getElementById('maintab-mappa')&&document.getElementById('maintab-mappa').style.display!=='none')renderTableMap();
@@ -2032,6 +2722,50 @@ if(window.electronAPI && window.electronAPI.isElectron && window.electronAPI.onU
     document.body.appendChild(bar);
   });
 }
+
+// ── ANDROID TABLET APP UPDATE BANNER ──
+// Same idea as the Windows update check: compares the installed app's
+// versionName (from android/app/build.gradle, read via @capacitor/app)
+// against downloads/version-android.json, published automatically by the
+// "Build Android APK" GitHub Actions workflow every time android-app/ is
+// updated. No silent auto-install (Android needs the person to open and
+// install the new APK manually, same as re-downloading the Windows exe) —
+// tapping the banner just opens the download link in the system browser.
+const ANDROID_VERSION_CHECK_URL='https://mamunjoyit1-cyber.github.io/downloads/version-android.json';
+const ANDROID_DOWNLOAD_URL='https://mamunjoyit1-cyber.github.io/downloads/LagoBinAdmin-android.apk';
+function isNewerVersionStr(remote,current){
+  const r=String(remote).split('.').map(Number);
+  const c=String(current).split('.').map(Number);
+  for(let i=0;i<Math.max(r.length,c.length);i++){
+    const rv=r[i]||0, cv=c[i]||0;
+    if(rv>cv)return true;
+    if(rv<cv)return false;
+  }
+  return false;
+}
+async function checkForAndroidUpdate(){
+  if(!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform() && window.Capacitor.Plugins && window.Capacitor.Plugins.App))return;
+  try{
+    const info=await window.Capacitor.Plugins.App.getInfo();
+    const res=await fetch(ANDROID_VERSION_CHECK_URL,{cache:'no-store'});
+    if(!res.ok)return;
+    const data=await res.json();
+    if(data.version && isNewerVersionStr(data.version, info.version)){
+      const bar=document.createElement('div');
+      bar.style.cssText='position:fixed;top:0;left:0;right:0;background:#d4af37;color:#150e0b;text-align:center;padding:12px;font-weight:bold;font-size:14px;z-index:99999;font-family:inherit;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,0.4);';
+      bar.textContent='🔔 Nuova versione disponibile ('+data.version+') — Tocca qui per scaricarla';
+      bar.onclick=function(){
+        if(window.Capacitor.Plugins.Browser)window.Capacitor.Plugins.Browser.open({url:ANDROID_DOWNLOAD_URL});
+        else window.open(ANDROID_DOWNLOAD_URL,'_blank');
+      };
+      document.body.appendChild(bar);
+    }
+  }catch(err){
+    console.error('Android update check failed:',err);
+  }
+}
+setTimeout(checkForAndroidUpdate,3000);
+
 </script>
 </body>
 </html>
