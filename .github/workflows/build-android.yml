@@ -1,0 +1,55 @@
+name: Build Android APK
+
+# Runs on every push to main that touches the android-app folder, and can
+# also be triggered manually from the GitHub Actions tab ("Run workflow") —
+# same idea as the Windows exe build, just scoped to its own subfolder so
+# it doesn't run every time you change something in the Windows project.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'android-app/**'
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android-app
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install npm dependencies
+        run: npm install
+
+      - name: Sync web assets into the Android project
+        run: npx cap sync android
+
+      - name: Make gradlew executable
+        run: chmod +x android/gradlew
+
+      - name: Build debug APK
+        working-directory: android-app/android
+        run: ./gradlew assembleDebug --no-daemon
+
+      # Debug build = installable straight on the tablet ("unknown sources"),
+      # no Play Store / signing certificate needed — same philosophy as the
+      # unsigned Windows portable .exe.
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: LagoBinAdmin-android
+          path: android-app/android/app/build/outputs/apk/debug/app-debug.apk
