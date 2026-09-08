@@ -1,0 +1,20 @@
+{
+  "name": "lagobin-admin-android",
+  "version": "1.0.0",
+  "description": "Lago Bin Admin Dashboard — Android tablet app (Capacitor) with network ESC/POS printing",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Lago Bin",
+  "license": "ISC",
+  "dependencies": {
+    "@capacitor-community/text-to-speech": "^8.0.2",
+    "@capacitor/android": "^8.5.1",
+    "@capacitor/app": "^8.1.1",
+    "@capacitor/browser": "^8.0.4",
+    "@capacitor/cli": "^8.5.1",
+    "@capacitor/core": "^8.5.1"
+  }
+}

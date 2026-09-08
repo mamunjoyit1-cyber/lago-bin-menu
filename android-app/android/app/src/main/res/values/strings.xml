@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Lago Bin Admin</string>
+    <string name="title_activity_main">Lago Bin Admin</string>
+    <string name="package_name">it.lagobin.admin</string>
+    <string name="custom_url_scheme">it.lagobin.admin</string>
+</resources>
