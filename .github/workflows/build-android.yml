@@ -1,5 +1,9 @@
 name: Build Android APK
 
+# Runs on every push to main that touches the android-app folder, and can
+# also be triggered manually from the GitHub Actions tab ("Run workflow") —
+# same idea as the Windows exe build, just scoped to its own subfolder so
+# it doesn't run every time you change something in the Windows project.
 on:
   push:
     branches: [main]
@@ -8,12 +12,11 @@ on:
   workflow_dispatch: {}
 
 permissions:
-  contents: write
+  contents: write   # needed to commit the built APK + version.json back into downloads/
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -44,12 +47,18 @@ jobs:
         working-directory: android-app/android
         run: ./gradlew assembleDebug --no-daemon
 
+      # Debug build = installable straight on the tablet ("unknown sources"),
+      # no Play Store / signing certificate needed — same philosophy as the
+      # unsigned Windows portable .exe.
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: LagoBinAdmin-android
           path: android-app/android/app/build/outputs/apk/debug/app-debug.apk
 
+      # Read the version straight out of build.gradle so it can never drift
+      # out of sync with what's actually inside the APK — bump versionName
+      # (and versionCode) there before pushing a release.
       - name: Extract version name
         id: appversion
         run: |
@@ -57,6 +66,9 @@ jobs:
           echo "Detected versionName: $VERSION"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
+      # Publishes the APK + a small version.json to the same public
+      # downloads/ folder the Windows exe uses (served via GitHub Pages) —
+      # this is what the in-app "new version available" banner reads.
       - name: Publish APK + version.json to downloads
         run: |
           mkdir -p downloads
