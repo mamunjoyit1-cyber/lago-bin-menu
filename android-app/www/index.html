@@ -1629,7 +1629,15 @@ function doLogin(){
   errEl.textContent='';
   if(!email||!pass){errEl.textContent='Inserisci email e password.';return;}
   auth.signInWithEmailAndPassword(email,pass).catch(err=>{
-    errEl.textContent='❌ Accesso fallito: email o password errata.';
+    if(err.code==='auth/unauthorized-domain'){
+      errEl.textContent='❌ Dominio non autorizzato su Firebase. Aggiungi "localhost" in Firebase Console → Authentication → Settings → Authorized domains.';
+    }else if(err.code==='auth/network-request-failed'){
+      errEl.textContent='❌ Nessuna connessione internet. Controlla il WiFi/dati del tablet.';
+    }else if(err.code==='auth/invalid-credential'||err.code==='auth/wrong-password'||err.code==='auth/user-not-found'){
+      errEl.textContent='❌ Accesso fallito: email o password errata.';
+    }else{
+      errEl.textContent='❌ Errore di accesso ('+(err.code||'sconosciuto')+'): '+(err.message||'');
+    }
     console.error(err);
   });
 }
