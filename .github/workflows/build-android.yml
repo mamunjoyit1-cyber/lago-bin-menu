@@ -104,6 +104,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
+          # Remove generated Gradle changes that are not meant to be published
+          git restore -- android-app/android/.gradle 2>/dev/null || true
+
           git add \
             android-app/android/app/build.gradle \
             downloads/LagoBinAdmin-android.apk \
@@ -116,6 +119,7 @@ jobs:
 
           git commit -m "Auto-publish Android admin app v${{ steps.version.outputs.version }} [skip ci]"
 
-          git pull --rebase origin main
+          git fetch origin main
+          git rebase origin/main
 
           git push origin main
