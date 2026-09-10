@@ -1,9 +1,5 @@
 name: Build Android APK
 
-# Runs on every push to main that touches the android-app folder, and can
-# also be triggered manually from the GitHub Actions tab ("Run workflow") —
-# same idea as the Windows exe build, just scoped to its own subfolder so
-# it doesn't run every time you change something in the Windows project.
 on:
   push:
     branches: [main]
@@ -12,14 +8,21 @@ on:
   workflow_dispatch: {}
 
 permissions:
-  contents: write   # needed to commit the built APK + version.json back into downloads/
+  contents: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    concurrency:
+      group: publish-downloads
+      cancel-in-progress: false
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -36,6 +39,32 @@ jobs:
         working-directory: android-app
         run: npm install
 
+      - name: Auto increment Android version
+        id: version
+        shell: bash
+        run: |
+          FILE="android-app/android/app/build.gradle"
+
+          CURRENT_VERSION=$(grep -oP 'versionName\s+"\K[^"]+' "$FILE")
+          CURRENT_CODE=$(grep -oP 'versionCode\s+\K[0-9]+' "$FILE")
+
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
+          PATCH=$((PATCH + 1))
+
+          NEW_VERSION="$MAJOR.$MINOR.$PATCH"
+          NEW_CODE=$((CURRENT_CODE + 1))
+
+          sed -i -E "s/versionCode [0-9]+/versionCode $NEW_CODE/" "$FILE"
+          sed -i -E "s/versionName \"[^\"]+\"/versionName \"$NEW_VERSION\"/" "$FILE"
+
+          echo "Old version: $CURRENT_VERSION"
+          echo "New version: $NEW_VERSION"
+          echo "Old versionCode: $CURRENT_CODE"
+          echo "New versionCode: $NEW_CODE"
+
+          echo "version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+          echo "versionCode=$NEW_CODE" >> "$GITHUB_OUTPUT"
+
       - name: Sync web assets into the Android project
         working-directory: android-app
         run: npx cap sync android
@@ -47,40 +76,46 @@ jobs:
         working-directory: android-app/android
         run: ./gradlew assembleDebug --no-daemon
 
-      # Debug build = installable straight on the tablet ("unknown sources"),
-      # no Play Store / signing certificate needed — same philosophy as the
-      # unsigned Windows portable .exe.
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: LagoBinAdmin-android
           path: android-app/android/app/build/outputs/apk/debug/app-debug.apk
 
-      # Read the version straight out of build.gradle so it can never drift
-      # out of sync with what's actually inside the APK — bump versionName
-      # (and versionCode) there before pushing a release.
-      - name: Extract version name
-        id: appversion
-        run: |
-          VERSION=$(grep -oP 'versionName\s+"\K[^"]+' android-app/android/app/build.gradle)
-          echo "Detected versionName: $VERSION"
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-
-      # Publishes the APK + a small version.json to the same public
-      # downloads/ folder the Windows exe uses (served via GitHub Pages) —
-      # this is what the in-app "new version available" banner reads.
-      - name: Publish APK + version.json to downloads
+      - name: Publish APK + version-android.json
         run: |
           mkdir -p downloads
-          cp android-app/android/app/build/outputs/apk/debug/app-debug.apk downloads/LagoBinAdmin-android.apk
+
+          cp android-app/android/app/build/outputs/apk/debug/app-debug.apk \
+             downloads/LagoBinAdmin-android.apk
+
           cat > downloads/version-android.json <<EOF
-          { "version": "${{ steps.appversion.outputs.version }}", "notes": "" }
+          {
+            "version": "${{ steps.version.outputs.version }}",
+            "notes": "",
+            "releasedAt": "$(date -u +%Y-%m-%d)"
+          }
           EOF
 
-      - name: Commit and push to downloads
+      - name: Commit and push
+        shell: bash
+        working-directory: .
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add downloads/LagoBinAdmin-android.apk downloads/version-android.json
-          git diff --cached --quiet || git commit -m "Auto-publish Android admin app v${{ steps.appversion.outputs.version }}"
-          git push
+
+          git add \
+            android-app/android/app/build.gradle \
+            downloads/LagoBinAdmin-android.apk \
+            downloads/version-android.json
+
+          if git diff --cached --quiet; then
+            echo "Nessuna modifica da pubblicare"
+            exit 0
+          fi
+
+          git commit -m "Auto-publish Android admin app v${{ steps.version.outputs.version }} [skip ci]"
+
+          git pull --rebase origin main
+
+          git push origin main
