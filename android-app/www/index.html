@@ -2877,48 +2877,127 @@ if(window.electronAPI && window.electronAPI.isElectron && window.electronAPI.onU
   });
 }
 
-// ── ANDROID TABLET APP UPDATE BANNER ──
-// Same idea as the Windows update check: compares the installed app's
-// versionName (from android/app/build.gradle, read via @capacitor/app)
-// against downloads/version-android.json, published automatically by the
-// "Build Android APK" GitHub Actions workflow every time android-app/ is
-// updated. No silent auto-install (Android needs the person to open and
-// install the new APK manually, same as re-downloading the Windows exe) —
-// tapping the banner just opens the download link in the system browser.
-const ANDROID_VERSION_CHECK_URL='https://mamunjoyit1-cyber.github.io/downloads/version-android.json';
-const ANDROID_DOWNLOAD_URL='https://mamunjoyit1-cyber.github.io/downloads/LagoBinAdmin-android.apk';
-function isNewerVersionStr(remote,current){
-  const r=String(remote).split('.').map(Number);
-  const c=String(current).split('.').map(Number);
-  for(let i=0;i<Math.max(r.length,c.length);i++){
-    const rv=r[i]||0, cv=c[i]||0;
-    if(rv>cv)return true;
-    if(rv<cv)return false;
+// ── ANDROID TABLET APP UPDATE ──
+
+const ANDROID_VERSION_CHECK_URL =
+  'https://mamunjoyit1-cyber.github.io/downloads/version-android.json';
+
+const ANDROID_DOWNLOAD_URL =
+  'https://mamunjoyit1-cyber.github.io/downloads/LagoBinAdmin-android.apk';
+
+function isNewerVersionStr(remote, current) {
+  const r = String(remote).split('.').map(Number);
+  const c = String(current).split('.').map(Number);
+
+  for (let i = 0; i < Math.max(r.length, c.length); i++) {
+    const rv = r[i] || 0;
+    const cv = c[i] || 0;
+
+    if (rv > cv) return true;
+    if (rv < cv) return false;
   }
+
   return false;
 }
-async function checkForAndroidUpdate(){
-  if(!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform() && window.Capacitor.Plugins && window.Capacitor.Plugins.App))return;
-  try{
-    const info=await window.Capacitor.Plugins.App.getInfo();
-    const res=await fetch(ANDROID_VERSION_CHECK_URL,{cache:'no-store'});
-    if(!res.ok)return;
-    const data=await res.json();
-    if(data.version && isNewerVersionStr(data.version, info.version)){
-      const bar=document.createElement('div');
-      bar.style.cssText='position:fixed;top:0;left:0;right:0;background:#d4af37;color:#150e0b;text-align:center;padding:12px;font-weight:bold;font-size:14px;z-index:99999;font-family:inherit;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,0.4);';
-      bar.textContent='🔔 Nuova versione disponibile ('+data.version+') — Tocca qui per scaricarla';
-      bar.onclick=function(){
-        if(window.Capacitor.Plugins.Browser)window.Capacitor.Plugins.Browser.open({url:ANDROID_DOWNLOAD_URL});
-        else window.open(ANDROID_DOWNLOAD_URL,'_blank');
-      };
-      document.body.appendChild(bar);
+
+async function checkForAndroidUpdate() {
+  try {
+    if (
+      !window.Capacitor ||
+      !window.Capacitor.isNativePlatform ||
+      !window.Capacitor.isNativePlatform()
+    ) {
+      return;
     }
-  }catch(err){
-    console.error('Android update check failed:',err);
+
+    const AppPlugin =
+      window.Capacitor.Plugins &&
+      window.Capacitor.Plugins.App;
+
+    if (!AppPlugin) {
+      console.error('[Update] App plugin not available');
+      return;
+    }
+
+    const info = await AppPlugin.getInfo();
+
+    console.log('[Update] Installed:', info.version);
+
+    const res = await fetch(
+      ANDROID_VERSION_CHECK_URL + '?t=' + Date.now(),
+      {
+        cache: 'no-store'
+      }
+    );
+
+    if (!res.ok) {
+      console.error('[Update] Version check failed:', res.status);
+      return;
+    }
+
+    const data = await res.json();
+
+    console.log('[Update] Latest:', data.version);
+
+    if (!data.version) return;
+
+    if (!isNewerVersionStr(data.version, info.version)) {
+      console.log('[Update] Already up to date');
+      return;
+    }
+
+    if (document.getElementById('android-update-banner')) {
+      return;
+    }
+
+    const bar = document.createElement('div');
+
+    bar.id = 'android-update-banner';
+
+    bar.style.cssText =
+      'position:fixed;' +
+      'top:0;' +
+      'left:0;' +
+      'right:0;' +
+      'background:#d4af37;' +
+      'color:#150e0b;' +
+      'text-align:center;' +
+      'padding:13px;' +
+      'font-weight:bold;' +
+      'font-size:14px;' +
+      'z-index:99999;' +
+      'font-family:inherit;' +
+      'cursor:pointer;' +
+      'box-shadow:0 2px 10px rgba(0,0,0,.4);';
+
+    bar.innerHTML =
+      '🔔 Nuova versione disponibile (' +
+      data.version +
+      ') — <u>Tocca qui per aggiornare</u>';
+
+    bar.onclick = function () {
+
+      if (
+        window.Capacitor &&
+        window.Capacitor.Plugins &&
+        window.Capacitor.Plugins.Browser
+      ) {
+        window.Capacitor.Plugins.Browser.open({
+          url: ANDROID_DOWNLOAD_URL
+        });
+      } else {
+        window.open(ANDROID_DOWNLOAD_URL, '_blank');
+      }
+    };
+
+    document.body.appendChild(bar);
+
+  } catch (err) {
+    console.error('[Update] Android update failed:', err);
   }
 }
-setTimeout(checkForAndroidUpdate,3000);
+
+setTimeout(checkForAndroidUpdate, 3000);
 
 </script>
 </body>
