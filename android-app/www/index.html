@@ -139,6 +139,64 @@ body { font-family: 'Palatino Linotype', Palatino, serif; background: #faf8f3; c
 .map-drawer .map-dtitle { color:#d4af37; font-size:15px; font-weight:bold; margin-bottom:4px; }
 .map-drawer .map-dmeta { font-size:12px; color:#8a6a50; margin-bottom:10px; }
 
+/* ── RECEIPT TYPOGRAPHY — shared by Windows browser-print AND Android
+   image-based printing ──
+   This used to live entirely inside @media print, which works fine for
+   real browser printing (#print-area) but is INVISIBLE to html2canvas —
+   html2canvas only ever sees normal "screen" styles, so none of this CSS
+   was being applied when Android rendered the receipt to an image, and it
+   fell back to plain browser-default text (small, unstyled, left-aligned).
+   Fix: these rules now apply unconditionally to both #print-area (real
+   print) and .receipt-render (the offscreen container the Android path
+   renders into with html2canvas) — same design tokens, same classes,
+   used identically by both platforms. */
+#print-area, .receipt-render {
+  --receipt-font: 'Montserrat', -apple-system, sans-serif;
+  --w-regular: 400;
+  --w-medium: 500;
+  --w-semibold: 600;
+  --size-heading: 23px;   /* Main heading — TAVOLO N */
+  --size-important: 22px; /* Tavolo/important info — TOTALE */
+  --size-section: 21px;   /* TURNO / section heading */
+  --size-dish: 19px;      /* Dish/menu name */
+  --size-normal: 18px;    /* Normal text — meta line */
+  --size-desc: 16px;      /* Description / detail */
+  --size-footer: 16px;    /* Footer */
+  --sp-after-heading: 10px;
+  --sp-after-box: 10px;
+  --sp-section-gap: 14px;
+  --sp-name-desc: 4px;
+  --sp-before-footer: 16px;
+
+  font-family: var(--receipt-font); color: #000;
+}
+
+.receipt-table-big { text-align: center; font-size: var(--size-heading); font-weight: var(--w-semibold); margin-bottom: var(--sp-after-heading); letter-spacing: 0.5px; }
+.receipt-title { text-align: center; font-size: var(--size-normal); font-weight: var(--w-medium); margin-bottom: 6px; color: #333; }
+.receipt-meta { font-size: var(--size-normal); font-weight: var(--w-regular); line-height: 1.5; margin-bottom: var(--sp-after-box); padding-bottom: var(--sp-after-box); border-bottom: 1px solid #000; }
+.receipt-meta b { font-weight: var(--w-semibold); }
+
+.receipt-turno { text-align: center; font-weight: var(--w-semibold); font-size: var(--size-section); margin: var(--sp-section-gap) 0 8px; padding-top: 10px; border-top: 1px dashed #000; text-transform: uppercase; letter-spacing: 0.5px; }
+
+.receipt-item { font-size: var(--size-dish); font-weight: var(--w-regular); margin-bottom: 10px; display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+.receipt-item .rleft { flex:1; }
+.receipt-item .rname { font-weight: var(--w-medium); }
+.receipt-item .rdetail { display:block; font-size: var(--size-desc); font-weight: var(--w-regular); color: #333; margin-top: var(--sp-name-desc); }
+.ritem-price { font-weight: var(--w-medium); font-size: var(--size-dish); white-space: nowrap; }
+.rqty { font-weight: var(--w-medium); }
+.menu-fisso-tag { font-size: 12px; font-weight: var(--w-medium); border: 1px solid #000; border-radius: 4px; padding: 1px 6px; margin-left: 4px; letter-spacing: 0.3px; white-space: nowrap; }
+
+.receipt-total { border-top: 1.5px solid #000; margin-top: 12px; padding-top: 10px; font-size: var(--size-important); font-weight: var(--w-semibold); text-align: right; }
+.receipt-online-tag { text-align: center; font-size: var(--size-desc); font-weight: var(--w-medium); border: 1.5px dashed #000; border-radius: 4px; padding: 6px; margin-top: 10px; }
+.receipt-footer { text-align: center; font-size: var(--size-footer); font-weight: var(--w-medium); letter-spacing: 1px; margin-top: var(--sp-before-footer); padding-top: 10px; border-top: 1px solid #000; text-transform: uppercase; }
+
+.receipt-divider { border-top: 1px dashed #000; margin: 12px 0 8px; }
+.person-summary-title { font-weight: var(--w-semibold); font-size: 15px; text-align: center; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+.person-summary-block { font-size: var(--size-desc); font-weight: var(--w-regular); margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px dotted #999; }
+.person-summary-name { font-weight: var(--w-medium); font-size: var(--size-desc); margin-bottom: 2px; }
+.person-summary-item { margin-left: 8px; }
+.person-summary-subtotal { text-align: right; font-weight: bold; font-size: 11px; margin-top: 2px; }
+
 /* PRINT AREA - hidden on screen, shown only when printing */
 #print-area { display: none; }
 @media print {
@@ -146,60 +204,22 @@ body { font-family: 'Palatino Linotype', Palatino, serif; background: #faf8f3; c
   body * { visibility: hidden; }
   #print-area, #print-area * { visibility: visible; }
 
-  /* ── RECEIPT DESIGN TOKENS — single source of truth ──
-     When this system is ported to React Native / ESC-POS in the future,
-     these values map 1:1 onto that renderer's style spec. Nothing about
-     these tokens is tied to "browser printing" — they describe the
-     receipt's typography and spacing contract, independent of how it's
-     eventually rendered. */
+  /* Print-specific mechanics only (the "overlay the whole page" hack) —
+     the actual typography lives above now, shared with .receipt-render. */
   #print-area {
-    --receipt-font: 'Montserrat', -apple-system, sans-serif;
-    --w-regular: 400;
-    --w-medium: 500;
-    --w-semibold: 600;
-    --size-heading: 23px;   /* Main heading — TAVOLO N */
-    --size-important: 22px; /* Tavolo/important info — TOTALE */
-    --size-section: 21px;   /* TURNO / section heading */
-    --size-dish: 19px;      /* Dish/menu name */
-    --size-normal: 18px;    /* Normal text — meta line */
-    --size-desc: 16px;      /* Description / detail */
-    --size-footer: 16px;    /* Footer */
-    --sp-after-heading: 10px;
-    --sp-after-box: 10px;
-    --sp-section-gap: 14px;
-    --sp-name-desc: 4px;
-    --sp-before-footer: 16px;
-
     display: block !important; position: absolute; top: 0; left: 0; width: 72mm; padding: 4mm;
-    font-family: var(--receipt-font); color: #000;
   }
-
-  .receipt-table-big { text-align: center; font-size: var(--size-heading); font-weight: var(--w-semibold); margin-bottom: var(--sp-after-heading); letter-spacing: 0.5px; }
-  .receipt-title { text-align: center; font-size: var(--size-normal); font-weight: var(--w-medium); margin-bottom: 6px; color: #333; }
-  .receipt-meta { font-size: var(--size-normal); font-weight: var(--w-regular); line-height: 1.5; margin-bottom: var(--sp-after-box); padding-bottom: var(--sp-after-box); border-bottom: 1px solid #000; }
-  .receipt-meta b { font-weight: var(--w-semibold); }
-
-  .receipt-turno { text-align: center; font-weight: var(--w-semibold); font-size: var(--size-section); margin: var(--sp-section-gap) 0 8px; padding-top: 10px; border-top: 1px dashed #000; text-transform: uppercase; letter-spacing: 0.5px; }
-
-  .receipt-item { font-size: var(--size-dish); font-weight: var(--w-regular); margin-bottom: 10px; display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
-  .receipt-item .rleft { flex:1; }
-  .receipt-item .rname { font-weight: var(--w-medium); }
-  .receipt-item .rdetail { display:block; font-size: var(--size-desc); font-weight: var(--w-regular); color: #333; margin-top: var(--sp-name-desc); }
-  .ritem-price { font-weight: var(--w-medium); font-size: var(--size-dish); white-space: nowrap; }
-  .rqty { font-weight: var(--w-medium); }
-  .menu-fisso-tag { font-size: 12px; font-weight: var(--w-medium); border: 1px solid #000; border-radius: 4px; padding: 1px 6px; margin-left: 4px; letter-spacing: 0.3px; white-space: nowrap; }
-
-  .receipt-total { border-top: 1.5px solid #000; margin-top: 12px; padding-top: 10px; font-size: var(--size-important); font-weight: var(--w-semibold); text-align: right; }
-  .receipt-online-tag { text-align: center; font-size: var(--size-desc); font-weight: var(--w-medium); border: 1.5px dashed #000; border-radius: 4px; padding: 6px; margin-top: 10px; }
-  .receipt-footer { text-align: center; font-size: var(--size-footer); font-weight: var(--w-medium); letter-spacing: 1px; margin-top: var(--sp-before-footer); padding-top: 10px; border-top: 1px solid #000; text-transform: uppercase; }
-
-  .receipt-divider { border-top: 1px dashed #000; margin: 12px 0 8px; }
-  .person-summary-title { font-weight: var(--w-semibold); font-size: 15px; text-align: center; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
-  .person-summary-block { font-size: var(--size-desc); font-weight: var(--w-regular); margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px dotted #999; }
-  .person-summary-name { font-weight: var(--w-medium); font-size: var(--size-desc); margin-bottom: 2px; }
-  .person-summary-item { margin-left: 8px; }
-  .person-summary-subtotal { text-align: right; font-weight: bold; font-size: 11px; margin-top: 2px; }
 }
+
+/* .receipt-render: the offscreen container the Android path renders into
+   with html2canvas (see renderReceiptToCanvas). Deliberately does NOT set
+   width here — the width is set inline in JS to RECEIPT_IMG_WIDTH_DOTS
+   (576px = 80mm printer dot width at 203dpi), which must win over any
+   mm-based width (72mm resolves to ~272 CSS px at the browser's 96dpi
+   reference, not 576 — that mismatch was part of why Android output was
+   too small). Inline styles always beat these class rules, so this is
+   safe either way, but is intentionally left unset here for clarity. */
+.receipt-render { color: #000; background: #fff; }
 </style>
 </head>
 <body>
@@ -2495,7 +2515,14 @@ const RECEIPT_IMG_WIDTH_DOTS=576; // standard 80mm thermal printer width at 203d
 async function renderReceiptToCanvas(job,tbl,items,showPrice,room,operatorName,billingItems){
   const receiptHtml=buildReceiptHTML(job,tbl,items,showPrice,room,operatorName,billingItems);
   const container=document.createElement('div');
-  container.style.cssText='position:fixed;left:-9999px;top:0;width:'+RECEIPT_IMG_WIDTH_DOTS+'px;background:#fff;padding:20px;font-family:"Montserrat",sans-serif;';
+  container.className='receipt-render';
+  // Width is set here (not in CSS) so it's an exact pixel match for
+  // RECEIPT_IMG_WIDTH_DOTS (576px = 80mm printer width at 203dpi) — inline
+  // styles always win over the class's rules regardless of any mm-based
+  // width elsewhere, so this can't be silently overridden.
+  // Padding here approximates the Windows print's "4mm" physical margin,
+  // scaled to our 576px-wide raster (4mm/72mm usable width * 576px ≈ 32px).
+  container.style.cssText='position:fixed;left:-9999px;top:0;width:'+RECEIPT_IMG_WIDTH_DOTS+'px;padding:32px;';
   container.innerHTML=receiptHtml;
   document.body.appendChild(container);
   await new Promise(r=>setTimeout(r,80)); // let web fonts finish applying before rasterizing
@@ -2877,127 +2904,48 @@ if(window.electronAPI && window.electronAPI.isElectron && window.electronAPI.onU
   });
 }
 
-// ── ANDROID TABLET APP UPDATE ──
-
-const ANDROID_VERSION_CHECK_URL =
-  'https://mamunjoyit1-cyber.github.io/downloads/version-android.json';
-
-const ANDROID_DOWNLOAD_URL =
-  'https://mamunjoyit1-cyber.github.io/downloads/LagoBinAdmin-android.apk';
-
-function isNewerVersionStr(remote, current) {
-  const r = String(remote).split('.').map(Number);
-  const c = String(current).split('.').map(Number);
-
-  for (let i = 0; i < Math.max(r.length, c.length); i++) {
-    const rv = r[i] || 0;
-    const cv = c[i] || 0;
-
-    if (rv > cv) return true;
-    if (rv < cv) return false;
+// ── ANDROID TABLET APP UPDATE BANNER ──
+// Same idea as the Windows update check: compares the installed app's
+// versionName (from android/app/build.gradle, read via @capacitor/app)
+// against downloads/version-android.json, published automatically by the
+// "Build Android APK" GitHub Actions workflow every time android-app/ is
+// updated. No silent auto-install (Android needs the person to open and
+// install the new APK manually, same as re-downloading the Windows exe) —
+// tapping the banner just opens the download link in the system browser.
+const ANDROID_VERSION_CHECK_URL='https://mamunjoyit1-cyber.github.io/downloads/version-android.json';
+const ANDROID_DOWNLOAD_URL='https://mamunjoyit1-cyber.github.io/downloads/LagoBinAdmin-android.apk';
+function isNewerVersionStr(remote,current){
+  const r=String(remote).split('.').map(Number);
+  const c=String(current).split('.').map(Number);
+  for(let i=0;i<Math.max(r.length,c.length);i++){
+    const rv=r[i]||0, cv=c[i]||0;
+    if(rv>cv)return true;
+    if(rv<cv)return false;
   }
-
   return false;
 }
-
-async function checkForAndroidUpdate() {
-  try {
-    if (
-      !window.Capacitor ||
-      !window.Capacitor.isNativePlatform ||
-      !window.Capacitor.isNativePlatform()
-    ) {
-      return;
+async function checkForAndroidUpdate(){
+  if(!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform() && window.Capacitor.Plugins && window.Capacitor.Plugins.App))return;
+  try{
+    const info=await window.Capacitor.Plugins.App.getInfo();
+    const res=await fetch(ANDROID_VERSION_CHECK_URL,{cache:'no-store'});
+    if(!res.ok)return;
+    const data=await res.json();
+    if(data.version && isNewerVersionStr(data.version, info.version)){
+      const bar=document.createElement('div');
+      bar.style.cssText='position:fixed;top:0;left:0;right:0;background:#d4af37;color:#150e0b;text-align:center;padding:12px;font-weight:bold;font-size:14px;z-index:99999;font-family:inherit;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,0.4);';
+      bar.textContent='🔔 Nuova versione disponibile ('+data.version+') — Tocca qui per scaricarla';
+      bar.onclick=function(){
+        if(window.Capacitor.Plugins.Browser)window.Capacitor.Plugins.Browser.open({url:ANDROID_DOWNLOAD_URL});
+        else window.open(ANDROID_DOWNLOAD_URL,'_blank');
+      };
+      document.body.appendChild(bar);
     }
-
-    const AppPlugin =
-      window.Capacitor.Plugins &&
-      window.Capacitor.Plugins.App;
-
-    if (!AppPlugin) {
-      console.error('[Update] App plugin not available');
-      return;
-    }
-
-    const info = await AppPlugin.getInfo();
-
-    console.log('[Update] Installed:', info.version);
-
-    const res = await fetch(
-      ANDROID_VERSION_CHECK_URL + '?t=' + Date.now(),
-      {
-        cache: 'no-store'
-      }
-    );
-
-    if (!res.ok) {
-      console.error('[Update] Version check failed:', res.status);
-      return;
-    }
-
-    const data = await res.json();
-
-    console.log('[Update] Latest:', data.version);
-
-    if (!data.version) return;
-
-    if (!isNewerVersionStr(data.version, info.version)) {
-      console.log('[Update] Already up to date');
-      return;
-    }
-
-    if (document.getElementById('android-update-banner')) {
-      return;
-    }
-
-    const bar = document.createElement('div');
-
-    bar.id = 'android-update-banner';
-
-    bar.style.cssText =
-      'position:fixed;' +
-      'top:0;' +
-      'left:0;' +
-      'right:0;' +
-      'background:#d4af37;' +
-      'color:#150e0b;' +
-      'text-align:center;' +
-      'padding:13px;' +
-      'font-weight:bold;' +
-      'font-size:14px;' +
-      'z-index:99999;' +
-      'font-family:inherit;' +
-      'cursor:pointer;' +
-      'box-shadow:0 2px 10px rgba(0,0,0,.4);';
-
-    bar.innerHTML =
-      '🔔 Nuova versione disponibile (' +
-      data.version +
-      ') — <u>Tocca qui per aggiornare</u>';
-
-    bar.onclick = function () {
-
-      if (
-        window.Capacitor &&
-        window.Capacitor.Plugins &&
-        window.Capacitor.Plugins.Browser
-      ) {
-        window.Capacitor.Plugins.Browser.open({
-          url: ANDROID_DOWNLOAD_URL
-        });
-      } else {
-        window.open(ANDROID_DOWNLOAD_URL, '_blank');
-      }
-    };
-
-    document.body.appendChild(bar);
-
-  } catch (err) {
-    console.error('[Update] Android update failed:', err);
+  }catch(err){
+    console.error('Android update check failed:',err);
   }
 }
-
-setTimeout(checkForAndroidUpdate, 3000);
+setTimeout(checkForAndroidUpdate,3000);
 
 </script>
 </body>
