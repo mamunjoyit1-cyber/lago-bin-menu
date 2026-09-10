@@ -3,7 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lago Bin – Admin Dashboard (TEST — con Mappa Tavoli)</title>
+<title>Lago Bin – Admin Dashboard</title>
+<!-- Google Fonts fallback for Montserrat — the self-hosted fonts/*.woff2
+     files below live next to index.html on GitHub Pages, but the Android
+     app doesn't ship that folder. This CDN copy loads instead so the
+     Android image-based receipt still renders in the same Montserrat font
+     as the Windows print, keeping both platforms visually identical. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- html2canvas: renders the same receipt HTML used for Windows into a
+     bitmap image, which is then sent to network printers on Android as a
+     raster image (see buildEscposImageReceipt) — this is what makes the
+     two platforms' receipts look pixel-identical instead of an ESC/POS
+     plain-text approximation. -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 /* ── RECEIPT TYPOGRAPHY — self-hosted Montserrat (print only) ──
    Files live in fonts/ next to this HTML file on GitHub Pages. */
@@ -18,8 +31,6 @@ body { font-family: 'Palatino Linotype', Palatino, serif; background: #faf8f3; c
 .logout-btn { background: transparent; border: 1px solid #d4af37; color: #d4af37; padding: 8px 18px; border-radius: 20px; cursor: pointer; font-family: inherit; font-size: 13px; }
 .logout-btn:hover { background: rgba(212,175,55,0.15); }
 
-/* TEST BANNER */
-.test-banner { background: #b31e1e; color: #fff; text-align: center; padding: 6px; font-size: 12px; font-weight: bold; letter-spacing: 1px; }
 
 /* LOGIN */
 #login-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
@@ -54,6 +65,8 @@ body { font-family: 'Palatino Linotype', Palatino, serif; background: #faf8f3; c
 .area-toggle { display: flex; gap: 8px; }
 .area-btn { padding: 8px 16px; border-radius: 20px; border: 1px solid #d4af37; background: transparent; color: #d4af37; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: bold; }
 .area-btn.active { background: #d4af37; color: #150e0b; }
+.table-picker-btn { padding: 12px 4px; border-radius: 10px; border: 1px solid rgba(212,175,55,0.5); background: #fff; color: #2a1a10; cursor: pointer; font-family: inherit; font-size: 15px; font-weight: bold; }
+.table-picker-btn:hover { background: #d4af37; color: #150e0b; }
 
 .item-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(212,175,55,0.15); gap: 10px; }
 .item-row .item-info { flex: 1; }
@@ -191,13 +204,26 @@ body { font-family: 'Palatino Linotype', Palatino, serif; background: #faf8f3; c
 </head>
 <body>
 
-<div class="test-banner">⚠️ VERSIONE TEST — admin1 — Non è il pannello live. Sostituire l'admin ufficiale solo dopo aver verificato tutto qui.</div>
+<!-- TABLE PICKER MODAL (tap a table on the map instead of typing a number) -->
+<div id="tablePickerModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:99998;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#f5f0e6;border-radius:16px;padding:20px;max-width:520px;width:100%;max-height:80vh;display:flex;flex-direction:column;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <h3 style="margin:0;color:#2a1a10;">🪑 Scegli il tavolo</h3>
+      <span onclick="closeTablePicker()" style="cursor:pointer;font-size:22px;color:#8a6a50;">✕</span>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:14px;">
+      <button class="area-btn" id="tablePickerBtn-esterno" onclick="renderTablePickerGrid('esterno')">🌤️ Esterno</button>
+      <button class="area-btn" id="tablePickerBtn-interno" onclick="renderTablePickerGrid('interno')">🏠 Interno</button>
+    </div>
+    <div id="tablePickerGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:8px;overflow-y:auto;padding-right:4px;"></div>
+  </div>
+</div>
 
 <!-- LOGIN SCREEN -->
 <div id="login-screen">
   <div class="login-box">
     <h2>✦ LAGO BIN ✦</h2>
-    <div class="sub">Admin Dashboard (TEST)</div>
+    <div class="sub">Admin Dashboard</div>
     <input type="email" id="loginEmail" placeholder="Email" autocomplete="username">
     <input type="password" id="loginPassword" placeholder="Password" autocomplete="current-password">
     <button onclick="doLogin()">Accedi</button>
@@ -210,7 +236,7 @@ body { font-family: 'Palatino Linotype', Palatino, serif; background: #faf8f3; c
   <div class="header">
     <div>
       <h1>LAGO BIN</h1>
-      <div class="sub">Admin — Ordini in Attesa (TEST)</div>
+      <div class="sub">Admin — Ordini in Attesa</div>
     </div>
     <button class="logout-btn" id="notif-btn" onclick="enableNotifications()" style="margin-right:8px;">🔔 Notifiche</button>
     <button class="logout-btn" onclick="doLogout()">Esci</button>
@@ -1008,7 +1034,7 @@ function renderTodaysRoundsSlot(tbl){
   if(!slot)return;
   const todays=todaysRoundsCache[tbl]||[];
   if(!todays.length){
-    slot.outerHTML='<div class="empty-state" style="padding:16px 0;">Nessun ordine servito oggi per questo tavolo.</div>';
+    slot.innerHTML='<div class="empty-state" style="padding:16px 0;">Nessun ordine servito oggi per questo tavolo.</div>';
     return;
   }
   const sel=selectedRoundIds[tbl]||new Set();
@@ -1038,7 +1064,7 @@ function renderTodaysRoundsSlot(tbl){
     hHtml+='  </div>';
     hHtml+='</div>';
   });
-  slot.outerHTML='<div>'+hHtml+'</div>';
+  slot.innerHTML=hHtml;
 }
 
 function toggleRoundCheck(tbl,docId,checked){
@@ -1282,7 +1308,7 @@ async function renderMapTableDetail(tbl){
   const area=selectedArea[tbl]||defaultArea;
 
   let html='<button onclick="closeMapDetailView()" style="width:100%;padding:15px;border-radius:14px;border:2px solid #d4af37;background:rgba(212,175,55,0.15);color:#d4af37;font-weight:bold;font-size:17px;font-family:inherit;cursor:pointer;margin-bottom:18px;display:flex;align-items:center;justify-content:center;gap:10px;">⬅ TORNA AI TAVOLI</button>';
-  html+='<div class="map-dtitle">🪑 Tavolo <input type="text" value="'+tbl+'" onchange="changeTableNumber(\''+tbl+'\',this.value)" style="width:60px;background: #f5f0e6;border:1px solid rgba(212,175,55,0.4);border-radius:6px;color:#d4af37;font-weight:900;font-family:inherit;font-size:16px;padding:3px 6px;text-align:center;"></div>';
+  html+='<div class="map-dtitle">🪑 Tavolo <span onclick="openTablePicker(\''+tbl+'\')" style="cursor:pointer;color:#d4af37;text-decoration:underline dotted;">'+tbl+' ✏️</span></div>';
   html+='<div class="map-dmeta">🔑 Camera <input type="text" value="'+roomVal+'" placeholder="n. (opzionale)" style="width:70px;background: #f5f0e6;border:1px solid rgba(212,175,55,0.3);border-radius:6px;color: #2a1a10;font-family:inherit;font-size:12px;padding:4px 6px;" onchange="changeRoomNumber(\''+tbl+'\',this.value)"> · 👥 <input type="number" min="1" value="'+peopleVal+'" style="width:50px;background: #f5f0e6;border:1px solid rgba(212,175,55,0.3);border-radius:6px;color: #2a1a10;font-family:inherit;font-size:12px;padding:4px 6px;" onchange="changePeopleCount(\''+tbl+'\',this.value)"> persone</div>';
   html+='<div style="margin:10px 0 16px;"><button class="decline-btn" style="border-color:#d4af37;color:#d4af37;" onclick="freeTable(\''+tbl+'\')">🔓 Libera Tavolo</button></div>';
 
@@ -1623,6 +1649,7 @@ function staffName(email){ return STAFF_NAMES[email] || (email?email.split('@')[
 
 // ── AUTH ──
 function doLogin(){
+  primeAudio();
   const email=document.getElementById('loginEmail').value.trim();
   const pass=document.getElementById('loginPassword').value;
   const errEl=document.getElementById('loginError');
@@ -1679,15 +1706,40 @@ function enableNotifications(){
   }
   Notification.requestPermission().then(()=>{updateNotifBtn();});
 }
+// Chromium (and Electron) suspends audio output until the page has seen a
+// real user gesture — before that, AudioContext stays 'suspended' and
+// speechSynthesis can silently do nothing, with no error thrown either way.
+// primeAudio() is called on the login click (the first guaranteed user
+// gesture) to unlock both, so beeps/voice announcements aren't silently
+// dropped for the rest of the session.
+let sharedAudioCtx=null;
+function getAudioCtx(){
+  if(!sharedAudioCtx)sharedAudioCtx=new (window.AudioContext||window.webkitAudioContext)();
+  if(sharedAudioCtx.state==='suspended')sharedAudioCtx.resume().catch(()=>{});
+  return sharedAudioCtx;
+}
+function primeAudio(){
+  try{ getAudioCtx(); }catch(e){}
+  if('speechSynthesis' in window){
+    try{
+      window.speechSynthesis.resume();
+      // A near-silent empty utterance nudges Chromium's speech pipeline out
+      // of its initial paused state on some Windows setups.
+      const u=new SpeechSynthesisUtterance(' ');
+      u.volume=0;
+      window.speechSynthesis.speak(u);
+    }catch(e){}
+  }
+}
 function playBeep(){
   try{
-    const ctx=new (window.AudioContext||window.webkitAudioContext)();
+    const ctx=getAudioCtx();
     const o=ctx.createOscillator(),g=ctx.createGain();
     o.type='sine'; o.frequency.value=880; g.gain.value=0.2;
     o.connect(g); g.connect(ctx.destination);
     o.start();
     setTimeout(()=>{o.frequency.value=660;},150);
-    setTimeout(()=>{o.stop(); ctx.close();},400);
+    setTimeout(()=>{o.stop();},400);
   }catch(e){console.error('Beep error:',e);}
 }
 // Repeats the beep every N seconds (configurable in ⚙️ Impostazioni, default
@@ -1739,6 +1791,7 @@ function speakAnnouncement(text){
     window.Capacitor.Plugins.TextToSpeech.speak({text:text,lang:'it-IT',rate:0.9,queueStrategy:1}).catch(err=>console.error('TTS speak error:',err));
   }else if('speechSynthesis' in window){
     try{
+      window.speechSynthesis.cancel();
       const utter=new SpeechSynthesisUtterance(text);
       utter.lang='it-IT';
       utter.rate=0.95;
@@ -1846,7 +1899,7 @@ function renderOrders(snapshot){
     html+='<div class="order-card" data-table="'+tbl+'">';
     html+='  <div class="order-card-header" style="flex-direction:column;align-items:stretch;">';
     html+='    <div class="table-room-row">';
-    html+='      <div class="table-badge">🪑 <input type="text" value="'+tbl+'" onchange="changeTableNumber(\''+tbl+'\',this.value)"></div>';
+    html+='      <div class="table-badge" onclick="openTablePicker(\''+tbl+'\')" style="cursor:pointer;">🪑 '+tbl+' ✏️</div>';
     html+='      <div class="table-label" style="font-size:14px;">🔑 Camera <input type="text" value="'+roomVal+'" placeholder="n." style="width:70px;" onchange="changeRoomNumber(\''+tbl+'\',this.value)"></div>';
     html+='      <div class="table-label" style="font-size:14px;">👥 Persone <input type="number" min="1" value="'+peopleVal+'" style="width:60px;" onchange="changePeopleCount(\''+tbl+'\',this.value)"></div>';
     html+='    </div>';
@@ -1918,6 +1971,34 @@ function changeTableNumber(oldTbl,newTbl){
   }).then(()=>{
     if(openMapTableId===oldTbl)openMapTableId=newTbl;
   }).catch(err=>console.error(err));
+}
+
+// ── TABLE PICKER (tap a table on the map instead of typing a number) ──
+let pickerOldTbl=null;
+function openTablePicker(oldTbl){
+  pickerOldTbl=oldTbl;
+  renderTablePickerGrid('esterno');
+  document.getElementById('tablePickerModal').style.display='flex';
+}
+function closeTablePicker(){
+  document.getElementById('tablePickerModal').style.display='none';
+  pickerOldTbl=null;
+}
+function renderTablePickerGrid(area){
+  const numbers=area==='interno'?TABLE_NUMBERS_INTERNO:TABLE_NUMBERS_ESTERNO;
+  const grid=document.getElementById('tablePickerGrid');
+  let html='';
+  numbers.forEach(n=>{
+    html+='<button class="table-picker-btn" onclick="selectTableFromPicker(\''+n+'\')">'+n+'</button>';
+  });
+  grid.innerHTML=html;
+  const eb=document.getElementById('tablePickerBtn-esterno'), ib=document.getElementById('tablePickerBtn-interno');
+  if(eb)eb.classList.toggle('active',area==='esterno');
+  if(ib)ib.classList.toggle('active',area==='interno');
+}
+function selectTableFromPicker(newTbl){
+  if(pickerOldTbl!=null)changeTableNumber(pickerOldTbl,String(newTbl));
+  closeTablePicker();
 }
 
 function changeRoomNumber(tbl,newRoom){
@@ -2263,7 +2344,7 @@ const CP858_MAP={
   'ÿ':0x98,'Ö':0x99,'Ü':0x9A,'ø':0x9B,'£':0x9C,'Ø':0x9D,'×':0x9E,'ƒ':0x9F,
   'á':0xA0,'í':0xA1,'ó':0xA2,'ú':0xA3,'ñ':0xA4,'Ñ':0xA5,'ª':0xA6,'º':0xA7,
   '¿':0xA8,'®':0xA9,'¬':0xAA,'½':0xAB,'¼':0xAC,'¡':0xAD,'«':0xAE,'»':0xAF,
-  '€':0xD5
+  '€':0xD5,'°':0xF8
 };
 function encodeEscposText(str){
   const out=[];
@@ -2302,6 +2383,7 @@ function buildEscposReceipt(job,tbl,items,showPrice,room,operatorName,billingIte
   };
 
   raw([ESC_,0x40]);        // initialize
+  raw([ESC_,0x4D,0x00]);   // ESC M 0 — select Font A (larger built-in font; some printers default to the smaller Font B)
   raw([ESC_,0x74,19]);     // select code page 19 = CP858 on most Epson-compatible printers
 
   align(1); bigFont(true); bold(true);
@@ -2397,13 +2479,77 @@ function buildEscposReceipt(job,tbl,items,showPrice,room,operatorName,billingIte
   line('');
   line('Buon Appetito - Grazie');
   raw([0x0A,0x0A,0x0A]);
-  raw([GS_,0x56,0x00]); // full cut — change to [GS_,0x56,0x01] if your printer only supports partial cut
+  raw([GS_,0x56,0x01]); // partial cut — Vretti's auto-cutter is a partial-cut type
   return bytes;
 }
+// ── IMAGE-BASED RECEIPT PRINTING (pixel-identical to the Windows receipt) ──
+// A plain thermal printer's built-in font (used by buildEscposReceipt above)
+// can never match the Windows Montserrat/HTML look — the printer simply has
+// no way to load a custom font. The workaround: render the exact same
+// receipt HTML (buildReceiptHTML, same CSS as Windows) into a bitmap using
+// html2canvas, then send that bitmap to the printer as a raster image (ESC/
+// POS "GS v 0" command) instead of text commands. Slower than plain text,
+// but the output looks identical on both platforms.
+const RECEIPT_IMG_WIDTH_DOTS=576; // standard 80mm thermal printer width at 203dpi — change if a printer uses a different dot width
+
+async function renderReceiptToCanvas(job,tbl,items,showPrice,room,operatorName,billingItems){
+  const receiptHtml=buildReceiptHTML(job,tbl,items,showPrice,room,operatorName,billingItems);
+  const container=document.createElement('div');
+  container.style.cssText='position:fixed;left:-9999px;top:0;width:'+RECEIPT_IMG_WIDTH_DOTS+'px;background:#fff;padding:20px;font-family:"Montserrat",sans-serif;';
+  container.innerHTML=receiptHtml;
+  document.body.appendChild(container);
+  await new Promise(r=>setTimeout(r,80)); // let web fonts finish applying before rasterizing
+  let canvas;
+  try{
+    canvas=await html2canvas(container,{backgroundColor:'#ffffff',scale:1,useCORS:true});
+  }finally{
+    document.body.removeChild(container);
+  }
+  return canvas;
+}
+
+function canvasToEscposRaster(canvas){
+  const ctx=canvas.getContext('2d');
+  const w=canvas.width, h=canvas.height;
+  const imgData=ctx.getImageData(0,0,w,h).data;
+  const widthBytes=Math.ceil(w/8);
+  const bytes=[ESC_,0x40]; // initialize
+  const CHUNK_HEIGHT=200; // send in bands so we don't overflow a cheap printer's buffer with one giant command
+  for(let y0=0;y0<h;y0+=CHUNK_HEIGHT){
+    const chunkH=Math.min(CHUNK_HEIGHT,h-y0);
+    bytes.push(GS_,0x76,0x30,0x00, widthBytes&0xFF,(widthBytes>>8)&0xFF, chunkH&0xFF,(chunkH>>8)&0xFF);
+    for(let y=0;y<chunkH;y++){
+      for(let xb=0;xb<widthBytes;xb++){
+        let byte=0;
+        for(let bit=0;bit<8;bit++){
+          const x=xb*8+bit;
+          let on=0;
+          if(x<w){
+            const idx=((y0+y)*w+x)*4;
+            const luminance=imgData[idx]*0.299+imgData[idx+1]*0.587+imgData[idx+2]*0.114;
+            const alpha=imgData[idx+3];
+            on=(alpha>10 && luminance<160)?1:0;
+          }
+          byte|=(on<<(7-bit));
+        }
+        bytes.push(byte);
+      }
+    }
+  }
+  bytes.push(0x0A,0x0A,0x0A);
+  bytes.push(GS_,0x56,0x01); // partial cut — Vretti's auto-cutter is a partial-cut type
+  return bytes;
+}
+
+async function buildEscposImageReceiptBytes(job,tbl,items,showPrice,room,operatorName,billingItems){
+  const canvas=await renderReceiptToCanvas(job,tbl,items,showPrice,room,operatorName,billingItems);
+  return canvasToEscposRaster(canvas);
+}
+
 async function printEscposJob(job,tbl,room,operatorName){
   const ip=(printerIPs&&printerIPs[job.ipKey])||'';
   if(!ip)throw new Error('IP non configurato per "'+job.printer+'" — vai su ⚙️ Impostazioni.');
-  const bytes=buildEscposReceipt(job,tbl,job.items,job.showPrice,room,operatorName,job.billingItems);
+  const bytes=await buildEscposImageReceiptBytes(job,tbl,job.items,job.showPrice,room,operatorName,job.billingItems);
   const base64Data=bytesToBase64(bytes);
   await window.Capacitor.Plugins.EscposPrinter.printRaw({ip:ip,port:9100,data:base64Data});
 }
