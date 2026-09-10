@@ -82,7 +82,7 @@ jobs:
           name: LagoBinAdmin-android
           path: android-app/android/app/build/outputs/apk/debug/app-debug.apk
 
-      - name: Publish APK + version-android.json
+      - name: Prepare downloads
         run: |
           mkdir -p downloads
 
@@ -99,14 +99,11 @@ jobs:
 
       - name: Commit and push
         shell: bash
-        working-directory: .
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Remove generated Gradle changes that are not meant to be published
-          git restore -- android-app/android/.gradle 2>/dev/null || true
-
+          # Stage only the files that should be published
           git add \
             android-app/android/app/build.gradle \
             downloads/LagoBinAdmin-android.apk \
@@ -119,7 +116,13 @@ jobs:
 
           git commit -m "Auto-publish Android admin app v${{ steps.version.outputs.version }} [skip ci]"
 
+          # Discard all remaining build-generated changes
+          git reset --hard HEAD
+
+          # Get the latest main branch
           git fetch origin main
+
+          # Rebase the commit we just created
           git rebase origin/main
 
           git push origin main
