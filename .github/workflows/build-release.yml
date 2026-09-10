@@ -14,13 +14,19 @@ jobs:
   build-windows:
     runs-on: windows-latest
 
+    concurrency:
+      group: publish-downloads
+      cancel-in-progress: false
+
     defaults:
       run:
         working-directory: electron-app
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -30,25 +36,36 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Build portable Windows app
-        run: npm run build:win
-
-      - name: Read version from package.json
-        id: pkg
+      - name: Auto increment Windows version
+        id: version
         shell: bash
         run: |
           VERSION=$(node -p "require('./package.json').version")
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+          PATCH=$((PATCH + 1))
+
+          NEW_VERSION="$MAJOR.$MINOR.$PATCH"
+
+          npm version "$NEW_VERSION" --no-git-tag-version
+
+          echo "Old version: $VERSION"
+          echo "New version: $NEW_VERSION"
+          echo "version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Build portable Windows app
+        run: npm run build:win
 
       - name: Check build output
         shell: bash
         run: |
           echo "=== dist folder ==="
           ls -la dist || true
+
           echo "=== Looking for EXE ==="
           find dist -type f -iname "*.exe" -print || true
 
-      - name: Publish exe and version.json to downloads/
+      - name: Publish exe and version.json
         shell: bash
         run: |
           mkdir -p ../downloads
@@ -66,24 +83,28 @@ jobs:
 
           cat > ../downloads/version.json <<EOF
           {
-            "version": "${{ steps.pkg.outputs.version }}",
+            "version": "${{ steps.version.outputs.version }}",
             "notes": "Build automatico da GitHub Actions.",
             "releasedAt": "$(date -u +%Y-%m-%d)"
           }
           EOF
 
-      - name: Commit and push updated downloads/
+      - name: Commit and push
         shell: bash
         working-directory: .
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git add downloads/LagoBinAdmin.exe downloads/version.json
+          git add electron-app/package.json downloads/LagoBinAdmin.exe downloads/version.json
 
           if git diff --cached --quiet; then
             echo "Nessuna modifica da pubblicare"
-          else
-            git commit -m "Auto-publish admin app v${{ steps.pkg.outputs.version }}"
-            git push
+            exit 0
           fi
+
+          git commit -m "Auto-publish Windows admin app v${{ steps.version.outputs.version }}"
+
+          git pull --rebase origin main
+
+          git push origin main
