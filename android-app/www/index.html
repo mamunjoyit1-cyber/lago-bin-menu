@@ -259,6 +259,7 @@ body { font-family: 'Palatino Linotype', Palatino, serif; background: #faf8f3; c
       <div class="sub">Admin — Ordini in Attesa</div>
     </div>
     <button class="logout-btn" id="notif-btn" onclick="enableNotifications()" style="margin-right:8px;">🔔 Notifiche</button>
+    <button class="logout-btn" onclick="refreshApp()" style="margin-right:8px;" title="Ricarica l'app se qualcosa non sembra aggiornarsi">🔄</button>
     <button class="logout-btn" onclick="doLogout()">Esci</button>
   </div>
   <div style="display:flex;align-items:center;gap:10px;padding:10px 0 0;flex-wrap:wrap;">
@@ -374,9 +375,12 @@ body { font-family: 'Palatino Linotype', Palatino, serif; background: #faf8f3; c
         <div id="mapGridView">
           <h3>🗺️ Mappa Tavoli</h3>
           <div class="mgmt-sub">Tocca un tavolo per vedere lo stato o aprire l'ordine.</div>
-          <div class="area-toggle" style="margin-bottom:14px;">
-            <button class="area-btn active" id="mapAreaBtn-esterno" onclick="setMapGridArea('esterno')">🌤️ Esterno</button>
-            <button class="area-btn" id="mapAreaBtn-interno" onclick="setMapGridArea('interno')">🏠 Interno</button>
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
+            <div class="area-toggle" style="margin-bottom:0;">
+              <button class="area-btn active" id="mapAreaBtn-esterno" onclick="setMapGridArea('esterno')">🌤️ Esterno</button>
+              <button class="area-btn" id="mapAreaBtn-interno" onclick="setMapGridArea('interno')">🏠 Interno</button>
+            </div>
+            <button class="decline-btn" onclick="freeAllTables()">🔓 Libera Tutti i Tavoli</button>
           </div>
           <div class="map-legend">
             <span class="map-legend-item"><span class="map-legend-dot map-dot-empty"></span> Libero</span>
@@ -1327,8 +1331,12 @@ async function renderMapTableDetail(tbl){
   const peopleVal=pendingDocs.find(d=>d.people)?.people || occ.people || 1;
   const area=selectedArea[tbl]||defaultArea;
 
-  let html='<button onclick="closeMapDetailView()" style="width:100%;padding:15px;border-radius:14px;border:2px solid #d4af37;background:rgba(212,175,55,0.15);color:#d4af37;font-weight:bold;font-size:17px;font-family:inherit;cursor:pointer;margin-bottom:18px;display:flex;align-items:center;justify-content:center;gap:10px;">⬅ TORNA AI TAVOLI</button>';
-  html+='<div class="map-dtitle">🪑 Tavolo <span onclick="openTablePicker(\''+tbl+'\')" style="cursor:pointer;color:#d4af37;text-decoration:underline dotted;">'+tbl+' ✏️</span></div>';
+  let html='<div style="position:sticky;top:0;z-index:10;background:#fff;margin:-16px -18px 14px;padding:12px 18px;border-bottom:1px solid rgba(212,175,55,0.3);display:flex;align-items:center;gap:10px;cursor:pointer;" onclick="closeMapDetailView()">'
+    +'<span style="font-size:20px;color:#d4af37;">⬅</span>'
+    +'<span style="font-weight:bold;color:#d4af37;font-size:15px;">Tavolo '+tbl+'</span>'
+    +'<span style="color:#8a6a50;font-size:12px;margin-left:auto;">Torna ai tavoli</span>'
+    +'</div>';
+  html+='<div class="map-dtitle">🪑 Tavolo <span onclick="openTablePicker(\''+tbl+'\')" style="cursor:pointer;color:#d4af37;text-decoration:underline dotted;">'+tbl+'</span> <span onclick="openTablePicker(\''+tbl+'\')" style="cursor:pointer;margin-left:6px;">✏️</span></div>';
   html+='<div class="map-dmeta">🔑 Camera <input type="text" value="'+roomVal+'" placeholder="n. (opzionale)" style="width:70px;background: #f5f0e6;border:1px solid rgba(212,175,55,0.3);border-radius:6px;color: #2a1a10;font-family:inherit;font-size:12px;padding:4px 6px;" onchange="changeRoomNumber(\''+tbl+'\',this.value)"> · 👥 <input type="number" min="1" value="'+peopleVal+'" style="width:50px;background: #f5f0e6;border:1px solid rgba(212,175,55,0.3);border-radius:6px;color: #2a1a10;font-family:inherit;font-size:12px;padding:4px 6px;" onchange="changePeopleCount(\''+tbl+'\',this.value)"> persone</div>';
   html+='<div style="margin:10px 0 16px;"><button class="decline-btn" style="border-color:#d4af37;color:#d4af37;" onclick="freeTable(\''+tbl+'\')">🔓 Libera Tavolo</button></div>';
 
@@ -1675,7 +1683,15 @@ function doLogin(){
   const errEl=document.getElementById('loginError');
   errEl.textContent='';
   if(!email||!pass){errEl.textContent='Inserisci email e password.';return;}
-  auth.signInWithEmailAndPassword(email,pass).catch(err=>{
+  auth.signInWithEmailAndPassword(email,pass).then(()=>{
+    // Hand the same login to the native background watcher (Android only)
+    // so it can keep monitoring for new orders even when the WebView is
+    // asleep — see OrderWatcherService.java for why this exists.
+    if(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform() && window.Capacitor.Plugins && window.Capacitor.Plugins.NativeAuthBridge){
+      window.Capacitor.Plugins.NativeAuthBridge.saveCredentials({email:email,password:pass}).catch(err=>console.error('NativeAuthBridge save error:',err));
+      window.Capacitor.Plugins.NativeAuthBridge.requestBatteryOptimizationExemption().catch(err=>console.error('Battery exemption request error:',err));
+    }
+  }).catch(err=>{
     if(err.code==='auth/unauthorized-domain'){
       errEl.textContent='❌ Dominio non autorizzato su Firebase. Aggiungi "localhost" in Firebase Console → Authentication → Settings → Authorized domains.';
     }else if(err.code==='auth/network-request-failed'){
@@ -1688,7 +1704,16 @@ function doLogin(){
     console.error(err);
   });
 }
-function doLogout(){ auth.signOut(); }
+function doLogout(){
+  if(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform() && window.Capacitor.Plugins && window.Capacitor.Plugins.NativeAuthBridge){
+    window.Capacitor.Plugins.NativeAuthBridge.clearCredentials().catch(err=>console.error('NativeAuthBridge clear error:',err));
+  }
+  auth.signOut();
+}
+// Safety-net button: normally unnecessary since everything updates live via
+// Firestore listeners, but reloads the whole app on demand in case a
+// connection ever gets stuck — same effect as closing and reopening the app.
+function refreshApp(){ location.reload(); }
 
 auth.onAuthStateChanged(user=>{
   if(user){
@@ -1751,6 +1776,25 @@ function primeAudio(){
     }catch(e){}
   }
 }
+// The login click alone isn't enough: main.js persists the Firebase session
+// across launches, so on a returning session the login screen — and its
+// click — never happens at all, and primeAudio() would never run. This
+// catches the very first interaction ANYWHERE in the app (click, touch, or
+// key) as a fallback, so audio still gets unlocked even when login is skipped.
+(function(){
+  let primed=false;
+  function primeOnce(){
+    if(primed)return;
+    primed=true;
+    primeAudio();
+    document.removeEventListener('click',primeOnce,true);
+    document.removeEventListener('touchstart',primeOnce,true);
+    document.removeEventListener('keydown',primeOnce,true);
+  }
+  document.addEventListener('click',primeOnce,true);
+  document.addEventListener('touchstart',primeOnce,true);
+  document.addEventListener('keydown',primeOnce,true);
+})();
 function playBeep(){
   try{
     const ctx=getAudioCtx();
@@ -1919,7 +1963,7 @@ function renderOrders(snapshot){
     html+='<div class="order-card" data-table="'+tbl+'">';
     html+='  <div class="order-card-header" style="flex-direction:column;align-items:stretch;">';
     html+='    <div class="table-room-row">';
-    html+='      <div class="table-badge" onclick="openTablePicker(\''+tbl+'\')" style="cursor:pointer;">🪑 '+tbl+' ✏️</div>';
+    html+='      <div class="table-badge" onclick="openTablePicker(\''+tbl+'\')" style="cursor:pointer;display:flex;align-items:center;gap:6px;">🪑 '+tbl+' <span>✏️</span></div>';
     html+='      <div class="table-label" style="font-size:14px;">🔑 Camera <input type="text" value="'+roomVal+'" placeholder="n." style="width:70px;" onchange="changeRoomNumber(\''+tbl+'\',this.value)"></div>';
     html+='      <div class="table-label" style="font-size:14px;">👥 Persone <input type="number" min="1" value="'+peopleVal+'" style="width:60px;" onchange="changePeopleCount(\''+tbl+'\',this.value)"></div>';
     html+='    </div>';
@@ -2850,22 +2894,18 @@ function deleteHistoryOrder(docId){
 // they stay visible forever afterwards in "Storico Ordini" and in each
 // table's "Storico di Oggi" for that date.
 const AUTO_CLEAR_HOUR = 0; // 00:00 — change just this number if closing time changes
-function autoClearTablesCheck(){
-  if(new Date().getHours()!==AUTO_CLEAR_HOUR)return;
-  const runKey='autoClearDone_'+todayStr();
-  if(localStorage.getItem(runKey))return; // already ran today, don't repeat
-  localStorage.setItem(runKey,'1');
-  // Also auto-reject any leftover pending (unapproved) orders — otherwise
-  // those tables would still show as "pending" on the map after clearing,
-  // for the same reason freeTable() has to do this too.
-  db.collection('orders').where('status','==','pending').get().then(pendingSnap=>{
+// Shared by both the midnight auto-clear and the manual "Libera Tutti i
+// Tavoli" button: rejects any leftover pending orders (so tables don't keep
+// showing as "pending" afterward) then frees every occupied table.
+function clearAllTablesAndPendingOrders(byWhomName){
+  return db.collection('orders').where('status','==','pending').get().then(pendingSnap=>{
     if(pendingSnap.empty)return null;
     const batch=db.batch();
     pendingSnap.forEach(doc=>batch.update(doc.ref,{
       status:'cancelled',
       cancelledAt:firebase.firestore.FieldValue.serverTimestamp(),
       cancelledByEmail:currentUserEmail,
-      cancelledByName:staffName(currentUserEmail)||'Auto (chiusura)'
+      cancelledByName:byWhomName
     }));
     return batch.commit();
   }).then(()=>db.collection('tableStatus').get()).then(snap=>{
@@ -2877,9 +2917,28 @@ function autoClearTablesCheck(){
     return any?batch.commit():null;
   }).then(()=>{
     if(document.getElementById('maintab-mappa')&&document.getElementById('maintab-mappa').style.display!=='none')renderTableMap();
-  }).catch(err=>{
+  });
+}
+
+function autoClearTablesCheck(){
+  if(new Date().getHours()!==AUTO_CLEAR_HOUR)return;
+  const runKey='autoClearDone_'+todayStr();
+  if(localStorage.getItem(runKey))return; // already ran today, don't repeat
+  localStorage.setItem(runKey,'1');
+  clearAllTablesAndPendingOrders(staffName(currentUserEmail)||'Auto (chiusura)').catch(err=>{
     console.error('Auto clear tables error:',err);
     localStorage.removeItem(runKey); // let it retry on the next check if it failed
+  });
+}
+
+// Manual "🔓 Libera Tutti i Tavoli" button — same effect as the midnight
+// auto-clear, available on demand (e.g. closing early, or fixing a stuck
+// table state) instead of waiting for AUTO_CLEAR_HOUR.
+function freeAllTables(){
+  if(!confirm('Liberare TUTTI i tavoli? Eventuali ordini ancora in attesa verranno rifiutati automaticamente. Questa azione non si può annullare.'))return;
+  clearAllTablesAndPendingOrders(staffName(currentUserEmail)).catch(err=>{
+    console.error('Free all tables error:',err);
+    alert('Errore durante la liberazione dei tavoli.');
   });
 }
 setInterval(autoClearTablesCheck, 4*60*1000); // check every 4 minutes
