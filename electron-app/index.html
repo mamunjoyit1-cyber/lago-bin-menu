@@ -139,6 +139,64 @@ body { font-family: 'Palatino Linotype', Palatino, serif; background: #faf8f3; c
 .map-drawer .map-dtitle { color:#d4af37; font-size:15px; font-weight:bold; margin-bottom:4px; }
 .map-drawer .map-dmeta { font-size:12px; color:#8a6a50; margin-bottom:10px; }
 
+/* ── RECEIPT TYPOGRAPHY — shared by Windows browser-print AND Android
+   image-based printing ──
+   This used to live entirely inside @media print, which works fine for
+   real browser printing (#print-area) but is INVISIBLE to html2canvas —
+   html2canvas only ever sees normal "screen" styles, so none of this CSS
+   was being applied when Android rendered the receipt to an image, and it
+   fell back to plain browser-default text (small, unstyled, left-aligned).
+   Fix: these rules now apply unconditionally to both #print-area (real
+   print) and .receipt-render (the offscreen container the Android path
+   renders into with html2canvas) — same design tokens, same classes,
+   used identically by both platforms. */
+#print-area, .receipt-render {
+  --receipt-font: 'Montserrat', -apple-system, sans-serif;
+  --w-regular: 400;
+  --w-medium: 500;
+  --w-semibold: 600;
+  --size-heading: 23px;   /* Main heading — TAVOLO N */
+  --size-important: 22px; /* Tavolo/important info — TOTALE */
+  --size-section: 21px;   /* TURNO / section heading */
+  --size-dish: 19px;      /* Dish/menu name */
+  --size-normal: 18px;    /* Normal text — meta line */
+  --size-desc: 16px;      /* Description / detail */
+  --size-footer: 16px;    /* Footer */
+  --sp-after-heading: 10px;
+  --sp-after-box: 10px;
+  --sp-section-gap: 14px;
+  --sp-name-desc: 4px;
+  --sp-before-footer: 16px;
+
+  font-family: var(--receipt-font); color: #000;
+}
+
+.receipt-table-big { text-align: center; font-size: var(--size-heading); font-weight: var(--w-semibold); margin-bottom: var(--sp-after-heading); letter-spacing: 0.5px; }
+.receipt-title { text-align: center; font-size: var(--size-normal); font-weight: var(--w-medium); margin-bottom: 6px; color: #333; }
+.receipt-meta { font-size: var(--size-normal); font-weight: var(--w-regular); line-height: 1.5; margin-bottom: var(--sp-after-box); padding-bottom: var(--sp-after-box); border-bottom: 1px solid #000; }
+.receipt-meta b { font-weight: var(--w-semibold); }
+
+.receipt-turno { text-align: center; font-weight: var(--w-semibold); font-size: var(--size-section); margin: var(--sp-section-gap) 0 8px; padding-top: 10px; border-top: 1px dashed #000; text-transform: uppercase; letter-spacing: 0.5px; }
+
+.receipt-item { font-size: var(--size-dish); font-weight: var(--w-regular); margin-bottom: 10px; display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+.receipt-item .rleft { flex:1; }
+.receipt-item .rname { font-weight: var(--w-medium); }
+.receipt-item .rdetail { display:block; font-size: var(--size-desc); font-weight: var(--w-regular); color: #333; margin-top: var(--sp-name-desc); }
+.ritem-price { font-weight: var(--w-medium); font-size: var(--size-dish); white-space: nowrap; }
+.rqty { font-weight: var(--w-medium); }
+.menu-fisso-tag { font-size: 12px; font-weight: var(--w-medium); border: 1px solid #000; border-radius: 4px; padding: 1px 6px; margin-left: 4px; letter-spacing: 0.3px; white-space: nowrap; }
+
+.receipt-total { border-top: 1.5px solid #000; margin-top: 12px; padding-top: 10px; font-size: var(--size-important); font-weight: var(--w-semibold); text-align: right; }
+.receipt-online-tag { text-align: center; font-size: var(--size-desc); font-weight: var(--w-medium); border: 1.5px dashed #000; border-radius: 4px; padding: 6px; margin-top: 10px; }
+.receipt-footer { text-align: center; font-size: var(--size-footer); font-weight: var(--w-medium); letter-spacing: 1px; margin-top: var(--sp-before-footer); padding-top: 10px; border-top: 1px solid #000; text-transform: uppercase; }
+
+.receipt-divider { border-top: 1px dashed #000; margin: 12px 0 8px; }
+.person-summary-title { font-weight: var(--w-semibold); font-size: 15px; text-align: center; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+.person-summary-block { font-size: var(--size-desc); font-weight: var(--w-regular); margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px dotted #999; }
+.person-summary-name { font-weight: var(--w-medium); font-size: var(--size-desc); margin-bottom: 2px; }
+.person-summary-item { margin-left: 8px; }
+.person-summary-subtotal { text-align: right; font-weight: bold; font-size: 11px; margin-top: 2px; }
+
 /* PRINT AREA - hidden on screen, shown only when printing */
 #print-area { display: none; }
 @media print {
@@ -146,60 +204,22 @@ body { font-family: 'Palatino Linotype', Palatino, serif; background: #faf8f3; c
   body * { visibility: hidden; }
   #print-area, #print-area * { visibility: visible; }
 
-  /* ── RECEIPT DESIGN TOKENS — single source of truth ──
-     When this system is ported to React Native / ESC-POS in the future,
-     these values map 1:1 onto that renderer's style spec. Nothing about
-     these tokens is tied to "browser printing" — they describe the
-     receipt's typography and spacing contract, independent of how it's
-     eventually rendered. */
+  /* Print-specific mechanics only (the "overlay the whole page" hack) —
+     the actual typography lives above now, shared with .receipt-render. */
   #print-area {
-    --receipt-font: 'Montserrat', -apple-system, sans-serif;
-    --w-regular: 400;
-    --w-medium: 500;
-    --w-semibold: 600;
-    --size-heading: 23px;   /* Main heading — TAVOLO N */
-    --size-important: 22px; /* Tavolo/important info — TOTALE */
-    --size-section: 21px;   /* TURNO / section heading */
-    --size-dish: 19px;      /* Dish/menu name */
-    --size-normal: 18px;    /* Normal text — meta line */
-    --size-desc: 16px;      /* Description / detail */
-    --size-footer: 16px;    /* Footer */
-    --sp-after-heading: 10px;
-    --sp-after-box: 10px;
-    --sp-section-gap: 14px;
-    --sp-name-desc: 4px;
-    --sp-before-footer: 16px;
-
     display: block !important; position: absolute; top: 0; left: 0; width: 72mm; padding: 4mm;
-    font-family: var(--receipt-font); color: #000;
   }
-
-  .receipt-table-big { text-align: center; font-size: var(--size-heading); font-weight: var(--w-semibold); margin-bottom: var(--sp-after-heading); letter-spacing: 0.5px; }
-  .receipt-title { text-align: center; font-size: var(--size-normal); font-weight: var(--w-medium); margin-bottom: 6px; color: #333; }
-  .receipt-meta { font-size: var(--size-normal); font-weight: var(--w-regular); line-height: 1.5; margin-bottom: var(--sp-after-box); padding-bottom: var(--sp-after-box); border-bottom: 1px solid #000; }
-  .receipt-meta b { font-weight: var(--w-semibold); }
-
-  .receipt-turno { text-align: center; font-weight: var(--w-semibold); font-size: var(--size-section); margin: var(--sp-section-gap) 0 8px; padding-top: 10px; border-top: 1px dashed #000; text-transform: uppercase; letter-spacing: 0.5px; }
-
-  .receipt-item { font-size: var(--size-dish); font-weight: var(--w-regular); margin-bottom: 10px; display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
-  .receipt-item .rleft { flex:1; }
-  .receipt-item .rname { font-weight: var(--w-medium); }
-  .receipt-item .rdetail { display:block; font-size: var(--size-desc); font-weight: var(--w-regular); color: #333; margin-top: var(--sp-name-desc); }
-  .ritem-price { font-weight: var(--w-medium); font-size: var(--size-dish); white-space: nowrap; }
-  .rqty { font-weight: var(--w-medium); }
-  .menu-fisso-tag { font-size: 12px; font-weight: var(--w-medium); border: 1px solid #000; border-radius: 4px; padding: 1px 6px; margin-left: 4px; letter-spacing: 0.3px; white-space: nowrap; }
-
-  .receipt-total { border-top: 1.5px solid #000; margin-top: 12px; padding-top: 10px; font-size: var(--size-important); font-weight: var(--w-semibold); text-align: right; }
-  .receipt-online-tag { text-align: center; font-size: var(--size-desc); font-weight: var(--w-medium); border: 1.5px dashed #000; border-radius: 4px; padding: 6px; margin-top: 10px; }
-  .receipt-footer { text-align: center; font-size: var(--size-footer); font-weight: var(--w-medium); letter-spacing: 1px; margin-top: var(--sp-before-footer); padding-top: 10px; border-top: 1px solid #000; text-transform: uppercase; }
-
-  .receipt-divider { border-top: 1px dashed #000; margin: 12px 0 8px; }
-  .person-summary-title { font-weight: var(--w-semibold); font-size: 15px; text-align: center; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
-  .person-summary-block { font-size: var(--size-desc); font-weight: var(--w-regular); margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px dotted #999; }
-  .person-summary-name { font-weight: var(--w-medium); font-size: var(--size-desc); margin-bottom: 2px; }
-  .person-summary-item { margin-left: 8px; }
-  .person-summary-subtotal { text-align: right; font-weight: bold; font-size: 11px; margin-top: 2px; }
 }
+
+/* .receipt-render: the offscreen container the Android path renders into
+   with html2canvas (see renderReceiptToCanvas). Deliberately does NOT set
+   width here — the width is set inline in JS to RECEIPT_IMG_WIDTH_DOTS
+   (576px = 80mm printer dot width at 203dpi), which must win over any
+   mm-based width (72mm resolves to ~272 CSS px at the browser's 96dpi
+   reference, not 576 — that mismatch was part of why Android output was
+   too small). Inline styles always beat these class rules, so this is
+   safe either way, but is intentionally left unset here for clarity. */
+.receipt-render { color: #000; background: #fff; }
 </style>
 </head>
 <body>
@@ -239,6 +259,7 @@ body { font-family: 'Palatino Linotype', Palatino, serif; background: #faf8f3; c
       <div class="sub">Admin — Ordini in Attesa</div>
     </div>
     <button class="logout-btn" id="notif-btn" onclick="enableNotifications()" style="margin-right:8px;">🔔 Notifiche</button>
+    <button class="logout-btn" onclick="refreshApp()" style="margin-right:8px;" title="Ricarica l'app se qualcosa non sembra aggiornarsi">🔄</button>
     <button class="logout-btn" onclick="doLogout()">Esci</button>
   </div>
   <div style="display:flex;align-items:center;gap:10px;padding:10px 0 0;flex-wrap:wrap;">
@@ -354,9 +375,12 @@ body { font-family: 'Palatino Linotype', Palatino, serif; background: #faf8f3; c
         <div id="mapGridView">
           <h3>🗺️ Mappa Tavoli</h3>
           <div class="mgmt-sub">Tocca un tavolo per vedere lo stato o aprire l'ordine.</div>
-          <div class="area-toggle" style="margin-bottom:14px;">
-            <button class="area-btn active" id="mapAreaBtn-esterno" onclick="setMapGridArea('esterno')">🌤️ Esterno</button>
-            <button class="area-btn" id="mapAreaBtn-interno" onclick="setMapGridArea('interno')">🏠 Interno</button>
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
+            <div class="area-toggle" style="margin-bottom:0;">
+              <button class="area-btn active" id="mapAreaBtn-esterno" onclick="setMapGridArea('esterno')">🌤️ Esterno</button>
+              <button class="area-btn" id="mapAreaBtn-interno" onclick="setMapGridArea('interno')">🏠 Interno</button>
+            </div>
+            <button class="decline-btn" onclick="freeAllTables()">🔓 Libera Tutti i Tavoli</button>
           </div>
           <div class="map-legend">
             <span class="map-legend-item"><span class="map-legend-dot map-dot-empty"></span> Libero</span>
@@ -1307,8 +1331,12 @@ async function renderMapTableDetail(tbl){
   const peopleVal=pendingDocs.find(d=>d.people)?.people || occ.people || 1;
   const area=selectedArea[tbl]||defaultArea;
 
-  let html='<button onclick="closeMapDetailView()" style="width:100%;padding:15px;border-radius:14px;border:2px solid #d4af37;background:rgba(212,175,55,0.15);color:#d4af37;font-weight:bold;font-size:17px;font-family:inherit;cursor:pointer;margin-bottom:18px;display:flex;align-items:center;justify-content:center;gap:10px;">⬅ TORNA AI TAVOLI</button>';
-  html+='<div class="map-dtitle">🪑 Tavolo <span onclick="openTablePicker(\''+tbl+'\')" style="cursor:pointer;color:#d4af37;text-decoration:underline dotted;">'+tbl+' ✏️</span></div>';
+  let html='<div style="position:sticky;top:0;z-index:10;background:#fff;margin:-16px -18px 14px;padding:12px 18px;border-bottom:1px solid rgba(212,175,55,0.3);display:flex;align-items:center;gap:10px;cursor:pointer;" onclick="closeMapDetailView()">'
+    +'<span style="font-size:20px;color:#d4af37;">⬅</span>'
+    +'<span style="font-weight:bold;color:#d4af37;font-size:15px;">Tavolo '+tbl+'</span>'
+    +'<span style="color:#8a6a50;font-size:12px;margin-left:auto;">Torna ai tavoli</span>'
+    +'</div>';
+  html+='<div class="map-dtitle">🪑 Tavolo <span onclick="openTablePicker(\''+tbl+'\')" style="cursor:pointer;color:#d4af37;text-decoration:underline dotted;">'+tbl+'</span> <span onclick="openTablePicker(\''+tbl+'\')" style="cursor:pointer;margin-left:6px;">✏️</span></div>';
   html+='<div class="map-dmeta">🔑 Camera <input type="text" value="'+roomVal+'" placeholder="n. (opzionale)" style="width:70px;background: #f5f0e6;border:1px solid rgba(212,175,55,0.3);border-radius:6px;color: #2a1a10;font-family:inherit;font-size:12px;padding:4px 6px;" onchange="changeRoomNumber(\''+tbl+'\',this.value)"> · 👥 <input type="number" min="1" value="'+peopleVal+'" style="width:50px;background: #f5f0e6;border:1px solid rgba(212,175,55,0.3);border-radius:6px;color: #2a1a10;font-family:inherit;font-size:12px;padding:4px 6px;" onchange="changePeopleCount(\''+tbl+'\',this.value)"> persone</div>';
   html+='<div style="margin:10px 0 16px;"><button class="decline-btn" style="border-color:#d4af37;color:#d4af37;" onclick="freeTable(\''+tbl+'\')">🔓 Libera Tavolo</button></div>';
 
@@ -1655,7 +1683,15 @@ function doLogin(){
   const errEl=document.getElementById('loginError');
   errEl.textContent='';
   if(!email||!pass){errEl.textContent='Inserisci email e password.';return;}
-  auth.signInWithEmailAndPassword(email,pass).catch(err=>{
+  auth.signInWithEmailAndPassword(email,pass).then(()=>{
+    // Hand the same login to the native background watcher (Android only)
+    // so it can keep monitoring for new orders even when the WebView is
+    // asleep — see OrderWatcherService.java for why this exists.
+    if(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform() && window.Capacitor.Plugins && window.Capacitor.Plugins.NativeAuthBridge){
+      window.Capacitor.Plugins.NativeAuthBridge.saveCredentials({email:email,password:pass}).catch(err=>console.error('NativeAuthBridge save error:',err));
+      window.Capacitor.Plugins.NativeAuthBridge.requestBatteryOptimizationExemption().catch(err=>console.error('Battery exemption request error:',err));
+    }
+  }).catch(err=>{
     if(err.code==='auth/unauthorized-domain'){
       errEl.textContent='❌ Dominio non autorizzato su Firebase. Aggiungi "localhost" in Firebase Console → Authentication → Settings → Authorized domains.';
     }else if(err.code==='auth/network-request-failed'){
@@ -1668,7 +1704,16 @@ function doLogin(){
     console.error(err);
   });
 }
-function doLogout(){ auth.signOut(); }
+function doLogout(){
+  if(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform() && window.Capacitor.Plugins && window.Capacitor.Plugins.NativeAuthBridge){
+    window.Capacitor.Plugins.NativeAuthBridge.clearCredentials().catch(err=>console.error('NativeAuthBridge clear error:',err));
+  }
+  auth.signOut();
+}
+// Safety-net button: normally unnecessary since everything updates live via
+// Firestore listeners, but reloads the whole app on demand in case a
+// connection ever gets stuck — same effect as closing and reopening the app.
+function refreshApp(){ location.reload(); }
 
 auth.onAuthStateChanged(user=>{
   if(user){
@@ -1731,6 +1776,25 @@ function primeAudio(){
     }catch(e){}
   }
 }
+// The login click alone isn't enough: main.js persists the Firebase session
+// across launches, so on a returning session the login screen — and its
+// click — never happens at all, and primeAudio() would never run. This
+// catches the very first interaction ANYWHERE in the app (click, touch, or
+// key) as a fallback, so audio still gets unlocked even when login is skipped.
+(function(){
+  let primed=false;
+  function primeOnce(){
+    if(primed)return;
+    primed=true;
+    primeAudio();
+    document.removeEventListener('click',primeOnce,true);
+    document.removeEventListener('touchstart',primeOnce,true);
+    document.removeEventListener('keydown',primeOnce,true);
+  }
+  document.addEventListener('click',primeOnce,true);
+  document.addEventListener('touchstart',primeOnce,true);
+  document.addEventListener('keydown',primeOnce,true);
+})();
 function playBeep(){
   try{
     const ctx=getAudioCtx();
@@ -1899,7 +1963,7 @@ function renderOrders(snapshot){
     html+='<div class="order-card" data-table="'+tbl+'">';
     html+='  <div class="order-card-header" style="flex-direction:column;align-items:stretch;">';
     html+='    <div class="table-room-row">';
-    html+='      <div class="table-badge" onclick="openTablePicker(\''+tbl+'\')" style="cursor:pointer;">🪑 '+tbl+' ✏️</div>';
+    html+='      <div class="table-badge" onclick="openTablePicker(\''+tbl+'\')" style="cursor:pointer;display:flex;align-items:center;gap:6px;">🪑 '+tbl+' <span>✏️</span></div>';
     html+='      <div class="table-label" style="font-size:14px;">🔑 Camera <input type="text" value="'+roomVal+'" placeholder="n." style="width:70px;" onchange="changeRoomNumber(\''+tbl+'\',this.value)"></div>';
     html+='      <div class="table-label" style="font-size:14px;">👥 Persone <input type="number" min="1" value="'+peopleVal+'" style="width:60px;" onchange="changePeopleCount(\''+tbl+'\',this.value)"></div>';
     html+='    </div>';
@@ -2495,7 +2559,14 @@ const RECEIPT_IMG_WIDTH_DOTS=576; // standard 80mm thermal printer width at 203d
 async function renderReceiptToCanvas(job,tbl,items,showPrice,room,operatorName,billingItems){
   const receiptHtml=buildReceiptHTML(job,tbl,items,showPrice,room,operatorName,billingItems);
   const container=document.createElement('div');
-  container.style.cssText='position:fixed;left:-9999px;top:0;width:'+RECEIPT_IMG_WIDTH_DOTS+'px;background:#fff;padding:20px;font-family:"Montserrat",sans-serif;';
+  container.className='receipt-render';
+  // Width is set here (not in CSS) so it's an exact pixel match for
+  // RECEIPT_IMG_WIDTH_DOTS (576px = 80mm printer width at 203dpi) — inline
+  // styles always win over the class's rules regardless of any mm-based
+  // width elsewhere, so this can't be silently overridden.
+  // Padding here approximates the Windows print's "4mm" physical margin,
+  // scaled to our 576px-wide raster (4mm/72mm usable width * 576px ≈ 32px).
+  container.style.cssText='position:fixed;left:-9999px;top:0;width:'+RECEIPT_IMG_WIDTH_DOTS+'px;padding:32px;';
   container.innerHTML=receiptHtml;
   document.body.appendChild(container);
   await new Promise(r=>setTimeout(r,80)); // let web fonts finish applying before rasterizing
@@ -2823,22 +2894,18 @@ function deleteHistoryOrder(docId){
 // they stay visible forever afterwards in "Storico Ordini" and in each
 // table's "Storico di Oggi" for that date.
 const AUTO_CLEAR_HOUR = 0; // 00:00 — change just this number if closing time changes
-function autoClearTablesCheck(){
-  if(new Date().getHours()!==AUTO_CLEAR_HOUR)return;
-  const runKey='autoClearDone_'+todayStr();
-  if(localStorage.getItem(runKey))return; // already ran today, don't repeat
-  localStorage.setItem(runKey,'1');
-  // Also auto-reject any leftover pending (unapproved) orders — otherwise
-  // those tables would still show as "pending" on the map after clearing,
-  // for the same reason freeTable() has to do this too.
-  db.collection('orders').where('status','==','pending').get().then(pendingSnap=>{
+// Shared by both the midnight auto-clear and the manual "Libera Tutti i
+// Tavoli" button: rejects any leftover pending orders (so tables don't keep
+// showing as "pending" afterward) then frees every occupied table.
+function clearAllTablesAndPendingOrders(byWhomName){
+  return db.collection('orders').where('status','==','pending').get().then(pendingSnap=>{
     if(pendingSnap.empty)return null;
     const batch=db.batch();
     pendingSnap.forEach(doc=>batch.update(doc.ref,{
       status:'cancelled',
       cancelledAt:firebase.firestore.FieldValue.serverTimestamp(),
       cancelledByEmail:currentUserEmail,
-      cancelledByName:staffName(currentUserEmail)||'Auto (chiusura)'
+      cancelledByName:byWhomName
     }));
     return batch.commit();
   }).then(()=>db.collection('tableStatus').get()).then(snap=>{
@@ -2850,9 +2917,28 @@ function autoClearTablesCheck(){
     return any?batch.commit():null;
   }).then(()=>{
     if(document.getElementById('maintab-mappa')&&document.getElementById('maintab-mappa').style.display!=='none')renderTableMap();
-  }).catch(err=>{
+  });
+}
+
+function autoClearTablesCheck(){
+  if(new Date().getHours()!==AUTO_CLEAR_HOUR)return;
+  const runKey='autoClearDone_'+todayStr();
+  if(localStorage.getItem(runKey))return; // already ran today, don't repeat
+  localStorage.setItem(runKey,'1');
+  clearAllTablesAndPendingOrders(staffName(currentUserEmail)||'Auto (chiusura)').catch(err=>{
     console.error('Auto clear tables error:',err);
     localStorage.removeItem(runKey); // let it retry on the next check if it failed
+  });
+}
+
+// Manual "🔓 Libera Tutti i Tavoli" button — same effect as the midnight
+// auto-clear, available on demand (e.g. closing early, or fixing a stuck
+// table state) instead of waiting for AUTO_CLEAR_HOUR.
+function freeAllTables(){
+  if(!confirm('Liberare TUTTI i tavoli? Eventuali ordini ancora in attesa verranno rifiutati automaticamente. Questa azione non si può annullare.'))return;
+  clearAllTablesAndPendingOrders(staffName(currentUserEmail)).catch(err=>{
+    console.error('Free all tables error:',err);
+    alert('Errore durante la liberazione dei tavoli.');
   });
 }
 setInterval(autoClearTablesCheck, 4*60*1000); // check every 4 minutes
