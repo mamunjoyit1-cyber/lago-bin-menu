@@ -72,33 +72,33 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x android-app/android/gradlew
 
-      # Decodes the fixed signing keystore (stored as a base64 GitHub Secret)
-      # to a file — this is what makes every build share the same signature,
-      # so Android accepts each new APK as an update instead of treating it
-      # as a "different" app that conflicts with the one already installed.
       - name: Decode signing keystore
-        run: echo "${{ secrets.LAGOBIN_KEYSTORE_BASE64 }}" | base64 -d > android-app/android/app/lagobin-release.keystore
+        shell: bash
+        run: |
+          echo "${{ secrets.LAGOBIN_KEYSTORE_BASE64 }}" | base64 --decode \
+            > android-app/android/app/lagobin-release.keystore
 
-      - name: Build debug APK
+      - name: Build signed release APK
         working-directory: android-app/android
         env:
           LAGOBIN_KEYSTORE_PATH: app/lagobin-release.keystore
           LAGOBIN_KEYSTORE_PASSWORD: ${{ secrets.LAGOBIN_KEYSTORE_PASSWORD }}
           LAGOBIN_KEY_ALIAS: ${{ secrets.LAGOBIN_KEY_ALIAS }}
           LAGOBIN_KEY_PASSWORD: ${{ secrets.LAGOBIN_KEY_PASSWORD }}
-        run: ./gradlew assembleDebug --no-daemon
+        run: |
+          ./gradlew assembleRelease --no-daemon
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: LagoBinAdmin-android
-          path: android-app/android/app/build/outputs/apk/debug/app-debug.apk
+          path: android-app/android/app/build/outputs/apk/release/app-release.apk
 
       - name: Prepare downloads
         run: |
           mkdir -p downloads
 
-          cp android-app/android/app/build/outputs/apk/debug/app-debug.apk \
+          cp android-app/android/app/build/outputs/apk/release/app-release.apk \
              downloads/LagoBinAdmin-android.apk
 
           cat > downloads/version-android.json <<EOF
@@ -115,7 +115,34 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Stage only the files that should be published
+          # Save freshly-built files before resetting the working tree.
+          mkdir -p /tmp/publish-artifacts
+
+          cp android-app/android/app/build.gradle \
+             /tmp/publish-artifacts/build.gradle
+
+          cp downloads/LagoBinAdmin-android.apk \
+             /tmp/publish-artifacts/LagoBinAdmin-android.apk
+
+          cp downloads/version-android.json \
+             /tmp/publish-artifacts/version-android.json
+
+          # Get the latest main BEFORE creating the publish commit.
+          # This prevents APK binary rebase conflicts.
+          git fetch origin main
+          git checkout main
+          git reset --hard origin/main
+
+          # Restore the freshly generated files.
+          cp /tmp/publish-artifacts/build.gradle \
+             android-app/android/app/build.gradle
+
+          cp /tmp/publish-artifacts/LagoBinAdmin-android.apk \
+             downloads/LagoBinAdmin-android.apk
+
+          cp /tmp/publish-artifacts/version-android.json \
+             downloads/version-android.json
+
           git add \
             android-app/android/app/build.gradle \
             downloads/LagoBinAdmin-android.apk \
@@ -126,15 +153,13 @@ jobs:
             exit 0
           fi
 
-          git commit -m "Auto-publish Android admin app v${{ steps.version.outputs.version }} [skip ci]"
-
-          # Discard all remaining build-generated changes
-          git reset --hard HEAD
-
-          # Get the latest main branch
-          git fetch origin main
-
-          # Rebase the commit we just created
-          git rebase origin/main
+          git commit \
+            -m "Auto-publish Android admin app v${{ steps.version.outputs.version }} [skip ci]"
 
           git push origin main
+
+      - name: Clean signing keystore
+        if: always()
+        shell: bash
+        run: |
+          rm -f android-app/android/app/lagobin-release.keystore
