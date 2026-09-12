@@ -72,8 +72,20 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x android-app/android/gradlew
 
+      # Decodes the fixed signing keystore (stored as a base64 GitHub Secret)
+      # to a file — this is what makes every build share the same signature,
+      # so Android accepts each new APK as an update instead of treating it
+      # as a "different" app that conflicts with the one already installed.
+      - name: Decode signing keystore
+        run: echo "${{ secrets.LAGOBIN_KEYSTORE_BASE64 }}" | base64 -d > android-app/android/app/lagobin-release.keystore
+
       - name: Build debug APK
         working-directory: android-app/android
+        env:
+          LAGOBIN_KEYSTORE_PATH: app/lagobin-release.keystore
+          LAGOBIN_KEYSTORE_PASSWORD: ${{ secrets.LAGOBIN_KEYSTORE_PASSWORD }}
+          LAGOBIN_KEY_ALIAS: ${{ secrets.LAGOBIN_KEY_ALIAS }}
+          LAGOBIN_KEY_PASSWORD: ${{ secrets.LAGOBIN_KEY_PASSWORD }}
         run: ./gradlew assembleDebug --no-daemon
 
       - name: Upload APK artifact
