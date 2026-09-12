@@ -3,43 +3,66 @@ apply plugin: 'com.android.application'
 android {
     namespace = "it.lagobin.admin"
     compileSdk = rootProject.ext.compileSdkVersion
+
     defaultConfig {
         applicationId "it.lagobin.admin"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
+
         versionCode 5
         versionName "1.0.4"
+
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
         aaptOptions {
-             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
-             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+
     signingConfigs {
-        debug {
-            // GitHub Actions decodes the fixed keystore secret to this path
-            // and sets these env vars before building — see build-android.yml.
-            // Without this, every CI run would auto-generate its OWN
-            // throw-away debug key, giving every build a different signature
-            // and making Android refuse to install updates over the old one
-            // ("conflicts with existing package"). Falls back to the normal
-            // local debug key automatically if these aren't set (e.g. when
-            // building locally, outside CI).
+
+        // Permanent release signing key used by GitHub Actions.
+        release {
             def ciKeystorePath = System.getenv("LAGOBIN_KEYSTORE_PATH")
+            def ciKeystorePassword = System.getenv("LAGOBIN_KEYSTORE_PASSWORD")
+            def ciKeyAlias = System.getenv("LAGOBIN_KEY_ALIAS")
+            def ciKeyPassword = System.getenv("LAGOBIN_KEY_PASSWORD")
+
             if (ciKeystorePath != null && file(ciKeystorePath).exists()) {
                 storeFile file(ciKeystorePath)
-                storePassword System.getenv("LAGOBIN_KEYSTORE_PASSWORD")
-                keyAlias System.getenv("LAGOBIN_KEY_ALIAS")
-                keyPassword System.getenv("LAGOBIN_KEY_PASSWORD")
+                storePassword ciKeystorePassword
+                keyAlias ciKeyAlias
+                keyPassword ciKeyPassword
+            }
+        }
+
+        // Keep debug builds working.
+        debug {
+            def ciKeystorePath = System.getenv("LAGOBIN_KEYSTORE_PATH")
+            def ciKeystorePassword = System.getenv("LAGOBIN_KEYSTORE_PASSWORD")
+            def ciKeyAlias = System.getenv("LAGOBIN_KEY_ALIAS")
+            def ciKeyPassword = System.getenv("LAGOBIN_KEY_PASSWORD")
+
+            if (ciKeystorePath != null && file(ciKeystorePath).exists()) {
+                storeFile file(ciKeystorePath)
+                storePassword ciKeystorePassword
+                keyAlias ciKeyAlias
+                keyPassword ciKeyPassword
             }
         }
     }
+
     buildTypes {
+
         release {
             minifyEnabled false
+
+            // Sign every release APK with the same permanent key.
+            signingConfig signingConfigs.release
+
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
+
         debug {
             signingConfig signingConfigs.debug
         }
@@ -47,31 +70,33 @@ android {
 }
 
 repositories {
-    flatDir{
+    flatDir {
         dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
     }
 }
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
+
     implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
     implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
     implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+
     implementation project(':capacitor-android')
+
     testImplementation "junit:junit:$junitVersion"
+
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+
     implementation project(':capacitor-cordova-android-plugins')
 
-    // ── Native order-watcher background service ──
-    // Uses the native (non-JS) Firebase SDK so it can keep listening for new
-    // pending orders even when the WebView/JS engine is throttled by Android
-    // (screen off, app in background) — see OrderWatcherService.java.
+    // Native order-watcher background service
     implementation platform('com.google.firebase:firebase-bom:34.17.0')
     implementation 'com.google.firebase:firebase-firestore'
     implementation 'com.google.firebase:firebase-auth'
-    // EncryptedSharedPreferences — securely stores the admin's login so the
-    // background service can sign in on its own (see NativeAuthBridge.java).
+
+    // Secure storage for native authentication
     implementation 'androidx.security:security-crypto:1.1.0'
 }
 
@@ -79,6 +104,7 @@ apply from: 'capacitor.build.gradle'
 
 try {
     def servicesJSON = file('google-services.json')
+
     if (servicesJSON.text) {
         apply plugin: 'com.google.gms.google-services'
     }
