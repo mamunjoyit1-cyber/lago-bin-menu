@@ -7,8 +7,8 @@ android {
         applicationId "it.lagobin.admin"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 6
-        versionName "1.0.5"
+        versionCode 4
+        versionName "1.0.3"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -16,10 +16,32 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        debug {
+            // GitHub Actions decodes the fixed keystore secret to this path
+            // and sets these env vars before building — see build-android.yml.
+            // Without this, every CI run would auto-generate its OWN
+            // throw-away debug key, giving every build a different signature
+            // and making Android refuse to install updates over the old one
+            // ("conflicts with existing package"). Falls back to the normal
+            // local debug key automatically if these aren't set (e.g. when
+            // building locally, outside CI).
+            def ciKeystorePath = System.getenv("LAGOBIN_KEYSTORE_PATH")
+            if (ciKeystorePath != null && file(ciKeystorePath).exists()) {
+                storeFile file(ciKeystorePath)
+                storePassword System.getenv("LAGOBIN_KEYSTORE_PASSWORD")
+                keyAlias System.getenv("LAGOBIN_KEY_ALIAS")
+                keyPassword System.getenv("LAGOBIN_KEY_PASSWORD")
+            }
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            signingConfig signingConfigs.debug
         }
     }
 }
