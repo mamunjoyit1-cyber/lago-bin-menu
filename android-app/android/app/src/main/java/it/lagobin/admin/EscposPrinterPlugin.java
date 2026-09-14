@@ -62,8 +62,26 @@ public class EscposPrinterPlugin extends Plugin {
                 socket.connect(new InetSocketAddress(finalIp, finalPort), 5000);
                 socket.setSoTimeout(5000);
                 OutputStream out = socket.getOutputStream();
-                out.write(bytes);
-                out.flush();
+
+                // Image-based receipts can be tens of KB of raw raster data.
+                // Writing it all in one go can overflow a cheap printer's
+                // small receive buffer, which corrupts/duplicates the print
+                // and can jam the paper feed. Writing in small chunks with a
+                // short pause between them gives the printer time to drain
+                // its buffer as data arrives, instead of flooding it.
+                final int CHUNK_SIZE = 1024;
+                final int CHUNK_DELAY_MS = 15;
+                int offset = 0;
+                while (offset < bytes.length) {
+                    int len = Math.min(CHUNK_SIZE, bytes.length - offset);
+                    out.write(bytes, offset, len);
+                    out.flush();
+                    offset += len;
+                    if (offset < bytes.length) {
+                        try { Thread.sleep(CHUNK_DELAY_MS); } catch (InterruptedException ignored) {}
+                    }
+                }
+
                 JSObject ret = new JSObject();
                 ret.put("success", true);
                 call.resolve(ret);
