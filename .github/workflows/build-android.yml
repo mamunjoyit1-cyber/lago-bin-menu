@@ -81,7 +81,7 @@ jobs:
       - name: Build signed release APK
         working-directory: android-app/android
         env:
-          LAGOBIN_KEYSTORE_PATH: app/lagobin-release.keystore
+          LAGOBIN_KEYSTORE_PATH: ${{ github.workspace }}/android-app/android/app/lagobin-release.keystore
           LAGOBIN_KEYSTORE_PASSWORD: ${{ secrets.LAGOBIN_KEYSTORE_PASSWORD }}
           LAGOBIN_KEY_ALIAS: ${{ secrets.LAGOBIN_KEY_ALIAS }}
           LAGOBIN_KEY_PASSWORD: ${{ secrets.LAGOBIN_KEY_PASSWORD }}
