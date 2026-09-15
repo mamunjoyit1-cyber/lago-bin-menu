@@ -2556,23 +2556,37 @@ function buildEscposReceipt(job,tbl,items,showPrice,room,operatorName,billingIte
 // but the output looks identical on both platforms.
 const RECEIPT_IMG_WIDTH_DOTS=576; // standard 80mm thermal printer width at 203dpi — change if a printer uses a different dot width
 
+// Windows' @page{size:72mm} is laid out by the browser using the universal
+// CSS reference of 96px/inch — so on Windows, 72mm of paper is only ~272 CSS
+// px wide, and a 23px heading takes up a big chunk of that. Our Android
+// raster needs to be RECEIPT_IMG_WIDTH_DOTS (576) pixels wide for the
+// printer, but laying the HTML out directly at 576px (as before) squeezed
+// the SAME 23px font into more than double the CSS space — which is why it
+// came out looking noticeably smaller than the Windows print, even though
+// every font-size number is identical between the two. Fix: lay out the
+// receipt at the SAME ~272px width Windows effectively uses (so proportions
+// match exactly), then use html2canvas's `scale` option to upsample the
+// whole rendered image to the full 576-dot resolution the printer needs.
+const RECEIPT_CSS_LAYOUT_WIDTH = 72 * 96 / 25.4; // 72mm at the CSS-standard 96dpi ≈ 272px — matches Windows' @page width exactly
+
 async function renderReceiptToCanvas(job,tbl,items,showPrice,room,operatorName,billingItems){
   const receiptHtml=buildReceiptHTML(job,tbl,items,showPrice,room,operatorName,billingItems);
   const container=document.createElement('div');
   container.className='receipt-render';
-  // Width is set here (not in CSS) so it's an exact pixel match for
-  // RECEIPT_IMG_WIDTH_DOTS (576px = 80mm printer width at 203dpi) — inline
-  // styles always win over the class's rules regardless of any mm-based
-  // width elsewhere, so this can't be silently overridden.
-  // Padding here approximates the Windows print's "4mm" physical margin,
-  // scaled to our 576px-wide raster (4mm/72mm usable width * 576px ≈ 32px).
-  container.style.cssText='position:fixed;left:-9999px;top:0;width:'+RECEIPT_IMG_WIDTH_DOTS+'px;padding:32px;';
+  // Layout width matches Windows' true CSS-pixel page width (see note
+  // above) so font sizes are proportioned identically on both platforms.
+  // Padding here is the CSS-px equivalent of Windows' "4mm" physical
+  // margin (4mm * 96/25.4 ≈ 15px), for the same reason.
+  container.style.cssText='position:fixed;left:-9999px;top:0;width:'+RECEIPT_CSS_LAYOUT_WIDTH+'px;padding:15px;';
   container.innerHTML=receiptHtml;
   document.body.appendChild(container);
   await new Promise(r=>setTimeout(r,80)); // let web fonts finish applying before rasterizing
   let canvas;
   try{
-    canvas=await html2canvas(container,{backgroundColor:'#ffffff',scale:1,useCORS:true});
+    // scale upsamples the render to the full raster width the printer
+    // needs (576 dots), without changing any font-size proportions.
+    const renderScale=RECEIPT_IMG_WIDTH_DOTS/RECEIPT_CSS_LAYOUT_WIDTH;
+    canvas=await html2canvas(container,{backgroundColor:'#ffffff',scale:renderScale,useCORS:true});
   }finally{
     document.body.removeChild(container);
   }
