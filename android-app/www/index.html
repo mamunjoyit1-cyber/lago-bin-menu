@@ -345,15 +345,15 @@ body { font-family: 'Palatino Linotype', Palatino, serif; background: #faf8f3; c
       </div>
 
       <div class="menu-mgmt" style="margin-top:20px;">
-        <h3>🖨️ Stampanti Windows (Electron)</h3>
-        <div class="mgmt-sub">Scegli quale stampante Windows usare per Esterno e Interno — utile se cambi o aggiungi una stampante, senza dover modificare il codice.</div>
+        <h3>🖨️ Stampanti Windows (elenco di sistema)</h3>
+        <div class="mgmt-sub">Elenco delle stampanti installate su Windows, solo per riferimento — la stampa avviene tramite l'IP di rete qui sotto, non tramite questa selezione.</div>
         <div id="printer-settings-container"><div class="empty-state">Caricamento stampanti...</div></div>
         <button class="add-item-btn" style="margin-top:10px;" onclick="savePrinterSettings()">💾 Salva Stampanti</button>
       </div>
 
       <div class="menu-mgmt" style="margin-top:20px;">
-        <h3>📶 Stampanti Tablet Android (IP di rete)</h3>
-        <div class="mgmt-sub">Il tablet Android invia la stampa direttamente all'indirizzo IP della stampante sulla rete WiFi (porta 9100). Trova l'IP dal display della stampante o stampando la sua pagina di configurazione di rete.</div>
+        <h3>📶 IP Stampanti di Rete (Windows e Android)</h3>
+        <div class="mgmt-sub">Sia il PC Windows che il tablet Android inviano la stampa direttamente all'indirizzo IP della stampante sulla rete WiFi (porta 9100). Trova l'IP dal display della stampante o stampando la sua pagina di configurazione di rete.</div>
         <div style="margin-bottom:14px;">
           <label style="display:block;margin-bottom:6px;color:#2a1a10;font-weight:bold;">🌤️ IP Stampante Esterno</label>
           <input type="text" id="printerIPEsterno" placeholder="192.168.1.101" style="width:100%;padding:10px;border-radius:8px;border:1px solid #d4af37;background:#f5f0e6;color:#2a1a10;font-family:inherit;">
@@ -980,7 +980,11 @@ function savePrinterIPs(){
   });
 }
 function setDefaultArea(area){
-  db.collection('appSettings').doc('general').set({activeArea:area},{merge:true}).catch(err=>console.error(err));
+  db.collection('appSettings').doc('general').set({activeArea:area},{merge:true})
+    .catch(err=>{
+      console.error('setDefaultArea error:',err);
+      alert('❌ Impossibile salvare l\'area: '+err.message);
+    });
 }
 function updateDefaultAreaToggleUI(){
   const eb=document.getElementById('defaultAreaBtn-esterno'), ib=document.getElementById('defaultAreaBtn-interno');
@@ -2631,42 +2635,46 @@ async function buildEscposImageReceiptBytes(job,tbl,items,showPrice,room,operato
   return canvasToEscposRaster(canvas);
 }
 
+// Sends the same rendered receipt image to whichever transport the current
+// platform supports — Android uses the Capacitor plugin (raw TCP socket
+// from native code), Windows/Electron uses Node's net module via main.js
+// (see silent-print-ip in main.js). Both hit the SAME printer IP with the
+// SAME bytes, which is what makes the two platforms' output identical and
+// avoids Windows' driver/printer-name system entirely — that system was
+// the source of the Esterno/Interno mix-up when only one (or zero)
+// printers were actually installed as named Windows printer objects.
 async function printEscposJob(job,tbl,room,operatorName){
   const ip=(printerIPs&&printerIPs[job.ipKey])||'';
   if(!ip)throw new Error('IP non configurato per "'+job.printer+'" — vai su ⚙️ Impostazioni.');
   const bytes=await buildEscposImageReceiptBytes(job,tbl,job.items,job.showPrice,room,operatorName,job.billingItems);
   const base64Data=bytesToBase64(bytes);
-  await window.Capacitor.Plugins.EscposPrinter.printRaw({ip:ip,port:9100,data:base64Data});
+  if(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()){
+    await window.Capacitor.Plugins.EscposPrinter.printRaw({ip:ip,port:9100,data:base64Data});
+  }else if(window.electronAPI && window.electronAPI.isElectron){
+    await window.electronAPI.silentPrintIP(base64Data, ip, 9100);
+  }else{
+    throw new Error('Piattaforma non supportata per la stampa diretta via IP.');
+  }
 }
 
 async function printJobs(jobs,tbl,room,operatorName){
-  const isAndroid = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
+  const canPrintDirect = (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform())
+    || (window.electronAPI && window.electronAPI.isElectron);
   for(const job of jobs){
     if(!job.items.length)continue;
-    if(isAndroid){
+    if(canPrintDirect){
       try{
         await printEscposJob(job,tbl,room,operatorName);
       }catch(err){
-        console.error('ESC/POS print failed:',err);
-        alert('❌ Stampa fallita su "'+job.printer+'".\nControlla l\'IP (⚙️ Impostazioni), la rete WiFi e che la stampante sia accesa.\n\n'+(err&&err.message?err.message:err));
+        console.error('Print failed:',err);
+        alert('❌ Stampa fallita su "'+job.printer+'".\nControlla l\'IP (⚙️ Impostazioni), la rete e che la stampante sia accesa.\n\n'+(err&&err.message?err.message:err));
       }
       continue;
     }
     const receiptHtml=buildReceiptHTML(job,tbl,job.items,job.showPrice,room,operatorName,job.billingItems);
-    if(window.electronAPI && window.electronAPI.isElectron){
-      // Desktop app: print straight to the named printer, no dialog, no popup.
-      try{
-        await window.electronAPI.silentPrint(receiptHtml, job.printer);
-      }catch(err){
-        console.error('Silent print failed:',err);
-        alert('❌ Stampa fallita su "'+job.printer+'".\nControlla che la stampante sia accesa e collegata.\n\n'+(err&&err.message?err.message:err));
-      }
-    }else{
-      // Browser fallback (testing on GitHub Pages / any normal browser): unchanged behavior.
-      document.getElementById('print-area').innerHTML=receiptHtml;
-      alert('🖨️ Nella finestra di stampa, seleziona la stampante:\n\n"'+job.printer+'"\n\nPremi OK per continuare, poi clicca Stampa.');
-      await doPrint();
-    }
+    document.getElementById('print-area').innerHTML=receiptHtml;
+    alert('🖨️ Nella finestra di stampa, seleziona la stampante:\n\n"'+job.printer+'"\n\nPremi OK per continuare, poi clicca Stampa.');
+    await doPrint();
   }
 }
 
@@ -2985,8 +2993,11 @@ if(window.electronAPI && window.electronAPI.isElectron && window.electronAPI.onU
 // updated. No silent auto-install (Android needs the person to open and
 // install the new APK manually, same as re-downloading the Windows exe) —
 // tapping the banner just opens the download link in the system browser.
-const ANDROID_VERSION_CHECK_URL='https://mamunjoyit1-cyber.github.io/downloads/version-android.json';
-const ANDROID_DOWNLOAD_URL='https://mamunjoyit1-cyber.github.io/downloads/LagoBinAdmin-android.apk';
+// NOTE: repo is "lago-bin-menu" (not a user-site repo), so GitHub Pages
+// serves it under /lago-bin-menu/. Without that segment these returned 404,
+// and since a failed check returns silently, the banner never showed.
+const ANDROID_VERSION_CHECK_URL='https://mamunjoyit1-cyber.github.io/lago-bin-menu/downloads/version-android.json';
+const ANDROID_DOWNLOAD_URL='https://mamunjoyit1-cyber.github.io/lago-bin-menu/downloads/LagoBinAdmin-android.apk';
 function isNewerVersionStr(remote,current){
   const r=String(remote).split('.').map(Number);
   const c=String(current).split('.').map(Number);
