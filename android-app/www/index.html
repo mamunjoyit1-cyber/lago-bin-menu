@@ -269,6 +269,7 @@ body { font-family: 'Palatino Linotype', Palatino, serif; background: #faf8f3; c
       <button class="area-btn" id="defaultAreaBtn-interno" onclick="setDefaultArea('interno')">🏠 Interno</button>
     </div>
   </div>
+  <div id="disabledPrintersWarning" style="display:none;margin:10px 0 0;padding:10px 14px;background:#5a1a1a;color:#ffdede;border-radius:8px;font-size:13px;font-weight:bold;"></div>
   <div class="tab-nav">
     <button class="main-tab-btn active" id="maintab-mappa-btn" onclick="switchMainTab('mappa')">🗺️ Mappa</button>
     <button class="main-tab-btn" id="maintab-orders-btn" onclick="switchMainTab('orders')">📋 Ordini</button>
@@ -356,17 +357,36 @@ body { font-family: 'Palatino Linotype', Palatino, serif; background: #faf8f3; c
         <div class="mgmt-sub">Sia il PC Windows che il tablet Android inviano la stampa direttamente all'indirizzo IP della stampante sulla rete WiFi (porta 9100). Trova l'IP dal display della stampante o stampando la sua pagina di configurazione di rete.</div>
         <div style="margin-bottom:14px;">
           <label style="display:block;margin-bottom:6px;color:#2a1a10;font-weight:bold;">🌤️ IP Stampante Esterno</label>
-          <input type="text" id="printerIPEsterno" placeholder="192.168.1.101" style="width:100%;padding:10px;border-radius:8px;border:1px solid #d4af37;background:#f5f0e6;color:#2a1a10;font-family:inherit;">
+          <div style="display:flex;gap:8px;">
+            <input type="text" id="printerIPEsterno" placeholder="192.168.1.101" style="flex:1;padding:10px;border-radius:8px;border:1px solid #d4af37;background:#f5f0e6;color:#2a1a10;font-family:inherit;">
+            <button class="decline-btn" style="border-color:#d4af37;color:#d4af37;white-space:nowrap;" onclick="testPrintIP('esterno')">🧪 Test</button>
+          </div>
+          <label style="display:flex;align-items:center;gap:6px;margin-top:6px;color:#2a1a10;font-size:13px;"><input type="checkbox" id="printerEnabledEsterno" checked> Stampa abilitata</label>
         </div>
         <div style="margin-bottom:14px;">
           <label style="display:block;margin-bottom:6px;color:#2a1a10;font-weight:bold;">🏠 IP Stampante Interno</label>
-          <input type="text" id="printerIPInterno" placeholder="192.168.1.102" style="width:100%;padding:10px;border-radius:8px;border:1px solid #d4af37;background:#f5f0e6;color:#2a1a10;font-family:inherit;">
+          <div style="display:flex;gap:8px;">
+            <input type="text" id="printerIPInterno" placeholder="192.168.1.102" style="flex:1;padding:10px;border-radius:8px;border:1px solid #d4af37;background:#f5f0e6;color:#2a1a10;font-family:inherit;">
+            <button class="decline-btn" style="border-color:#d4af37;color:#d4af37;white-space:nowrap;" onclick="testPrintIP('interno')">🧪 Test</button>
+          </div>
+          <label style="display:flex;align-items:center;gap:6px;margin-top:6px;color:#2a1a10;font-size:13px;"><input type="checkbox" id="printerEnabledInterno" checked> Stampa abilitata</label>
         </div>
         <div>
           <label style="display:block;margin-bottom:6px;color:#2a1a10;font-weight:bold;">🍹 IP Stampante Bar (Interno)</label>
-          <input type="text" id="printerIPInternoBar" placeholder="192.168.1.103" style="width:100%;padding:10px;border-radius:8px;border:1px solid #d4af37;background:#f5f0e6;color:#2a1a10;font-family:inherit;">
+          <div style="display:flex;gap:8px;">
+            <input type="text" id="printerIPInternoBar" placeholder="192.168.1.103" style="flex:1;padding:10px;border-radius:8px;border:1px solid #d4af37;background:#f5f0e6;color:#2a1a10;font-family:inherit;">
+            <button class="decline-btn" style="border-color:#d4af37;color:#d4af37;white-space:nowrap;" onclick="testPrintIP('internoBar')">🧪 Test</button>
+          </div>
+          <label style="display:flex;align-items:center;gap:6px;margin-top:6px;color:#2a1a10;font-size:13px;"><input type="checkbox" id="printerEnabledInternoBar" checked> Stampa abilitata</label>
         </div>
         <button class="add-item-btn" style="margin-top:10px;" onclick="savePrinterIPs()">💾 Salva IP Stampanti</button>
+      </div>
+
+      <div class="menu-mgmt" style="margin-top:20px;">
+        <h3>ℹ️ Info & Aggiornamenti</h3>
+        <div id="appVersionInfo" class="mgmt-sub">Caricamento...</div>
+        <button class="add-item-btn" style="margin-top:10px;" onclick="checkAppVersionManual()">🔄 Controlla aggiornamenti ora</button>
+        <button class="add-item-btn" id="appVersionDownloadBtn" style="margin-top:10px;display:none;" onclick="openAppDownloadPage()">⬇️ Scarica/Installa aggiornamento</button>
       </div>
     </div>
 
@@ -441,6 +461,11 @@ const PRINTER_ROUTES = {
 
 // ── TURNO OPTIONS (must match the Italian values stored by the customer site) ──
 const TURNO_OPTIONS=['1° turno','2° turno','3° turno','4° turno'];
+// Names of all fixed-menu packages ("menu fisso"). Any item whose name is in
+// this list gets grouped/tagged as a fixed menu on receipts — previously
+// only 'Menù del Lago Bin' was recognized, so the other packages silently
+// fell through as plain à la carte items.
+const MENU_FISSO_NAMES=['Menù del Lago Bin','Menù Gastronomico','Menù Degustazione','Menù Bambini (4/10 Anni)'];
 
 // ── FULL MENU AVAILABILITY MANAGEMENT (all categories) ──
 const COURSE_LABELS = {antipasti:'🥗 Antipasti', primi:'🍝 Primi', secondi:'🥩 Secondi', contorni:'🥦 Contorni', dolci:'🍰 Dolci', gelato:'🍨 Gelato', bevande:'🍹 Bevande'};
@@ -838,7 +863,7 @@ function switchMainTab(tab){
   });
   document.getElementById('dashboard').classList.toggle('mappa-fullwidth', tab==='mappa');
   if(tab==='mappa')renderTableMap();
-  if(tab==='settings'){loadPrinterSettingsUI();renderPrinterIPSettingsUI();}
+  if(tab==='settings'){loadPrinterSettingsUI();renderPrinterIPSettingsUI();checkAppVersionManual();}
 }
 // ── DEFAULT AREA (Esterno/Interno) FOR THE WHOLE DAY ──
 // The restaurant only ever runs one area at a time (never both esterno and
@@ -856,6 +881,10 @@ let printerOverrides={esterno:'',interno:'',internoBar:''};
 // Real network IPs for the Android tablet's ESC/POS printing — can still be
 // changed anytime from ⚙️ Impostazioni without rebuilding the app.
 let printerIPs={esterno:'192.168.0.53',interno:'192.168.0.136',internoBar:'192.168.0.54'};
+// Per-printer on/off switch (⚙️ Impostazioni). A disabled printer's job is
+// skipped quietly during printJobs() — no alert, since disabling one is a
+// deliberate choice (e.g. that printer is temporarily out of paper/broken).
+let printerEnabled={esterno:true,interno:true,internoBar:true};
 function startAppSettingsListener(){
   if(appSettingsUnsub)appSettingsUnsub();
   appSettingsUnsub=db.collection('appSettings').doc('general').onSnapshot(doc=>{
@@ -869,9 +898,16 @@ function startAppSettingsListener(){
       interno:d.printerInternoIP||printerIPs.interno,
       internoBar:d.printerInternoBarIP||printerIPs.internoBar
     };
+    const pe=d.printerEnabled||{};
+    printerEnabled = {
+      esterno: pe.esterno!==false,
+      interno: pe.interno!==false,
+      internoBar: pe.internoBar!==false
+    };
     updateDefaultAreaToggleUI();
     updateAlertSettingsUI();
     renderPrinterIPSettingsUI();
+    updateDisabledPrintersWarning();
     scheduleNextAlert(); // pick up new interval/on-off immediately
     if(lastOrdersSnapshot)renderOrders(lastOrdersSnapshot);
     if(openMapTableId)renderMapTableDetail(openMapTableId);
@@ -958,6 +994,28 @@ function renderPrinterIPSettingsUI(){
   if(es && document.activeElement!==es)es.value=printerIPs.esterno;
   if(it && document.activeElement!==it)it.value=printerIPs.interno;
   if(bar && document.activeElement!==bar)bar.value=printerIPs.internoBar;
+  const esEn=document.getElementById('printerEnabledEsterno');
+  const itEn=document.getElementById('printerEnabledInterno');
+  const barEn=document.getElementById('printerEnabledInternoBar');
+  if(esEn)esEn.checked=printerEnabled.esterno;
+  if(itEn)itEn.checked=printerEnabled.interno;
+  if(barEn)barEn.checked=printerEnabled.internoBar;
+}
+// Persistent banner on the dashboard so a printer left OFF in Impostazioni
+// (e.g. Bar was disabled while broken) never silently gets forgotten —
+// this is what makes the silent-skip in printJobs() safe to have.
+const PRINTER_LABELS={esterno:'Esterno',interno:'Interno',internoBar:'Bar'};
+function updateDisabledPrintersWarning(){
+  const box=document.getElementById('disabledPrintersWarning');
+  if(!box)return;
+  const off=Object.keys(printerEnabled).filter(k=>!printerEnabled[k]).map(k=>PRINTER_LABELS[k]||k);
+  if(off.length){
+    box.style.display='';
+    box.textContent='⚠️ Stampa disabilitata per: '+off.join(', ')+' — vai su ⚙️ Impostazioni per riattivarla.';
+  }else{
+    box.style.display='none';
+    box.textContent='';
+  }
 }
 function savePrinterIPs(){
   const es=document.getElementById('printerIPEsterno');
@@ -970,10 +1028,18 @@ function savePrinterIPs(){
     alert('Uno degli indirizzi IP non sembra valido (es. 192.168.1.101).');
     return;
   }
+  const esEn=document.getElementById('printerEnabledEsterno');
+  const itEn=document.getElementById('printerEnabledInterno');
+  const barEn=document.getElementById('printerEnabledInternoBar');
   db.collection('appSettings').doc('general').set({
     printerEsternoIP:es.value.trim(),
     printerInternoIP:it.value.trim(),
-    printerInternoBarIP:bar.value.trim()
+    printerInternoBarIP:bar.value.trim(),
+    printerEnabled:{
+      esterno: esEn?esEn.checked:true,
+      interno: itEn?itEn.checked:true,
+      internoBar: barEn?barEn.checked:true
+    }
   },{merge:true}).then(()=>alert('✅ Indirizzi IP salvati.')).catch(err=>{
     console.error('Save printer IP settings error:',err);
     alert('Errore durante il salvataggio.');
@@ -2324,7 +2390,7 @@ function buildReceiptHTML(job,tbl,items,showPrice,room,operatorName,billingItems
     if(turno!=='—')html+='<div class="receipt-turno">'+turno+'</div>';
     const grouped=[];
     byTurno[turno].forEach(it=>{
-      const isMenuFisso = it.name==='Menù del Lago Bin';
+      const isMenuFisso = MENU_FISSO_NAMES.includes(it.name);
       const isMenuComponent = it.course==='menu_component';
       const isDessert = it.course==='dolci' || it.course==='gelato';
       const key=it.name+'||'+(it.detail||'')+'||'+(it.person||'')+'||'+(isMenuFisso?'F':'')+(isMenuComponent?'C':'');
@@ -2342,7 +2408,7 @@ function buildReceiptHTML(job,tbl,items,showPrice,room,operatorName,billingItems
       const qtyTag = ' <span class="rqty">×'+g.qty+'</span>';
       const lineTotal=(Number(g.price)||0)*g.qty;
       html+='<div class="receipt-item"><div class="rleft"><span class="rname">'+(g.person?g.person+' — ':'')+stripEmoji(g.name)+qtyTag+tag+'</span>';
-      if(g.detail && g.name!=='Menù del Lago Bin')html+='<br><span class="rdetail">'+stripEmoji(g.detail)+'</span>';
+      if(g.detail && !MENU_FISSO_NAMES.includes(g.name))html+='<br><span class="rdetail">'+stripEmoji(g.detail)+'</span>';
       html+='</div><span class="ritem-price">€'+lineTotal+'</span></div>';
     });
   });
@@ -2491,7 +2557,7 @@ function buildEscposReceipt(job,tbl,items,showPrice,room,operatorName,billingIte
     }
     const grouped=[];
     byTurno[turno].forEach(it=>{
-      const isMenuFisso = it.name==='Menù del Lago Bin';
+      const isMenuFisso = MENU_FISSO_NAMES.includes(it.name);
       const isMenuComponent = it.course==='menu_component';
       const isDessert = it.course==='dolci' || it.course==='gelato';
       const key=it.name+'||'+(it.detail||'')+'||'+(it.person||'')+'||'+(isMenuFisso?'F':'')+(isMenuComponent?'C':'');
@@ -2508,7 +2574,7 @@ function buildEscposReceipt(job,tbl,items,showPrice,room,operatorName,billingIte
       const nameStr=(g.person?g.person+' - ':'')+stripEmoji(g.name)+' x'+g.qty+tag;
       const lineTotal=(Number(g.price)||0)*g.qty;
       priceLine(nameStr,'€'+lineTotal);
-      if(g.detail && g.name!=='Menù del Lago Bin')line('  '+stripEmoji(g.detail));
+      if(g.detail && !MENU_FISSO_NAMES.includes(g.name))line('  '+stripEmoji(g.detail));
     });
   });
 
@@ -2657,11 +2723,65 @@ async function printEscposJob(job,tbl,room,operatorName){
   }
 }
 
+// Sends a small standalone test ticket straight to a printer's IP (bypassing
+// printerEnabled and any order data) so Impostazioni's "🧪 Test" button can
+// confirm the printer is reachable without needing a real table order.
+async function sendRawEscposToIP(ip,bytes){
+  const base64Data=bytesToBase64(bytes);
+  if(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()){
+    await window.Capacitor.Plugins.EscposPrinter.printRaw({ip:ip,port:9100,data:base64Data});
+  }else if(window.electronAPI && window.electronAPI.isElectron){
+    await window.electronAPI.silentPrintIP(base64Data, ip, 9100);
+  }else{
+    throw new Error('Piattaforma non supportata per la stampa diretta via IP.');
+  }
+}
+const TEST_PRINT_IP_FIELDS={esterno:'printerIPEsterno',interno:'printerIPInterno',internoBar:'printerIPInternoBar'};
+async function testPrintIP(area){
+  const fieldId=TEST_PRINT_IP_FIELDS[area];
+  const field=fieldId?document.getElementById(fieldId):null;
+  const ip=field?field.value.trim():'';
+  if(!ip){alert('Inserisci prima un indirizzo IP per questa stampante.');return;}
+  const ipPattern=/^(\d{1,3}\.){3}\d{1,3}$/;
+  if(!ipPattern.test(ip)){alert('Indirizzo IP non valido (es. 192.168.1.101).');return;}
+
+  const canvas=document.createElement('canvas');
+  canvas.width=RECEIPT_IMG_WIDTH_DOTS;
+  canvas.height=260;
+  const ctx=canvas.getContext('2d');
+  ctx.fillStyle='#ffffff';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle='#000000';
+  ctx.textAlign='center';
+  ctx.font='bold 32px sans-serif';
+  ctx.fillText('LAGO BIN',canvas.width/2,60);
+  ctx.font='bold 26px sans-serif';
+  ctx.fillText('STAMPA DI PROVA',canvas.width/2,105);
+  ctx.font='22px sans-serif';
+  ctx.fillText(PRINTER_LABELS[area]||area,canvas.width/2,150);
+  ctx.fillText(ip,canvas.width/2,185);
+  ctx.font='18px sans-serif';
+  ctx.fillText(new Date().toLocaleString('it-IT'),canvas.width/2,225);
+
+  try{
+    const bytes=canvasToEscposRaster(canvas);
+    await sendRawEscposToIP(ip,bytes);
+    alert('✅ Stampa di prova inviata a '+(PRINTER_LABELS[area]||area)+' ('+ip+'). Controlla che sia uscita dalla stampante.');
+  }catch(err){
+    console.error('Test print failed:',err);
+    alert('❌ Stampa di prova fallita su '+(PRINTER_LABELS[area]||area)+' ('+ip+').\nControlla che la stampante sia accesa e collegata alla stessa rete.\n\n'+(err&&err.message?err.message:err));
+  }
+}
+
 async function printJobs(jobs,tbl,room,operatorName){
   const canPrintDirect = (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform())
     || (window.electronAPI && window.electronAPI.isElectron);
   for(const job of jobs){
     if(!job.items.length)continue;
+    if(printerEnabled && printerEnabled[job.ipKey]===false){
+      console.log('Stampa saltata (stampante disabilitata in Impostazioni): '+job.printer);
+      continue;
+    }
     if(canPrintDirect){
       try{
         await printEscposJob(job,tbl,room,operatorName);
@@ -3030,6 +3150,74 @@ async function checkForAndroidUpdate(){
   }
 }
 setTimeout(checkForAndroidUpdate,3000);
+
+// ── ℹ️ INFO & AGGIORNAMENTI (About / manual version check) ──
+// Shown in ⚙️ Impostazioni. Reuses the same version.json endpoints as the
+// automatic startup banners above, but runs on demand (tab open + button
+// click) so the person can check right now instead of waiting for the
+// next app launch.
+const WINDOWS_VERSION_CHECK_URL='https://mamunjoyit1-cyber.github.io/lago-bin-menu/downloads/version.json';
+const WINDOWS_DOWNLOAD_PAGE_URL='https://mamunjoyit1-cyber.github.io/lago-bin-menu/downloads/';
+let appVersionDownloadUrl='';
+function openAppDownloadPage(){
+  if(!appVersionDownloadUrl)return;
+  if(window.electronAPI && window.electronAPI.isElectron && window.electronAPI.openDownloadPage){
+    window.electronAPI.openDownloadPage();
+  }else if(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()){
+    if(window.Capacitor.Plugins.Browser)window.Capacitor.Plugins.Browser.open({url:appVersionDownloadUrl});
+    else window.open(appVersionDownloadUrl,'_blank');
+  }else{
+    window.open(appVersionDownloadUrl,'_blank');
+  }
+}
+async function checkAppVersionManual(){
+  const box=document.getElementById('appVersionInfo');
+  const dlBtn=document.getElementById('appVersionDownloadBtn');
+  if(!box)return;
+  if(dlBtn)dlBtn.style.display='none';
+  appVersionDownloadUrl='';
+
+  const isAndroid = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
+  const isWindows = window.electronAPI && window.electronAPI.isElectron;
+
+  if(!isAndroid && !isWindows){
+    box.textContent='Disponibile solo nell\'app desktop Windows o nella tablet Android (non nel browser).';
+    return;
+  }
+
+  box.textContent='🔄 Controllo versione in corso...';
+  try{
+    if(isWindows){
+      const currentVersion = await window.electronAPI.getAppVersion();
+      const res = await fetch(WINDOWS_VERSION_CHECK_URL,{cache:'no-store'});
+      if(!res.ok){ box.textContent='Versione installata: '+currentVersion+' (piattaforma: Windows). Impossibile controllare aggiornamenti ora.'; return; }
+      const data = await res.json();
+      if(data.version && isNewerVersionStr(data.version,currentVersion)){
+        box.textContent='Versione installata: '+currentVersion+' (Windows). 🔔 Nuova versione disponibile: '+data.version+(data.releasedAt?' ('+data.releasedAt+')':'');
+        appVersionDownloadUrl=WINDOWS_DOWNLOAD_PAGE_URL;
+        if(dlBtn)dlBtn.style.display='';
+      }else{
+        box.textContent='Versione installata: '+currentVersion+' (Windows). ✅ Sei aggiornato.';
+      }
+    }else{
+      const info = await window.Capacitor.Plugins.App.getInfo();
+      const currentVersion = info.version;
+      const res = await fetch(ANDROID_VERSION_CHECK_URL,{cache:'no-store'});
+      if(!res.ok){ box.textContent='Versione installata: '+currentVersion+' (piattaforma: Android). Impossibile controllare aggiornamenti ora.'; return; }
+      const data = await res.json();
+      if(data.version && isNewerVersionStr(data.version,currentVersion)){
+        box.textContent='Versione installata: '+currentVersion+' (Android). 🔔 Nuova versione disponibile: '+data.version+(data.releasedAt?' ('+data.releasedAt+')':'');
+        appVersionDownloadUrl=ANDROID_DOWNLOAD_URL;
+        if(dlBtn)dlBtn.style.display='';
+      }else{
+        box.textContent='Versione installata: '+currentVersion+' (Android). ✅ Sei aggiornato.';
+      }
+    }
+  }catch(err){
+    console.error('Manual version check failed:',err);
+    box.textContent='Errore durante il controllo della versione.';
+  }
+}
 
 </script>
 </body>
