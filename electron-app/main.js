@@ -266,6 +266,12 @@ ipcMain.handle('list-printers', async () => {
   return printers.map(p => p.name);
 });
 
+// Lets the "ℹ️ Info & Aggiornamenti" screen in Impostazioni show which
+// version of the Windows app is currently installed, alongside a manual
+// "check for updates now" button (rather than only the automatic
+// 3-seconds-after-launch check above).
+ipcMain.handle('get-app-version', () => app.getVersion());
+
 ipcMain.handle('open-download-page', () => {
   shell.openExternal(DOWNLOAD_PAGE_URL);
 });
