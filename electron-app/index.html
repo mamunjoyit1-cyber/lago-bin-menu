@@ -239,7 +239,20 @@ body { font-family: 'Palatino Linotype', Palatino, serif; background: #faf8f3; c
   </div>
 </div>
 
-<!-- LOGIN SCREEN -->
+<!-- RISTAMPA PREVIEW MODAL -->
+<div id="ristampaPreviewModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:99998;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#f5f0e6;border-radius:16px;padding:20px;max-width:520px;width:100%;max-height:85vh;display:flex;flex-direction:column;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <h3 id="ristampaPreviewTitle" style="margin:0;color:#2a1a10;">👁️ Anteprima Ristampa</h3>
+      <span onclick="closeRistampaPreview()" style="cursor:pointer;font-size:22px;color:#8a6a50;">✕</span>
+    </div>
+    <div id="ristampaPreviewList" style="overflow-y:auto;flex:1;margin-bottom:12px;"></div>
+    <label style="display:flex;align-items:center;gap:6px;color:#8a6a50;font-size:13px;margin-bottom:10px;">📋 Copie da stampare: <input type="number" id="ristampaPreviewCopies" value="1" min="1" max="9" style="width:48px;padding:4px 6px;border-radius:6px;border:1px solid rgba(212,175,55,0.4);background:#f5f0e6;color:#2a1a10;font-family:inherit;"></label>
+    <button class="add-item-btn" style="margin-bottom:8px;" onclick="ristampaPreviewOpenAddPicker()">➕ Aggiungi Prodotto</button>
+    <button class="add-item-btn" style="background:rgba(212,175,55,0.9);color:#2a1a10;" onclick="confirmRistampaPreview()">✅ Conferma e Stampa</button>
+  </div>
+</div>
+
 <div id="login-screen">
   <div class="login-box">
     <h2>✦ LAGO BIN ✦</h2>
@@ -885,6 +898,11 @@ let printerIPs={esterno:'192.168.0.53',interno:'192.168.0.136',internoBar:'192.1
 // skipped quietly during printJobs() — no alert, since disabling one is a
 // deliberate choice (e.g. that printer is temporarily out of paper/broken).
 let printerEnabled={esterno:true,interno:true,internoBar:true};
+// Set right before each printJobs() call, read inside buildReceiptHTML to
+// print the optional order-type line (OPERAIO / MEZZA PENSIONE / etc.)
+// under the TAVOLO heading — a cross-cutting print setting, same pattern
+// as printerIPs/printerEnabled above.
+let currentOrderCategory='';
 function startAppSettingsListener(){
   if(appSettingsUnsub)appSettingsUnsub();
   appSettingsUnsub=db.collection('appSettings').doc('general').onSnapshot(doc=>{
@@ -1100,7 +1118,7 @@ function startTableStatusListener(){
     const st={};
     snap.forEach(doc=>{
       const d=doc.data();
-      if(d.occupied)st[doc.id]={waiter:d.waiter||'',people:d.people||'',room:d.room||''};
+      if(d.occupied)st[doc.id]={waiter:d.waiter||'',people:d.people||'',room:d.room||'',orderCategory:d.orderCategory||''};
     });
     mapOccupiedState=st;
     if(document.getElementById('maintab-mappa')&&document.getElementById('maintab-mappa').style.display!=='none')renderTableMap();
@@ -1135,7 +1153,12 @@ function renderTodaysRoundsSlot(tbl){
   const allSelected=todays.every(o=>sel.has(o.id));
   let hHtml='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:10px;">';
   hHtml+='  <label style="display:flex;align-items:center;gap:6px;color:#8a6a50;font-size:13px;cursor:pointer;"><input type="checkbox" '+(allSelected?'checked':'')+' onchange="toggleSelectAllRounds(\''+tbl+'\')"> Seleziona tutto</label>';
+  hHtml+='  <label style="display:flex;align-items:center;gap:6px;color:#8a6a50;font-size:13px;">📋 Copie: <input type="number" id="ristampaCopies-'+tbl+'" value="1" min="1" max="9" style="width:48px;padding:4px 6px;border-radius:6px;border:1px solid rgba(212,175,55,0.4);background:#f5f0e6;color:#2a1a10;font-family:inherit;"></label>';
+  hHtml+='  <div style="display:flex;gap:8px;">';
+  hHtml+='  <button class="decline-btn" style="border-color:#d4af37;color:#d4af37;" '+(sel.size?'':'disabled')+' onclick="openRistampaPreview(\'combined\',\''+tbl+'\')">👁️ Anteprima</button>';
   hHtml+='  <button class="add-item-btn" '+(sel.size?'':'disabled')+' onclick="printSelectedRounds(\''+tbl+'\')">🖨️ Stampa Selezionati ('+sel.size+')</button>';
+  hHtml+='  <button class="add-item-btn" onclick="printPreconto(\''+tbl+'\')">🧾 Preconto</button>';
+  hHtml+='  </div>';
   hHtml+='</div>';
   todays.forEach((o,i)=>{
     const roundNum=todays.length-i;
@@ -1154,6 +1177,7 @@ function renderTodaysRoundsSlot(tbl){
     hHtml+='  <div id="'+cId+'" style="display:none;padding:0 16px 16px;">';
     hHtml+=buildReadOnlyItemRowsHTML(o.items||[]);
     hHtml+='    <div class="card-total">Totale: €'+total+'</div>';
+    hHtml+='    <button class="decline-btn" style="border-color:#d4af37;color:#d4af37;" onclick="openRistampaPreview(\'single\',\''+o.id+'\')">👁️ Anteprima</button>';
     hHtml+='    <button class="decline-btn" style="border-color:#d4af37;color:#d4af37;" onclick="reprintOrder(\''+o.id+'\')">🖨️ Ristampa</button>';
     hHtml+='  </div>';
     hHtml+='</div>';
@@ -1191,8 +1215,14 @@ async function printSelectedRounds(tbl){
   const area=latest.area||'esterno';
   const jobs=buildJobsForArea(area,mergedItems);
   const operatorName=latest.approvedByName||staffName(currentUserEmail);
+  const room=latest.room||(mapOccupiedState[tbl]&&mapOccupiedState[tbl].room)||'';
+  currentOrderCategory=latest.orderCategory||(mapOccupiedState[tbl]&&mapOccupiedState[tbl].orderCategory)||'';
+  const copiesEl=document.getElementById('ristampaCopies-'+tbl);
+  const copies=Math.max(1,Number(copiesEl&&copiesEl.value)||1);
   try{
-    await printJobs(jobs,tbl,latest.room||'',operatorName);
+    for(let i=0;i<copies;i++){
+      await printJobs(jobs,tbl,room,operatorName);
+    }
   }catch(err){
     console.error('Combined reprint error:',err);
     alert('Errore durante la ristampa combinata.');
@@ -1282,7 +1312,7 @@ async function freeTable(tbl){
       }));
       await batch.commit();
     }
-    await db.collection('tableStatus').doc(tbl).set({occupied:false},{merge:true});
+    await db.collection('tableStatus').doc(tbl).set({occupied:false,room:'',orderCategory:''},{merge:true});
     closeMapDetailView();
   }catch(err){
     console.error('Free table error:',err);
@@ -1399,6 +1429,9 @@ async function renderMapTableDetail(tbl){
   const pendingTotal=pendingItems.reduce((s,it)=>s+(Number(it.price)||0),0);
   const roomVal=pendingDocs.find(d=>d.room)?.room || occ.room || '';
   const peopleVal=pendingDocs.find(d=>d.people)?.people || occ.people || 1;
+  const categoryVal=pendingDocs.find(d=>d.orderCategory)?.orderCategory || occ.orderCategory || '';
+  const categoryPresets=['OPERAIO','MEZZA PENSIONE','OFFERTA GASTRONOMICO'];
+  const categoryIsCustom=categoryVal && !categoryPresets.includes(categoryVal);
   const area=selectedArea[tbl]||defaultArea;
 
   let html='<div style="position:sticky;top:0;z-index:10;background:#fff;margin:-16px -18px 14px;padding:12px 18px;border-bottom:1px solid rgba(212,175,55,0.3);display:flex;align-items:center;gap:10px;cursor:pointer;" onclick="closeMapDetailView()">'
@@ -1408,6 +1441,12 @@ async function renderMapTableDetail(tbl){
     +'</div>';
   html+='<div class="map-dtitle">🪑 Tavolo <span onclick="openTablePicker(\''+tbl+'\')" style="cursor:pointer;color:#d4af37;text-decoration:underline dotted;">'+tbl+'</span> <span onclick="openTablePicker(\''+tbl+'\')" style="cursor:pointer;margin-left:6px;">✏️</span></div>';
   html+='<div class="map-dmeta">🔑 Camera <input type="text" value="'+roomVal+'" placeholder="n. (opzionale)" style="width:70px;background: #f5f0e6;border:1px solid rgba(212,175,55,0.3);border-radius:6px;color: #2a1a10;font-family:inherit;font-size:12px;padding:4px 6px;" onchange="changeRoomNumber(\''+tbl+'\',this.value)"> · 👥 <input type="number" min="1" value="'+peopleVal+'" style="width:50px;background: #f5f0e6;border:1px solid rgba(212,175,55,0.3);border-radius:6px;color: #2a1a10;font-family:inherit;font-size:12px;padding:4px 6px;" onchange="changePeopleCount(\''+tbl+'\',this.value)"> persone</div>';
+  html+='<div class="map-dmeta" style="margin-top:6px;">📋 Tipo <select onchange="if(this.value===\'__custom__\'){document.getElementById(\'orderCatCustom-'+tbl+'\').style.display=\'inline-block\';document.getElementById(\'orderCatCustom-'+tbl+'\').focus();}else{changeOrderCategory(\''+tbl+'\',this.value);}" style="background: #f5f0e6;border:1px solid rgba(212,175,55,0.3);border-radius:6px;color: #2a1a10;font-family:inherit;font-size:12px;padding:4px 6px;">'
+    +'<option value=""'+(categoryVal?'':' selected')+'>— (nessuno) —</option>'
+    +categoryPresets.map(c=>'<option value="'+c+'"'+(categoryVal===c?' selected':'')+'>'+c+'</option>').join('')
+    +'<option value="__custom__"'+(categoryIsCustom?' selected':'')+'>Altro (scrivi)...</option>'
+    +'</select>'
+    +' <input type="text" id="orderCatCustom-'+tbl+'" value="'+(categoryIsCustom?categoryVal:'')+'" placeholder="Scrivi..." style="display:'+(categoryIsCustom?'inline-block':'none')+';width:130px;background: #f5f0e6;border:1px solid rgba(212,175,55,0.3);border-radius:6px;color: #2a1a10;font-family:inherit;font-size:12px;padding:4px 6px;" onchange="changeOrderCategory(\''+tbl+'\',this.value)"></div>';
   html+='<div style="margin:10px 0 16px;"><button class="decline-btn" style="border-color:#d4af37;color:#d4af37;" onclick="freeTable(\''+tbl+'\')">🔓 Libera Tavolo</button></div>';
 
   if(pendingDocs.length){
@@ -1583,12 +1622,24 @@ function mapFinalizeMasterItemAdd(tbl,directItem,directDetail){
     if(item.cottura&&c.cottura)d.push('Cottura: '+c.cottura);
     detail=d.join(' · ');
   }
-  const anyDocId=mapAnyDocId[tbl];
-  if(!anyDocId)return;
   const turnoEl=document.getElementById('mnewturno-'+tbl);
   const turno=turnoEl?turnoEl.value:'';
   const personEl=document.getElementById('mnewperson-'+tbl);
   const person=personEl?personEl.value:'';
+  if(mapPickerMode==='ristampaPreview'){
+    if(!ristampaPreview)return;
+    const targetDocId=ristampaPreview.sourceDocIds[ristampaPreview.sourceDocIds.length-1];
+    ristampaPreview.items.push({name:item.name,price:effectivePrice(item),category:(item.course==='bevande'?'drink':'food'),course:item.course,detail,person,turno,__docId:targetDocId});
+    const searchEl=document.getElementById('mnewsearch-'+tbl);
+    if(searchEl)searchEl.value='';
+    delete mapPendingCustomize[tbl];
+    mapRenderProductPicker(tbl);
+    mapRenderCustomizePanel(tbl);
+    if(tbl==='picker')showPickerToast('✅ '+item.name+' aggiunto!');
+    return;
+  }
+  const anyDocId=mapAnyDocId[tbl];
+  if(!anyDocId)return;
   const ref=db.collection('orders').doc(anyDocId);
   ref.get().then(doc=>{
     const data=doc.data();
@@ -1606,8 +1657,6 @@ function mapFinalizeMasterItemAdd(tbl,directItem,directDetail){
   }).catch(err=>console.error(err));
 }
 function mapAddManualItem(tbl){
-  const anyDocId=mapAnyDocId[tbl];
-  if(!anyDocId)return;
   const nameEl=document.getElementById('mnewname-'+tbl);
   const priceEl=document.getElementById('mnewprice-'+tbl);
   const catEl=document.getElementById('mnewmancat-'+tbl);
@@ -1619,6 +1668,16 @@ function mapAddManualItem(tbl){
   const turno=turnoEl?turnoEl.value:'';
   const person=personEl?personEl.value:'';
   if(!name)return;
+  if(mapPickerMode==='ristampaPreview'){
+    if(!ristampaPreview)return;
+    const targetDocId=ristampaPreview.sourceDocIds[ristampaPreview.sourceDocIds.length-1];
+    ristampaPreview.items.push({name,price,category,course:category==='drink'?'bevande':'manuale',detail:'',person,turno,__docId:targetDocId});
+    nameEl.value='';priceEl.value='';
+    if(tbl==='picker')showPickerToast('✅ '+name+' aggiunto!');
+    return;
+  }
+  const anyDocId=mapAnyDocId[tbl];
+  if(!anyDocId)return;
   const ref=db.collection('orders').doc(anyDocId);
   ref.get().then(doc=>{
     const data=doc.data();
@@ -1638,6 +1697,11 @@ function mapAddManualItem(tbl){
 // duplicated add-item logic — only the browsing screen around it is new.
 let mapPickerTable=null;
 let mapPickerCategory='';
+// When opened from a normal pending order, adds write straight to Firestore
+// (as before). When opened from Ristampa Preview (mode 'ristampaPreview'),
+// the same picker/customize/manual-entry flow instead pushes into
+// ristampaPreview.items in memory — nothing is saved until "Conferma e Stampa".
+let mapPickerMode='pending';
 const MAP_PICKER_CATS=[['antipasti','🥗 Antipasti'],['primi','🍝 Primi'],['secondi','🥩 Secondi'],['contorni','🥦 Contorni'],['dolci','🍰 Dolci'],['gelato','🍨 Gelato'],['bevande','🍹 Bevande']];
 
 function showPickerToast(msg){
@@ -1653,10 +1717,16 @@ function showPickerToast(msg){
   },1800);
 }
 
-function openMapProductPicker(tbl){
+function openMapProductPicker(tbl,mode){
   mapPickerTable=tbl;
   mapPickerCategory='';
+  mapPickerMode=mode||'pending';
   mapAnyDocId['picker']=mapAnyDocId[tbl];
+  if(mapPickerMode==='ristampaPreview'){
+    // The picker overlay's z-index sits below the Ristampa Preview modal,
+    // so hide that modal while picking — it's restored in closeMapProductPicker.
+    document.getElementById('ristampaPreviewModal').style.display='none';
+  }
   document.getElementById('mapProductPickerOverlay').style.display='block';
   renderMapProductPickerScreen();
 }
@@ -1664,6 +1734,11 @@ function closeMapProductPicker(){
   document.getElementById('mapProductPickerOverlay').style.display='none';
   mapPickerTable=null;
   delete mapPendingCustomize['picker'];
+  if(mapPickerMode==='ristampaPreview' && ristampaPreview){
+    document.getElementById('ristampaPreviewModal').style.display='flex';
+    renderRistampaPreview();
+  }
+  mapPickerMode='pending';
 }
 function renderMapProductPickerScreen(){
   const tbl=mapPickerTable;
@@ -2028,6 +2103,9 @@ function renderOrders(snapshot){
     const timeStr=earliestTime?earliestTime.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}):'';
     const roomVal=docs.find(d=>d.room)?.room||'';
     const peopleVal=docs.find(d=>d.people)?.people||1;
+    const categoryVal=docs.find(d=>d.orderCategory)?.orderCategory||'';
+    const categoryPresets=['OPERAIO','MEZZA PENSIONE','OFFERTA GASTRONOMICO'];
+    const categoryIsCustom=categoryVal && !categoryPresets.includes(categoryVal);
     tableAnyDocId[tbl]=docs[0].id;
 
     html+='<div class="order-card" data-table="'+tbl+'">';
@@ -2036,6 +2114,12 @@ function renderOrders(snapshot){
     html+='      <div class="table-badge" onclick="openTablePicker(\''+tbl+'\')" style="cursor:pointer;display:flex;align-items:center;gap:6px;">🪑 '+tbl+' <span>✏️</span></div>';
     html+='      <div class="table-label" style="font-size:14px;">🔑 Camera <input type="text" value="'+roomVal+'" placeholder="n." style="width:70px;" onchange="changeRoomNumber(\''+tbl+'\',this.value)"></div>';
     html+='      <div class="table-label" style="font-size:14px;">👥 Persone <input type="number" min="1" value="'+peopleVal+'" style="width:60px;" onchange="changePeopleCount(\''+tbl+'\',this.value)"></div>';
+    html+='      <div class="table-label" style="font-size:14px;">📋 Tipo <select onchange="if(this.value===\'__custom__\'){document.getElementById(\'orderCatCustomO-'+tbl+'\').style.display=\'inline-block\';document.getElementById(\'orderCatCustomO-'+tbl+'\').focus();}else{changeOrderCategory(\''+tbl+'\',this.value);}">'
+      +'<option value=""'+(categoryVal?'':' selected')+'>— —</option>'
+      +categoryPresets.map(c=>'<option value="'+c+'"'+(categoryVal===c?' selected':'')+'>'+c+'</option>').join('')
+      +'<option value="__custom__"'+(categoryIsCustom?' selected':'')+'>Altro...</option>'
+      +'</select>'
+      +' <input type="text" id="orderCatCustomO-'+tbl+'" value="'+(categoryIsCustom?categoryVal:'')+'" placeholder="Scrivi..." style="display:'+(categoryIsCustom?'inline-block':'none')+';width:110px;" onchange="changeOrderCategory(\''+tbl+'\',this.value)"></div>';
     html+='    </div>';
     html+='    <div class="area-toggle">';
     html+='      <button class="area-btn '+(area==='esterno'?'active':'')+'" onclick="setArea(\''+tbl+'\',\'esterno\')">🌤️ Esterno</button>';
@@ -2141,6 +2225,24 @@ function changeRoomNumber(tbl,newRoom){
     snap.forEach(doc=>batch.update(doc.ref,{room:newRoom}));
     return batch.commit();
   }).catch(err=>console.error(err));
+  // Also persist at the table level, so a later round of orders for the same
+  // stay (created after this one is approved) inherits the room automatically
+  // instead of needing it re-typed — and so Ristampa can always fall back to
+  // this value if a specific order document's own room field is blank.
+  db.collection('tableStatus').doc(tbl).set({room:newRoom},{merge:true}).catch(err=>console.error(err));
+}
+// Optional per-stay order type (e.g. OPERAIO / MEZZA PENSIONE / OFFERTA
+// GASTRONOMICO, or free text). Nothing selected by default. Persists the
+// same way as the room number — at the table level, so later rounds inherit
+// it and reprints can fall back to it — and prints as a bold line under the
+// TAVOLO heading on the kitchen ticket (see buildReceiptHTML).
+function changeOrderCategory(tbl,newCategory){
+  db.collection('orders').where('table','==',tbl).where('status','==','pending').get().then(snap=>{
+    const batch=db.batch();
+    snap.forEach(doc=>batch.update(doc.ref,{orderCategory:newCategory}));
+    return batch.commit();
+  }).catch(err=>console.error(err));
+  db.collection('tableStatus').doc(tbl).set({orderCategory:newCategory},{merge:true}).catch(err=>console.error(err));
 }
 
 function changePeopleCount(tbl,newCount){
@@ -2368,6 +2470,7 @@ function buildReceiptHTML(job,tbl,items,showPrice,room,operatorName,billingItems
   const now=new Date();
   const dateStr=now.toLocaleDateString('it-IT')+' '+now.toLocaleTimeString('it-IT');
   let html='<div class="receipt-table-big">TAVOLO '+tbl+'</div>';
+  if(currentOrderCategory)html+='<div style="text-align:center;font-weight:bold;font-size:16px;margin-bottom:8px;">'+stripEmoji(currentOrderCategory)+'</div>';
   html+='<div class="receipt-title">'+job.title+'</div>';
   html+='<div class="receipt-meta">'+(room?'Camera: <b>'+room+'</b><br>':'')+dateStr+(operatorName?'<br>Cameriere: '+operatorName:'')+'</div>';
 
@@ -2839,16 +2942,24 @@ async function approveTable(tbl){
   const allItems=[];
   const docIds=[];
   let room='';
+  let orderCategory='';
   snap.forEach(doc=>{
     docIds.push(doc.id);
     if(!room&&doc.data().room)room=doc.data().room;
+    if(!orderCategory&&doc.data().orderCategory)orderCategory=doc.data().orderCategory;
     (doc.data().items||[]).forEach(it=>allItems.push(it));
   });
+  // Fall back to the table's last-known room/category (set via the 🔑 Camera
+  // and 📋 Tipo fields) if this round's own pending docs never had one — this
+  // is what lets a second/third round for the same stay keep printing right.
+  if(!room)room=(mapOccupiedState[tbl]&&mapOccupiedState[tbl].room)||'';
+  if(!orderCategory)orderCategory=(mapOccupiedState[tbl]&&mapOccupiedState[tbl].orderCategory)||'';
   if(!allItems.length)return;
 
   const jobs=buildJobsForArea(area,allItems);
 
   const operatorName=staffName(currentUserEmail);
+  currentOrderCategory=orderCategory;
   await printJobs(jobs,tbl,room,operatorName);
 
   const batch=db.batch();
@@ -2857,12 +2968,14 @@ async function approveTable(tbl){
     approvedAt:firebase.firestore.FieldValue.serverTimestamp(),
     approvedByEmail:currentUserEmail,
     approvedByName:operatorName,
-    area:area
+    area:area,
+    room:room,
+    orderCategory:orderCategory
   }));
   await batch.commit();
 
   const peopleForTbl=(await db.collection('orders').where('table','==',tbl).limit(1).get()).docs[0]?.data()?.people||'';
-  await db.collection('tableStatus').doc(tbl).set({occupied:true,waiter:operatorName,people:peopleForTbl,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+  await db.collection('tableStatus').doc(tbl).set({occupied:true,waiter:operatorName,people:peopleForTbl,room:room,orderCategory:orderCategory,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
 
   delete selectedArea[tbl];
   loadHistory();
@@ -2928,7 +3041,9 @@ function renderHistory(orders){
       html+='<div class="item-row"><div class="item-info"><div class="item-name">'+it.name+'</div></div><div class="item-price">€'+it.price+'</div></div>';
     });
     html+='  <div class="card-total">Totale: €'+total+'</div>';
-    html+='  <div class="card-actions"><button class="decline-btn" style="border-color:#d4af37;color:#d4af37;" onclick="reprintOrder(\''+o.id+'\')">🖨️ Ristampa</button>'
+    html+='  <div class="card-actions"><button class="decline-btn" style="border-color:#d4af37;color:#d4af37;" onclick="openRistampaPreview(\'single\',\''+o.id+'\')">👁️ Anteprima</button>'
+      +'<button class="decline-btn" style="border-color:#d4af37;color:#d4af37;" onclick="reprintOrder(\''+o.id+'\')">🖨️ Ristampa</button>'
+      +'<button class="add-item-btn" onclick="openRistampaPreview(\'single\',\''+o.id+'\').then(ristampaPreviewOpenAddPicker)">➕ Aggiungi Prodotto</button>'
       +'<button class="cancel-btn" onclick="deleteHistoryOrder(\''+o.id+'\')">🗑️ Elimina</button>'
       +'</div>';
     html+='</div>';
@@ -3017,12 +3132,209 @@ async function reprintOrder(docId){
     const area=data.area||'esterno';
     const jobs=buildJobsForArea(area,items);
     const operatorName=data.approvedByName||staffName(currentUserEmail);
-    await printJobs(jobs,data.table||'—',data.room||'',operatorName);
+    const room=data.room||(mapOccupiedState[data.table]&&mapOccupiedState[data.table].room)||'';
+    currentOrderCategory=data.orderCategory||(mapOccupiedState[data.table]&&mapOccupiedState[data.table].orderCategory)||'';
+    await printJobs(jobs,data.table||'—',room,operatorName);
   }catch(err){
     console.error('Reprint error:',err);
     alert('Errore durante la ristampa.');
   }
 }
+
+// ── RISTAMPA PREVIEW (Anteprima) ──
+// Lets staff review the merged item list before a reprint, add a forgotten
+// product, or delete a wrong one — then confirm to both save the correction
+// back to the original order document(s) AND print. The plain "🖨️ Ristampa" /
+// "🖨️ Stampa Selezionati" buttons still print immediately without this step.
+let ristampaPreview=null; // {tbl, room, operatorName, area, items:[...with __docId], sourceDocIds:[...]}
+
+async function openRistampaPreview(mode,param){
+  try{
+    if(mode==='single'){
+      const doc=await db.collection('orders').doc(param).get();
+      if(!doc.exists){alert('Ordine non trovato.');return;}
+      const data=doc.data();
+      const items=(data.items||[]).map(it=>Object.assign({},it,{__docId:doc.id}));
+      ristampaPreview={
+        tbl:data.table||'—',
+        room:data.room||(mapOccupiedState[data.table]&&mapOccupiedState[data.table].room)||'',
+        orderCategory:data.orderCategory||(mapOccupiedState[data.table]&&mapOccupiedState[data.table].orderCategory)||'',
+        operatorName:data.approvedByName||staffName(currentUserEmail),
+        area:data.area||'esterno',
+        items,
+        sourceDocIds:[doc.id]
+      };
+    }else{ // combined
+      const tbl=param;
+      const sel=selectedRoundIds[tbl];
+      if(!sel||!sel.size){alert('Seleziona prima almeno un round da ristampare.');return;}
+      const todays=todaysRoundsCache[tbl]||[];
+      const chosen=todays.filter(o=>sel.has(o.id)).sort((a,b)=>a.__time-b.__time);
+      if(!chosen.length)return;
+      const items=[];
+      chosen.forEach(o=>(o.items||[]).forEach(it=>items.push(Object.assign({},it,{__docId:o.id}))));
+      if(!items.length){alert('Nessun articolo da ristampare.');return;}
+      const latest=chosen[chosen.length-1];
+      ristampaPreview={
+        tbl,
+        room:latest.room||(mapOccupiedState[tbl]&&mapOccupiedState[tbl].room)||'',
+        orderCategory:latest.orderCategory||(mapOccupiedState[tbl]&&mapOccupiedState[tbl].orderCategory)||'',
+        operatorName:latest.approvedByName||staffName(currentUserEmail),
+        area:latest.area||'esterno',
+        items,
+        sourceDocIds:chosen.map(o=>o.id)
+      };
+    }
+    renderRistampaPreview();
+    document.getElementById('ristampaPreviewModal').style.display='flex';
+  }catch(err){
+    console.error('Open ristampa preview error:',err);
+    alert('Errore durante l\'apertura dell\'anteprima.');
+  }
+}
+function closeRistampaPreview(){
+  document.getElementById('ristampaPreviewModal').style.display='none';
+  ristampaPreview=null;
+}
+function renderRistampaPreview(){
+  if(!ristampaPreview)return;
+  document.getElementById('ristampaPreviewTitle').textContent='👁️ Anteprima — Tavolo '+ristampaPreview.tbl+(ristampaPreview.room?' · 🔑 Camera '+ristampaPreview.room:'');
+  const box=document.getElementById('ristampaPreviewList');
+  if(!ristampaPreview.items.length){
+    box.innerHTML='<div class="empty-state">Nessun articolo. Aggiungine uno qui sotto.</div>';
+    return;
+  }
+  let html='';
+  ristampaPreview.items.forEach((it,idx)=>{
+    html+='<div style="display:flex;justify-content:space-between;align-items:center;background:#fff;border-radius:8px;padding:8px 12px;margin-bottom:6px;">'
+      +'<div><div style="font-weight:bold;color:#2a1a10;">'+stripEmoji(it.name)+(it.detail?'<br><span style="font-size:12px;color:#8a6a50;">'+stripEmoji(it.detail)+'</span>':'')+'</div></div>'
+      +'<div style="display:flex;align-items:center;gap:10px;"><span style="color:#8a6a50;">€'+(Number(it.price)||0)+'</span>'
+      +'<span onclick="ristampaPreviewRemoveItem('+idx+')" style="cursor:pointer;color:#b03a2e;font-size:18px;">🗑️</span></div>'
+      +'</div>';
+  });
+  box.innerHTML=html;
+}
+function ristampaPreviewRemoveItem(idx){
+  if(!ristampaPreview)return;
+  ristampaPreview.items.splice(idx,1);
+  renderRistampaPreview();
+}
+function ristampaPreviewOpenAddPicker(){
+  openMapProductPicker('picker','ristampaPreview');
+}
+async function confirmRistampaPreview(){
+  if(!ristampaPreview)return;
+  if(!ristampaPreview.items.length){alert('Nessun articolo da stampare.');return;}
+  try{
+    // Persist: regroup the (possibly edited) items back onto their origin
+    // documents, so the correction sticks in the order history too.
+    const byDoc={};
+    ristampaPreview.sourceDocIds.forEach(id=>byDoc[id]=[]);
+    ristampaPreview.items.forEach(it=>{
+      const plain=Object.assign({},it);
+      delete plain.__docId;
+      if(!byDoc[it.__docId])byDoc[it.__docId]=[];
+      byDoc[it.__docId].push(plain);
+    });
+    const batch=db.batch();
+    Object.keys(byDoc).forEach(docId=>{
+      batch.update(db.collection('orders').doc(docId),{items:byDoc[docId]});
+    });
+    await batch.commit();
+
+    const jobs=buildJobsForArea(ristampaPreview.area,ristampaPreview.items);
+    currentOrderCategory=ristampaPreview.orderCategory||'';
+    const copiesEl=document.getElementById('ristampaPreviewCopies');
+    const copies=Math.max(1,Number(copiesEl&&copiesEl.value)||1);
+    for(let i=0;i<copies;i++){
+      await printJobs(jobs,ristampaPreview.tbl,ristampaPreview.room,ristampaPreview.operatorName);
+    }
+    closeRistampaPreview();
+    loadHistory();
+  }catch(err){
+    console.error('Confirm ristampa preview error:',err);
+    alert('Errore durante il salvataggio/stampa.');
+  }
+}
+
+// ── PRECONTO (guest pre-bill) ──
+// Unlike the kitchen ticket (buildReceiptHTML), this is a flat, itemized
+// summary meant for the guest: no turno/course grouping, no BEVANDE split.
+// A fixed-menu package prints as a single "name × qty — price" line, without
+// its internal dish breakdown, since the guest only needs to see what they
+// were charged for, not the kitchen's course-by-course detail.
+function buildPrecontoHTML(tbl,room,items){
+  let html='<div class="receipt-meta">Camera\\Room: '+(room?stripEmoji(room):'')+'<br>Cliente: </div>';
+  html+='<div class="receipt-turno">--- Tavolo '+tbl+' ---</div>';
+  const grouped=[];
+  items.forEach(it=>{
+    // Preconto works from the raw stored items (not the kitchen ticket's
+    // expandForDisplay breakdown), so a fixed-menu item is still one whole
+    // item here — just print its name+price as one line, skip its detail.
+    const isMenuFisso=MENU_FISSO_NAMES.includes(it.name);
+    const showDetail=!isMenuFisso && it.detail;
+    const key=it.name+'||'+(showDetail?it.detail:'')+'||'+(isMenuFisso?'F':'');
+    const existing=grouped.find(g=>g.key===key);
+    if(existing){existing.qty++;}
+    else grouped.push({key,name:it.name,detail:showDetail?it.detail:'',price:it.price,qty:1});
+  });
+  let total=0;
+  grouped.forEach(g=>{
+    const lineTotal=(Number(g.price)||0)*g.qty;
+    total+=lineTotal;
+    html+='<div class="receipt-item"><div class="rleft"><span class="rname">'+stripEmoji(g.name)+' <span class="rqty">×'+g.qty+'</span></span>';
+    if(g.detail)html+='<br><span class="rdetail">'+stripEmoji(g.detail)+'</span>';
+    html+='</div><span class="ritem-price">€'+lineTotal+'</span></div>';
+  });
+  html+='<div class="receipt-total">Totale: €'+total+'</div>';
+  html+='<div class="receipt-meta" style="margin-top:14px;">Nome Ospite:<br>in stampatello<br><br>Firma Ospite: ________________________</div>';
+  html+='<div class="receipt-footer">La direzione le augura un piacevole soggiorno.</div>';
+  return html;
+}
+async function renderPrecontoToCanvas(tbl,room,items){
+  const html=buildPrecontoHTML(tbl,room,items);
+  const container=document.createElement('div');
+  container.className='receipt-render';
+  container.style.cssText='position:fixed;left:-9999px;top:0;width:'+RECEIPT_CSS_LAYOUT_WIDTH+'px;padding:15px;';
+  container.innerHTML=html;
+  document.body.appendChild(container);
+  await new Promise(r=>setTimeout(r,80));
+  let canvas;
+  try{
+    const renderScale=RECEIPT_IMG_WIDTH_DOTS/RECEIPT_CSS_LAYOUT_WIDTH;
+    canvas=await html2canvas(container,{backgroundColor:'#ffffff',scale:renderScale,useCORS:true});
+  }finally{
+    document.body.removeChild(container);
+  }
+  return canvas;
+}
+// Preconto covers the whole stay (all of today's approved rounds for the
+// table), not a single round — a guest asking for the bill wants everything
+// they've had, not just the last thing they ordered.
+async function printPreconto(tbl){
+  try{
+    const todays=(todaysRoundsCache[tbl]||[]).slice().sort((a,b)=>a.__time-b.__time);
+    if(!todays.length){alert('Nessun ordine approvato oggi per questo tavolo.');return;}
+    const items=[];
+    todays.forEach(o=>(o.items||[]).forEach(it=>items.push(it)));
+    if(!items.length){alert('Nessun articolo da stampare.');return;}
+    const latest=todays[todays.length-1];
+    const room=latest.room||(mapOccupiedState[tbl]&&mapOccupiedState[tbl].room)||'';
+    const area=latest.area||'esterno';
+    // Printed on whichever printer serves that table's area (no separate
+    // till/cash-desk printer is configured) — same as the kitchen ticket.
+    const ip=printerIPs&&printerIPs[area];
+    if(!ip){alert('IP non configurato per questa zona — vai su ⚙️ Impostazioni.');return;}
+    const canvas=await renderPrecontoToCanvas(tbl,room,items);
+    const bytes=canvasToEscposRaster(canvas);
+    await sendRawEscposToIP(ip,bytes);
+    alert('✅ Preconto stampato.');
+  }catch(err){
+    console.error('Preconto print error:',err);
+    alert('❌ Stampa preconto fallita.\nControlla l\'IP (⚙️ Impostazioni), la rete e che la stampante sia accesa.\n\n'+(err&&err.message?err.message:err));
+  }
+}
+
 function deleteHistoryOrder(docId){
   if(!confirm('Eliminare definitivamente questo ordine dallo storico?'))return;
   db.collection('orders').doc(docId).delete().then(loadHistory).catch(err=>console.error(err));
@@ -3054,7 +3366,7 @@ function clearAllTablesAndPendingOrders(byWhomName){
     const batch=db.batch();
     let any=false;
     snap.forEach(doc=>{
-      if(doc.data().occupied){ batch.set(doc.ref,{occupied:false},{merge:true}); any=true; }
+      if(doc.data().occupied){ batch.set(doc.ref,{occupied:false,room:'',orderCategory:''},{merge:true}); any=true; }
     });
     return any?batch.commit():null;
   }).then(()=>{
