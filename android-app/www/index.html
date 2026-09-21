@@ -392,6 +392,14 @@ body { font-family: 'Palatino Linotype', Palatino, serif; background: #faf8f3; c
           </div>
           <label style="display:flex;align-items:center;gap:6px;margin-top:6px;color:#2a1a10;font-size:13px;"><input type="checkbox" id="printerEnabledInternoBar" checked> Stampa abilitata</label>
         </div>
+        <div style="margin-top:14px;">
+          <label style="display:block;margin-bottom:6px;color:#2a1a10;font-weight:bold;">👨‍🍳 IP Stampante Cucina (opzionale)</label>
+          <div style="display:flex;gap:8px;">
+            <input type="text" id="printerIPCucina" placeholder="192.168.1.104" style="flex:1;padding:10px;border-radius:8px;border:1px solid #d4af37;background:#f5f0e6;color:#2a1a10;font-family:inherit;">
+            <button class="decline-btn" style="border-color:#d4af37;color:#d4af37;white-space:nowrap;" onclick="testPrintIP('cucina')">🧪 Test</button>
+          </div>
+          <label style="display:flex;align-items:center;gap:6px;margin-top:6px;color:#2a1a10;font-size:13px;"><input type="checkbox" id="printerEnabledCucina"> Stampa abilitata (spento di default — attivalo solo quando serve)</label>
+        </div>
         <button class="add-item-btn" style="margin-top:10px;" onclick="savePrinterIPs()">💾 Salva IP Stampanti</button>
       </div>
 
@@ -893,11 +901,13 @@ let alertSoundSeconds=10;
 let printerOverrides={esterno:'',interno:'',internoBar:''};
 // Real network IPs for the Android tablet's ESC/POS printing — can still be
 // changed anytime from ⚙️ Impostazioni without rebuilding the app.
-let printerIPs={esterno:'192.168.0.53',interno:'192.168.0.136',internoBar:'192.168.0.54'};
+let printerIPs={esterno:'192.168.0.53',interno:'192.168.0.136',internoBar:'192.168.0.54',cucina:''};
 // Per-printer on/off switch (⚙️ Impostazioni). A disabled printer's job is
 // skipped quietly during printJobs() — no alert, since disabling one is a
 // deliberate choice (e.g. that printer is temporarily out of paper/broken).
-let printerEnabled={esterno:true,interno:true,internoBar:true};
+// Cucina defaults OFF (not just disabled-by-accident like the others) — it's
+// an optional extra kitchen-prep ticket the person turns on only when needed.
+let printerEnabled={esterno:true,interno:true,internoBar:true,cucina:false};
 // Set right before each printJobs() call, read inside buildReceiptHTML to
 // print the optional order-type line (OPERAIO / MEZZA PENSIONE / etc.)
 // under the TAVOLO heading — a cross-cutting print setting, same pattern
@@ -914,13 +924,15 @@ function startAppSettingsListener(){
     printerIPs = {
       esterno:d.printerEsternoIP||printerIPs.esterno,
       interno:d.printerInternoIP||printerIPs.interno,
-      internoBar:d.printerInternoBarIP||printerIPs.internoBar
+      internoBar:d.printerInternoBarIP||printerIPs.internoBar,
+      cucina:d.printerCucinaIP||printerIPs.cucina
     };
     const pe=d.printerEnabled||{};
     printerEnabled = {
       esterno: pe.esterno!==false,
       interno: pe.interno!==false,
-      internoBar: pe.internoBar!==false
+      internoBar: pe.internoBar!==false,
+      cucina: pe.cucina===true
     };
     updateDefaultAreaToggleUI();
     updateAlertSettingsUI();
@@ -1008,25 +1020,31 @@ function renderPrinterIPSettingsUI(){
   const es=document.getElementById('printerIPEsterno');
   const it=document.getElementById('printerIPInterno');
   const bar=document.getElementById('printerIPInternoBar');
+  const cuc=document.getElementById('printerIPCucina');
   // Don't clobber text the person is actively typing.
   if(es && document.activeElement!==es)es.value=printerIPs.esterno;
   if(it && document.activeElement!==it)it.value=printerIPs.interno;
   if(bar && document.activeElement!==bar)bar.value=printerIPs.internoBar;
+  if(cuc && document.activeElement!==cuc)cuc.value=printerIPs.cucina;
   const esEn=document.getElementById('printerEnabledEsterno');
   const itEn=document.getElementById('printerEnabledInterno');
   const barEn=document.getElementById('printerEnabledInternoBar');
+  const cucEn=document.getElementById('printerEnabledCucina');
   if(esEn)esEn.checked=printerEnabled.esterno;
   if(itEn)itEn.checked=printerEnabled.interno;
   if(barEn)barEn.checked=printerEnabled.internoBar;
+  if(cucEn)cucEn.checked=printerEnabled.cucina;
 }
 // Persistent banner on the dashboard so a printer left OFF in Impostazioni
 // (e.g. Bar was disabled while broken) never silently gets forgotten —
-// this is what makes the silent-skip in printJobs() safe to have.
-const PRINTER_LABELS={esterno:'Esterno',interno:'Interno',internoBar:'Bar'};
+// this is what makes the silent-skip in printJobs() safe to have. Cucina is
+// excluded: it defaults OFF on purpose (an optional extra ticket turned on
+// only when needed), so warning about it being off would just be noise.
+const PRINTER_LABELS={esterno:'Esterno',interno:'Interno',internoBar:'Bar',cucina:'Cucina'};
 function updateDisabledPrintersWarning(){
   const box=document.getElementById('disabledPrintersWarning');
   if(!box)return;
-  const off=Object.keys(printerEnabled).filter(k=>!printerEnabled[k]).map(k=>PRINTER_LABELS[k]||k);
+  const off=Object.keys(printerEnabled).filter(k=>k!=='cucina' && !printerEnabled[k]).map(k=>PRINTER_LABELS[k]||k);
   if(off.length){
     box.style.display='';
     box.textContent='⚠️ Stampa disabilitata per: '+off.join(', ')+' — vai su ⚙️ Impostazioni per riattivarla.';
@@ -1039,9 +1057,10 @@ function savePrinterIPs(){
   const es=document.getElementById('printerIPEsterno');
   const it=document.getElementById('printerIPInterno');
   const bar=document.getElementById('printerIPInternoBar');
+  const cuc=document.getElementById('printerIPCucina');
   if(!es||!it||!bar)return;
   const ipPattern=/^(\d{1,3}\.){3}\d{1,3}$/;
-  const values=[es.value.trim(),it.value.trim(),bar.value.trim()];
+  const values=[es.value.trim(),it.value.trim(),bar.value.trim(),cuc?cuc.value.trim():''];
   if(values.some(v=>v && !ipPattern.test(v))){
     alert('Uno degli indirizzi IP non sembra valido (es. 192.168.1.101).');
     return;
@@ -1049,14 +1068,17 @@ function savePrinterIPs(){
   const esEn=document.getElementById('printerEnabledEsterno');
   const itEn=document.getElementById('printerEnabledInterno');
   const barEn=document.getElementById('printerEnabledInternoBar');
+  const cucEn=document.getElementById('printerEnabledCucina');
   db.collection('appSettings').doc('general').set({
     printerEsternoIP:es.value.trim(),
     printerInternoIP:it.value.trim(),
     printerInternoBarIP:bar.value.trim(),
+    printerCucinaIP:cuc?cuc.value.trim():'',
     printerEnabled:{
       esterno: esEn?esEn.checked:true,
       interno: itEn?itEn.checked:true,
-      internoBar: barEn?barEn.checked:true
+      internoBar: barEn?barEn.checked:true,
+      cucina: cucEn?cucEn.checked:false
     }
   },{merge:true}).then(()=>alert('✅ Indirizzi IP salvati.')).catch(err=>{
     console.error('Save printer IP settings error:',err);
@@ -1339,9 +1361,14 @@ function buildReadOnlyItemRowsHTML(items){
 
 // Editable item rows for the CURRENT pending round — grouped by qty with +/- stepper.
 // Rename/price editing only shown when qty===1 (unambiguous which instance to edit).
-let mapItemGroupsTemp=[];
-function buildEditableItemRowsHTML(items){
-  mapItemGroupsTemp=[];
+// Keyed by context ('map' vs 'ordini') rather than one flat array — both
+// views can render in the same Firestore-snapshot cycle regardless of which
+// tab is visible, and a shared array would let one view's re-render corrupt
+// the other's already-drawn +/- button indices.
+let itemGroupsTemp={};
+function buildEditableItemRowsHTML(items,ctxKey){
+  ctxKey=ctxKey||'map';
+  itemGroupsTemp[ctxKey]=[];
   if(!items||!items.length)return '<div class="empty-state" style="padding:10px;">Nessun articolo.</div>';
   const groups=[];
   items.forEach(it=>{
@@ -1354,7 +1381,7 @@ function buildEditableItemRowsHTML(items){
   groups.forEach(g=>{
     const qty=g.instances.length;
     const first=g.instances[0];
-    const gi=mapItemGroupsTemp.push(g)-1;
+    const gi=itemGroupsTemp[ctxKey].push(g)-1;
     html+='<div class="item-row" style="align-items:flex-start;flex-wrap:wrap;">';
     html+='  <div class="item-info" style="min-width:150px;">';
     if(qty===1){
@@ -1379,17 +1406,17 @@ function buildEditableItemRowsHTML(items){
       html+='  <div style="color:#d4af37;font-weight:bold;font-size:13px;white-space:nowrap;">€'+(g.price*qty)+'</div>';
     }
     html+='  <div style="display:flex;align-items:center;gap:6px;">';
-    html+='    <button style="border:1.5px solid #d4af37;background:transparent;color:#d4af37;border-radius:50%;width:28px;height:28px;font-size:16px;font-weight:bold;cursor:pointer;font-family:inherit;" onclick="mapChangeItemQty('+gi+',-1)">−</button>';
+    html+='    <button style="border:1.5px solid #d4af37;background:transparent;color:#d4af37;border-radius:50%;width:28px;height:28px;font-size:16px;font-weight:bold;cursor:pointer;font-family:inherit;" onclick="mapChangeItemQty(\''+ctxKey+'\','+gi+',-1)">−</button>';
     html+='    <span style="min-width:18px;text-align:center;font-weight:bold;color:#d4af37;font-size:14px;">'+qty+'</span>';
-    html+='    <button style="border:1.5px solid #d4af37;background:transparent;color:#d4af37;border-radius:50%;width:28px;height:28px;font-size:16px;font-weight:bold;cursor:pointer;font-family:inherit;" onclick="mapChangeItemQty('+gi+',1)">+</button>';
+    html+='    <button style="border:1.5px solid #d4af37;background:transparent;color:#d4af37;border-radius:50%;width:28px;height:28px;font-size:16px;font-weight:bold;cursor:pointer;font-family:inherit;" onclick="mapChangeItemQty(\''+ctxKey+'\','+gi+',1)">+</button>';
     html+='  </div>';
     html+='</div>';
   });
   html+='</div>';
   return html;
 }
-function mapChangeItemQty(gi,delta){
-  const g=mapItemGroupsTemp[gi];
+function mapChangeItemQty(ctxKey,gi,delta){
+  const g=(itemGroupsTemp[ctxKey]||[])[gi];
   if(!g)return;
   if(delta<0){
     const last=g.instances[g.instances.length-1];
@@ -1453,7 +1480,7 @@ async function renderMapTableDetail(tbl){
     mapAnyDocId[tbl]=pendingDocs[0].id;
     html+='<div class="order-card" style="margin-bottom:16px;">';
     html+='  <div class="complete-badge waiting" id="mapPendingElapsed">⏳ Ordine in attesa'+(mapPendingState[tbl]&&mapPendingState[tbl].earliestAt?' — '+elapsedLabel(mapPendingState[tbl].earliestAt)+' fa':'')+'</div>';
-    html+=buildEditableItemRowsHTML(pendingItems);
+    html+=buildEditableItemRowsHTML(pendingItems,'map');
     html+='  <div style="margin:12px 0;">';
     html+='    <button class="add-item-btn" style="width:100%;padding:13px;font-size:14px;" onclick="openMapProductPicker(\''+tbl+'\')">➕ Aggiungi Prodotto</button>';
     html+='  </div>';
@@ -2131,16 +2158,7 @@ function renderOrders(snapshot){
     html+='  <div class="complete-badge '+(isComplete?'done':'waiting')+'">'+(isComplete?'✅ Tutti hanno ordinato':'⏳ Altri potrebbero ordinare ancora')+'</div>';
     html+='  <div class="pending-time"></div>';
     html+='  <div style="margin-top:12px;">';
-    allItems.forEach(it=>{
-      html+='<div class="item-row">';
-      html+='  <div class="item-info">';
-      html+='    <div class="item-name '+(it.category==='drink'?'drink':'')+'">'+(it.category==='drink'?'🍷':'🍽️')+' '+(it.person?'<span style="color:#d4af37;">👤 '+it.person+'</span> — ':'')+it.name+(it.turno?' <span style="font-weight:normal;color:#8a6a50;">('+it.turno+')</span>':'')+'</div>';
-      if(it.detail)html+='    <div class="item-detail">'+it.detail+'</div>';
-      html+='  </div>';
-      html+='  <div class="item-price">€'+it.price+'</div>';
-      html+='  <button class="item-remove" onclick="removeItem(\''+it.__docId+'\','+it.__idx+')">✕</button>';
-      html+='</div>';
-    });
+    html+=buildEditableItemRowsHTML(allItems,'ordini');
     html+='  </div>';
     html+='  <div class="add-item-row" style="flex-direction:column;align-items:stretch;">';
     html+='    <div style="display:flex;gap:8px;flex-wrap:wrap;">';
@@ -2839,7 +2857,7 @@ async function sendRawEscposToIP(ip,bytes){
     throw new Error('Piattaforma non supportata per la stampa diretta via IP.');
   }
 }
-const TEST_PRINT_IP_FIELDS={esterno:'printerIPEsterno',interno:'printerIPInterno',internoBar:'printerIPInternoBar'};
+const TEST_PRINT_IP_FIELDS={esterno:'printerIPEsterno',interno:'printerIPInterno',internoBar:'printerIPInternoBar',cucina:'printerIPCucina'};
 async function testPrintIP(area){
   const fieldId=TEST_PRINT_IP_FIELDS[area];
   const field=fieldId?document.getElementById(fieldId):null;
@@ -2899,6 +2917,109 @@ async function printJobs(jobs,tbl,room,operatorName){
     alert('🖨️ Nella finestra di stampa, seleziona la stampante:\n\n"'+job.printer+'"\n\nPremi OK per continuare, poi clicca Stampa.');
     await doPrint();
   }
+
+  // ── CUCINA (optional extra kitchen-prep ticket) ──
+  // Off by default (see printerEnabled.cucina) — only fires when explicitly
+  // turned on in ⚙️ Impostazioni. Uses the RAW (unexpanded) items from every
+  // non-bar job so a fixed menu's dishBreakdown is available to print as a
+  // header + dish list, and drinks are excluded entirely (they never go to
+  // the kitchen, only to Bar).
+  if(printerEnabled && printerEnabled.cucina===true){
+    const foodItems=[];
+    jobs.forEach(job=>{
+      if(job.ipKey==='internoBar')return;
+      (job.billingItems||job.items||[]).forEach(it=>{
+        if(it.category!=='drink')foodItems.push(it);
+      });
+    });
+    if(foodItems.length){
+      const ip=printerIPs&&printerIPs.cucina;
+      if(!ip){
+        console.log('Cucina abilitata ma IP non configurato — stampa saltata.');
+      }else{
+        try{
+          const canvas=await renderCucinaReceiptToCanvas(tbl,foodItems);
+          const bytes=canvasToEscposRaster(canvas);
+          await sendRawEscposToIP(ip,bytes);
+        }catch(err){
+          console.error('Cucina print failed:',err);
+          alert('❌ Stampa Cucina fallita.\nControlla l\'IP (⚙️ Impostazioni), la rete e che la stampante sia accesa.\n\n'+(err&&err.message?err.message:err));
+        }
+      }
+    }
+  }
+}
+
+// ── CUCINA receipt ──
+// Unlike buildReceiptHTML (unchanged, still used for Esterno/Interno), this
+// keeps each dish under its OWN turno — a fixed menu's courses stay spread
+// across turni exactly like today's ticket already does via expandForDisplay,
+// they are NOT gathered into one block. What's different here: every dish
+// gets a small caption under it — the menu's name (e.g. "MENU GASTRONOMICO")
+// for a menu course, or "ALLA CARTA" for a plain dish — and no prices at all
+// (this is a kitchen prep ticket, not a bill).
+function expandForCucina(rawItems){
+  const out=[];
+  rawItems.forEach(it=>{
+    if(it.course==='menu' && it.dishBreakdown && it.dishBreakdown.length){
+      it.dishBreakdown.forEach(d=>{
+        out.push({name:d.name,turno:d.turno,detail:d.detail||'',person:it.person,menuName:it.name});
+      });
+    }else{
+      out.push({name:it.name,turno:it.turno,detail:it.detail||'',person:it.person,menuName:null});
+    }
+  });
+  return out;
+}
+function buildCucinaReceiptHTML(tbl,items){
+  let html='<div class="receipt-table-big">TAVOLO '+tbl+'</div>';
+  const expanded=expandForCucina(items);
+  const byTurno={};
+  expanded.forEach(it=>{
+    const t=it.turno||'—';
+    if(!byTurno[t])byTurno[t]=[];
+    byTurno[t].push(it);
+  });
+  const sortedTurni=Object.keys(byTurno).sort((a,b)=>{
+    if(a==='—')return 1;
+    if(b==='—')return -1;
+    return parseInt(a,10)-parseInt(b,10);
+  });
+  sortedTurni.forEach(turno=>{
+    html+='<div class="receipt-turno">'+(turno==='—'?'SENZA TURNO':turno)+'</div>';
+    const grouped=[];
+    byTurno[turno].forEach(it=>{
+      const key=it.name+'||'+(it.detail||'')+'||'+(it.person||'')+'||'+(it.menuName||'');
+      const existing=grouped.find(g=>g.key===key);
+      if(existing){existing.qty++;}
+      else grouped.push({key,name:it.name,detail:it.detail,person:it.person,menuName:it.menuName,qty:1});
+    });
+    grouped.forEach(g=>{
+      const caption=g.menuName?stripEmoji(g.menuName).toUpperCase():'ALLA CARTA';
+      html+='<div class="receipt-item"><div class="rleft"><span class="rname">'+(g.person?g.person+' — ':'')+stripEmoji(g.name)+' <span class="rqty">×'+g.qty+'</span></span>';
+      if(g.detail)html+='<br><span class="rdetail">'+stripEmoji(g.detail)+'</span>';
+      html+='<br><span class="rdetail" style="font-style:italic;">'+caption+'</span>';
+      html+='</div></div>';
+    });
+  });
+  return html;
+}
+async function renderCucinaReceiptToCanvas(tbl,items){
+  const html=buildCucinaReceiptHTML(tbl,items);
+  const container=document.createElement('div');
+  container.className='receipt-render';
+  container.style.cssText='position:fixed;left:-9999px;top:0;width:'+RECEIPT_CSS_LAYOUT_WIDTH+'px;padding:15px;';
+  container.innerHTML=html;
+  document.body.appendChild(container);
+  await new Promise(r=>setTimeout(r,80));
+  let canvas;
+  try{
+    const renderScale=RECEIPT_IMG_WIDTH_DOTS/RECEIPT_CSS_LAYOUT_WIDTH;
+    canvas=await html2canvas(container,{backgroundColor:'#ffffff',scale:renderScale,useCORS:true});
+  }finally{
+    document.body.removeChild(container);
+  }
+  return canvas;
 }
 
 function expandForDisplay(rawItems){
