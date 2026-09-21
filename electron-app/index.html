@@ -486,7 +486,14 @@ const TURNO_OPTIONS=['1° turno','2° turno','3° turno','4° turno'];
 // this list gets grouped/tagged as a fixed menu on receipts — previously
 // only 'Menù del Lago Bin' was recognized, so the other packages silently
 // fell through as plain à la carte items.
-const MENU_FISSO_NAMES=['Menù del Lago Bin','Menù Gastronomico','Menù Degustazione','Menù Bambini (4/10 Anni)'];
+// Only "Menù del Lago Bin" actually has structured dishBreakdown data — the
+// other 3 fixed-menu packages (Gastronomico/Degustazione/Bambini) store their
+// chosen dishes as free-text in `detail` instead. Tagging them as menu-fisso
+// too (as an earlier fix mistakenly did) hides that `detail` text on receipts,
+// leaving just a bare "MENU FISSO" label with no product info — so only the
+// one with real breakdown data gets this treatment; the rest print as normal
+// items with their detail text shown, per Abdullah's correction.
+const MENU_FISSO_NAMES=['Menù del Lago Bin'];
 
 // ── FULL MENU AVAILABILITY MANAGEMENT (all categories) ──
 const COURSE_LABELS = {antipasti:'🥗 Antipasti', primi:'🍝 Primi', secondi:'🥩 Secondi', contorni:'🥦 Contorni', dolci:'🍰 Dolci', gelato:'🍨 Gelato', bevande:'🍹 Bevande'};
@@ -901,7 +908,7 @@ let alertSoundSeconds=10;
 let printerOverrides={esterno:'',interno:'',internoBar:''};
 // Real network IPs for the Android tablet's ESC/POS printing — can still be
 // changed anytime from ⚙️ Impostazioni without rebuilding the app.
-let printerIPs={esterno:'192.168.0.53',interno:'192.168.0.136',internoBar:'192.168.0.54',cucina:''};
+let printerIPs={esterno:'192.168.0.53',interno:'192.168.0.136',internoBar:'192.168.0.54',cucina:'192.168.0.51'};
 // Per-printer on/off switch (⚙️ Impostazioni). A disabled printer's job is
 // skipped quietly during printJobs() — no alert, since disabling one is a
 // deliberate choice (e.g. that printer is temporarily out of paper/broken).
