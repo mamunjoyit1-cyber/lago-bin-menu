@@ -2959,27 +2959,59 @@ async function printJobs(jobs,tbl,room,operatorName){
 
 // ── CUCINA receipt ──
 // Unlike buildReceiptHTML (unchanged, still used for Esterno/Interno), this
-// keeps each dish under its OWN turno — a fixed menu's courses stay spread
-// across turni exactly like today's ticket already does via expandForDisplay,
-// they are NOT gathered into one block. What's different here: every dish
-// gets a small caption under it — the menu's name (e.g. "MENU GASTRONOMICO")
-// for a menu course, or "ALLA CARTA" for a plain dish — and no prices at all
-// (this is a kitchen prep ticket, not a bill).
+// keeps each dish under its OWN turno. A fixed menu's courses:
+//  - "Menù del Lago Bin" has real dishBreakdown data (each dish carries its
+//    own turno) — used as-is, same as before.
+//  - The other 3 packages (Gastronomico/Degustazione/Bambini) have no
+//    dishBreakdown; their courses are stored as numbered lines in `detail`
+//    ("1. X\n2. Y\n3. Z") instead. Those get parsed and each numbered line
+//    becomes its own dish under turno N° — matching how the kitchen actually
+//    wants courses spread across turni even without structured data.
+//  - If a menu item has neither dishBreakdown nor numbered detail lines (e.g.
+//    Bambini, a single kids dish with nothing to split), it prints as ONE
+//    line under 1° turno.
+// Every dish gets a small italic caption ABOVE it — the menu's own name
+// (e.g. "MENU GASTRONOMICO") for a menu-course dish, or "ALLA CARTA" for a
+// plain dish. No prices (kitchen prep ticket, not a bill).
+const CUCINA_MENU_NAMES=['Menù del Lago Bin','Menù Gastronomico','Menù Degustazione','Menù Bambini (4/10 Anni)'];
+function parseNumberedMenuDetail(detail){
+  if(!detail)return [];
+  const lines=String(detail).split(/\n+/).map(l=>l.trim()).filter(Boolean);
+  const dishes=[];
+  lines.forEach(line=>{
+    const m=line.match(/^(\d+)\.\s*(.+)$/);
+    if(m)dishes.push({num:parseInt(m[1],10),name:m[2].trim()});
+  });
+  return dishes;
+}
 function expandForCucina(rawItems){
   const out=[];
   rawItems.forEach(it=>{
-    if(it.course==='menu' && it.dishBreakdown && it.dishBreakdown.length){
+    const isMenu=CUCINA_MENU_NAMES.includes(it.name);
+    if(isMenu && it.dishBreakdown && it.dishBreakdown.length){
       it.dishBreakdown.forEach(d=>{
         out.push({name:d.name,turno:d.turno,detail:d.detail||'',person:it.person,menuName:it.name});
       });
-    }else{
-      out.push({name:it.name,turno:it.turno,detail:it.detail||'',person:it.person,menuName:null});
+      return;
     }
+    if(isMenu){
+      const numbered=parseNumberedMenuDetail(it.detail);
+      if(numbered.length){
+        numbered.forEach(d=>{
+          out.push({name:d.name,turno:d.num+'° turno',detail:'',person:it.person,menuName:it.name});
+        });
+      }else{
+        out.push({name:it.name,turno:'1° turno',detail:'',person:it.person,menuName:it.name});
+      }
+      return;
+    }
+    out.push({name:it.name,turno:it.turno,detail:it.detail||'',person:it.person,menuName:null});
   });
   return out;
 }
 function buildCucinaReceiptHTML(tbl,items){
   let html='<div class="receipt-table-big">TAVOLO '+tbl+'</div>';
+  html+='<div style="text-align:center;font-weight:bold;font-size:13px;letter-spacing:2px;margin-bottom:8px;">CUCINA</div>';
   const expanded=expandForCucina(items);
   const byTurno={};
   expanded.forEach(it=>{
@@ -3003,9 +3035,10 @@ function buildCucinaReceiptHTML(tbl,items){
     });
     grouped.forEach(g=>{
       const caption=g.menuName?stripEmoji(g.menuName).toUpperCase():'ALLA CARTA';
-      html+='<div class="receipt-item"><div class="rleft"><span class="rname">'+(g.person?g.person+' — ':'')+stripEmoji(g.name)+' <span class="rqty">×'+g.qty+'</span></span>';
+      html+='<div class="receipt-item"><div class="rleft">';
+      html+='<span class="rdetail" style="font-style:italic;font-size:12px;">'+caption+'</span><br>';
+      html+='<span class="rname">'+g.qty+' '+(g.person?g.person+' — ':'')+stripEmoji(g.name)+'</span>';
       if(g.detail)html+='<br><span class="rdetail">'+stripEmoji(g.detail)+'</span>';
-      html+='<br><span class="rdetail" style="font-style:italic;">'+caption+'</span>';
       html+='</div></div>';
     });
   });
