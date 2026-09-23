@@ -2973,10 +2973,12 @@ async function printJobs(jobs,tbl,room,operatorName){
 // Every dish gets a small italic caption ABOVE it — the menu's own name
 // (e.g. "MENU GASTRONOMICO") for a menu-course dish, or "ALLA CARTA" for a
 // plain dish. No prices (kitchen prep ticket, not a bill).
-const CUCINA_MENU_NAMES=['Menù del Lago Bin','Menù Gastronomico','Menù Degustazione','Menù Bambini (4/10 Anni)'];
+const CUCINA_MENU_NAMES=['Menù del Lago Bin','Menù Gastronomico','Menù Degustazione','Menù Bambini (4/10 Anni)','Menù Bambini'];
 function parseNumberedMenuDetail(detail){
   if(!detail)return [];
-  const lines=String(detail).split(/\n+/).map(l=>l.trim()).filter(Boolean);
+  // Real order data separates courses with literal "<br>" tags, not \n —
+  // split on both so either form works.
+  const lines=String(detail).split(/<br\s*\/?>|\n+/i).map(l=>l.trim()).filter(Boolean);
   const dishes=[];
   lines.forEach(line=>{
     const m=line.match(/^(\d+)\.\s*(.+)$/);
@@ -3035,10 +3037,10 @@ function buildCucinaReceiptHTML(tbl,items){
     });
     grouped.forEach(g=>{
       const caption=g.menuName?stripEmoji(g.menuName).toUpperCase():'ALLA CARTA';
-      html+='<div class="receipt-item"><div class="rleft">';
-      html+='<span class="rdetail" style="font-style:italic;font-size:12px;">'+caption+'</span><br>';
-      html+='<span class="rname">'+g.qty+' '+(g.person?g.person+' — ':'')+stripEmoji(g.name)+'</span>';
-      if(g.detail)html+='<br><span class="rdetail">'+stripEmoji(g.detail)+'</span>';
+      html+='<div class="receipt-item" style="margin-bottom:6px;"><div class="rleft">';
+      html+='<div style="font-style:italic;font-size:11px;color:#333;line-height:1.15;margin:0;padding:0;">'+caption+'</div>';
+      html+='<div style="line-height:1.25;margin:0;padding:0;font-weight:500;">'+g.qty+' '+(g.person?g.person+' — ':'')+stripEmoji(g.name)+'</div>';
+      if(g.detail)html+='<div style="font-size:14px;color:#333;line-height:1.2;margin-top:2px;">'+stripEmoji(g.detail)+'</div>';
       html+='</div></div>';
     });
   });
