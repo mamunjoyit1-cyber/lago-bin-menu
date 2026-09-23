@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lago Bin Admin — Download</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Palatino Linotype', Palatino, serif;
+    background: #150e0b;
+    color: #f9f1e2;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .card {
+    max-width: 460px;
+    width: 100%;
+    text-align: center;
+  }
+  h1 {
+    font-size: 26px;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+    color: #f9f1e2;
+  }
+  .subtitle {
+    color: #d4af37;
+    font-size: 14px;
+    margin-bottom: 36px;
+    letter-spacing: 0.5px;
+  }
+  .btn {
+    display: block;
+    width: 100%;
+    padding: 16px;
+    margin-bottom: 16px;
+    border-radius: 10px;
+    border: 1px solid #d4af37;
+    background: transparent;
+    color: #f9f1e2;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+    transition: background 0.15s ease;
+  }
+  .btn:hover { background: rgba(212,175,55,0.12); }
+  .btn .ver {
+    display: block;
+    font-size: 12px;
+    font-weight: normal;
+    color: #b8a888;
+    margin-top: 4px;
+    letter-spacing: normal;
+  }
+  .note {
+    margin-top: 28px;
+    font-size: 12px;
+    color: #8a7860;
+    line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>Hotel Ristorante Lago Bin</h1>
+    <div class="subtitle">Admin — Download</div>
+
+    <a class="btn" id="winBtn" href="LagoBinAdmin.exe">
+      🖥️ Windows (.exe)
+      <span class="ver" id="winVer">caricamento versione…</span>
+    </a>
+
+    <a class="btn" id="androidBtn" href="LagoBinAdmin-android.apk">
+      📱 Android (.apk)
+      <span class="ver" id="androidVer">caricamento versione…</span>
+    </a>
+
+    <div class="note">
+      Windows: scarica ed esegui il file .exe (portabile, nessuna installazione).<br>
+      Android: scarica l'.apk e consenti "Installa da fonti sconosciute" se richiesto.
+    </div>
+  </div>
+
+  <script>
+    fetch('version.json?_=' + Date.now())
+      .then(r => r.json())
+      .then(d => {
+        document.getElementById('winVer').textContent =
+          'v' + d.version + (d.releasedAt ? ' — ' + d.releasedAt : '');
+      })
+      .catch(() => {
+        document.getElementById('winVer').textContent = '';
+      });
+
+    fetch('version-android.json?_=' + Date.now())
+      .then(r => r.json())
+      .then(d => {
+        document.getElementById('androidVer').textContent =
+          'v' + d.version + (d.releasedAt ? ' — ' + d.releasedAt : '');
+      })
+      .catch(() => {
+        document.getElementById('androidVer').textContent = '';
+      });
+  </script>
+</body>
+</html>
